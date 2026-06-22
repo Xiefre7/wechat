@@ -1,0 +1,261 @@
+<view class="import-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.60" />
+  <!-- 顶部渐变条 -->
+  <view class="ambient-strip"></view>
+
+  <scroll-view class="import-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 页面标题 -->
+    <view class="page-header">
+      <view class="page-title">导入题库</view>
+      <view class="page-desc">支持 Excel / Word / 文本粘贴 / 拍照OCR / 手动录入五种方式</view>
+    </view>
+
+    <!-- 方式选择 Tab -->
+    <view class="method-tabs">
+      <view
+        wx:for="{{methods}}"
+        wx:key="id"
+        class="method-tab {{currentMethod === item.id ? 'active' : ''}}"
+        data-method="{{item.id}}"
+        bindtap="switchMethod"
+      >
+        <image class="tab-icon" src="{{item.icon}}" mode="aspectFit"></image>
+        <view class="tab-label">{{item.label}}</view>
+      </view>
+    </view>
+
+    <!-- Excel 上传面板 -->
+    <view class="method-panel" wx:if="{{currentMethod === 'excel'}}">
+      <view class="panel-card glass-card">
+        <view class="panel-icon-wrap">
+          <image class="panel-icon" src="/images/kzg/file-blue.svg" mode="aspectFit"></image>
+        </view>
+        <view class="panel-title">Excel 模板上传</view>
+        <view class="panel-desc">下载模板，按格式填写后上传，一键导入。推荐大量题目使用此方式。</view>
+
+        <view class="file-upload-area" bindtap="downloadTemplate">
+          <view class="upload-hint">
+            <view class="hint-icon">📥</view>
+            <view class="hint-text">下载 Excel 导入模板</view>
+          </view>
+        </view>
+
+        <view class="file-upload-area {{uploadFile ? 'has-file' : ''}}" bindtap="chooseExcel">
+          <view class="upload-hint" wx:if="{{!uploadFile}}">
+            <view class="hint-icon">📁</view>
+            <view class="hint-text">点击选择 .xlsx / .xls 文件</view>
+            <view class="hint-sub">文件大小不超过 10MB</view>
+          </view>
+          <view class="upload-hint" wx:else>
+            <view class="hint-icon">✅</view>
+            <view class="hint-text">{{uploadFile.name}}</view>
+            <view class="hint-sub">{{uploadFile.size}}</view>
+          </view>
+        </view>
+
+        <view class="constraint-info">
+          <view class="constraint-item">单次最多导入 500 题</view>
+          <view class="constraint-item">文件大小不超过 10MB</view>
+          <view class="constraint-item">自导入题库按单题管理，无知识点分类</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Word 上传面板 -->
+    <view class="method-panel" wx:if="{{currentMethod === 'word'}}">
+      <view class="panel-card glass-card">
+        <view class="panel-icon-wrap">
+          <image class="panel-icon" src="/images/kzg/book-blue.svg" mode="aspectFit"></image>
+        </view>
+        <view class="panel-title">Word 文档上传</view>
+        <view class="panel-desc">上传 .docx 格式的题目文档，系统自动识别题型、题干、选项和答案。推荐使用此方式导入老师发的试卷文档。</view>
+
+        <view class="file-upload-area" bindtap="downloadWordTemplate">
+          <view class="upload-hint">
+            <view class="hint-icon">📥</view>
+            <view class="hint-text">下载 Word 导入模板</view>
+          </view>
+        </view>
+
+        <view class="file-upload-area {{uploadWordFile ? 'has-file' : ''}}" bindtap="chooseWord">
+          <view class="upload-hint" wx:if="{{!uploadWordFile}}">
+            <view class="hint-icon">📄</view>
+            <view class="hint-text">点击选择 .docx 文件</view>
+            <view class="hint-sub">文件大小不超过 10MB</view>
+          </view>
+          <view class="upload-hint" wx:else>
+            <view class="hint-icon">✅</view>
+            <view class="hint-text">{{uploadWordFile.name}}</view>
+            <view class="hint-sub">{{uploadWordFile.size}}</view>
+          </view>
+        </view>
+
+        <view class="constraint-info">
+          <view class="constraint-item">支持 .docx / .doc 格式</view>
+          <view class="constraint-item">文件大小不超过 10MB</view>
+          <view class="constraint-item">自导入题库按单题管理，无知识点分类</view>
+          <view class="constraint-item">文档中题目格式：题号+题干+选项+答案</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 文本粘贴面板 -->
+    <view class="method-panel" wx:if="{{currentMethod === 'text'}}">
+      <view class="panel-card glass-card">
+        <view class="panel-icon-wrap">
+          <image class="panel-icon" src="/images/kzg/pen-blue.svg" mode="aspectFit"></image>
+        </view>
+        <view class="panel-title">结构化文本粘贴</view>
+        <view class="panel-desc">将题目文本粘贴到下方区域，系统自动识别题型、题干、选项和答案。</view>
+
+        <view class="format-example glass-button" bindtap="toggleFormatHelp">
+          <view class="example-header">
+            <view class="example-title">📋 支持的格式示例</view>
+            <view class="example-toggle">{{showFormatHelp ? '收起' : '展开'}}</view>
+          </view>
+          <view class="example-content" wx:if="{{showFormatHelp}}">
+            <view class="example-block">
+              <view class="example-label">格式一（编号型）：</view>
+              <text class="example-text">1. 设集合A={1,2,3}, B={2,3,4}, 则A∩B=?
+A. {1,2,3,4}
+B. {2,3}
+C. {1,4}
+D. {1}
+答案：B
+解析：交集是同时属于两个集合的元素</text>
+            </view>
+            <view class="example-block">
+              <view class="example-label">格式二（括号型）：</view>
+              <text class="example-text">1、【单选题】以下哪个不是实数？
+A、0
+B、√2
+C、i
+D、π
+答案：C
+解析：i是虚数单位</text>
+            </view>
+            <view class="example-block">
+              <view class="example-label">判断题：</view>
+              <text class="example-text">1. 所有正方形都是矩形。
+A. 对
+B. 错
+答案：对</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="text-input-wrap">
+          <textarea
+            class="text-input glass-input"
+            placeholder="在此粘贴题目文本...&#10;&#10;支持格式：&#10;1. 题干内容&#10;A. 选项A&#10;B. 选项B&#10;答案：B&#10;解析：（可选）"
+            value="{{textContent}}"
+            bindinput="onTextInput"
+            maxlength="{{50000}}"
+            auto-height
+          ></textarea>
+          <view class="char-count">{{textContent.length}}/50000</view>
+        </view>
+
+        <view class="constraint-info">
+          <view class="constraint-item">支持单选、多选、判断、填空、简答题</view>
+          <view class="constraint-item">题目间用题号（1. 2. 3.）分隔</view>
+          <view class="constraint-item">单次最多解析 500 题</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 拍照OCR面板 -->
+    <view class="method-panel" wx:if="{{currentMethod === 'ocr'}}">
+      <view class="panel-card glass-card">
+        <view class="panel-icon-wrap">
+          <image class="panel-icon" src="/images/kzg/chat-blue.svg" mode="aspectFit"></image>
+        </view>
+        <view class="panel-title">拍照 OCR 识别</view>
+        <view class="panel-desc">对纸质试卷拍照，系统自动识别题目文字并结构化。识别后可在预览页修正。</view>
+
+        <view class="ocr-actions">
+          <button class="ocr-btn glass-button" bindtap="takePhoto">
+            <view class="ocr-btn-icon">📷</view>
+            <view class="ocr-btn-label">拍照识别</view>
+          </button>
+          <button class="ocr-btn glass-button" bindtap="chooseImage">
+            <view class="ocr-btn-icon">🖼️</view>
+            <view class="ocr-btn-label">从相册选择</view>
+          </button>
+        </view>
+
+        <view class="ocr-remaining">
+          今日剩余 OCR 次数：<text class="ocr-count">{{ocrRemaining}}</text> 次
+        </view>
+
+        <view class="constraint-info">
+          <view class="constraint-item">每日 OCR 上限 20 次</view>
+          <view class="constraint-item">仅支持印刷体中文识别</view>
+          <view class="constraint-item">拍照后请在预览页修正识别错误</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 手动录入面板 -->
+    <view class="method-panel" wx:if="{{currentMethod === 'manual'}}">
+      <view class="panel-card glass-card">
+        <view class="panel-icon-wrap">
+          <image class="panel-icon" src="/images/kzg/plus-blue.svg" mode="aspectFit"></image>
+        </view>
+        <view class="panel-title">手动逐题录入</view>
+        <view class="panel-desc">逐题填写题干、选项、答案和解析，适合少量题目补充。</view>
+
+        <view class="manual-preview" wx:if="{{manualQuestions.length > 0}}">
+          <view class="manual-count">已录入 {{manualQuestions.length}} 题</view>
+          <view class="manual-list">
+            <view
+              wx:for="{{manualQuestions}}"
+              wx:key="index"
+              class="manual-item glass-button"
+            >
+              <view class="manual-item-num">{{index + 1}}</view>
+              <view class="manual-item-info">
+                <view class="manual-item-stem">{{item.stem}}</view>
+                <view class="manual-item-meta">{{item.typeLabel}} · 答案：{{item.answer}}</view>
+              </view>
+              <view class="manual-item-actions">
+                <view class="manual-action" data-index="{{index}}" bindtap="editManualQuestion" aria-label="编辑">✏️</view>
+                <view class="manual-action" data-index="{{index}}" bindtap="deleteManualQuestion" aria-label="删除">🗑️</view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <button class="add-manual-btn glass-button" bindtap="goManualEntry">
+          <view class="add-manual-icon">＋</view>
+          <view class="add-manual-text">{{manualQuestions.length > 0 ? '继续添加题目' : '开始录入题目'}}</view>
+        </button>
+      </view>
+    </view>
+
+    <!-- 题库名称输入 -->
+    <view class="bank-name-section" wx:if="{{currentMethod !== 'manual' || manualQuestions.length > 0}}">
+      <view class="section-label">题库名称</view>
+      <input
+        class="bank-name-input glass-input"
+        placeholder="请输入题库名称（如：2024福建职教数学真题）"
+        value="{{bankName}}"
+        bindinput="onBankNameInput"
+        maxlength="50"
+      />
+    </view>
+
+    <!-- 操作按钮区 -->
+    <view class="action-area" wx:if="{{canProceed}}">
+      <button class="preview-btn glass-card" bindtap="goPreview" hover-class="pressing">
+        <view class="btn-content">
+          <view class="btn-main">预览并确认导入</view>
+          <view class="btn-sub">{{parseStatsText}}</view>
+        </view>
+        <view class="btn-arrow">→</view>
+      </button>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </scroll-view>
+</view>

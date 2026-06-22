@@ -1,0 +1,301 @@
+page {
+  width: 100%;
+  min-height: 100vh;
+  background: #F4F7FC;
+  color: #1E2A3A;
+  overflow-x: hidden;
+}
+
+.ambient-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 240rpx;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 240rpx 160rpx at 50% 0%, rgba(59, 130, 246, 0.05), transparent 70%);
+  filter: blur(12rpx);
+}
+
+.history-page {
+  position: relative;
+  min-height: 100vh;
+  padding-top: calc(env(safe-area-inset-top) + 8rpx);
+}
+
+.history-scroll {
+  position: relative;
+  z-index: 2;
+  height: calc(100vh - env(safe-area-inset-top) - 8rpx);
+  padding: 0 24rpx;
+}
+
+/* ─── 页面头 ─── */
+.page-header {
+  padding: 20rpx 4rpx 12rpx;
+}
+
+.page-title {
+  font-size: 44rpx;
+  line-height: 1.18;
+  font-weight: 850;
+  color: #1A2538;
+}
+
+.page-desc {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  color: #95A6BD;
+}
+
+/* ─── 骨架屏 ─── */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin-top: 8rpx;
+}
+
+.skeleton-card {
+  padding: 24rpx 22rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.skeleton-line {
+  height: 20rpx;
+  border-radius: 10rpx;
+  background: #E6EAF2;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-name {
+  width: 60%;
+  height: 28rpx;
+  margin-bottom: 14rpx;
+}
+
+.skeleton-meta {
+  width: 40%;
+  margin-bottom: 18rpx;
+}
+
+.skeleton-bar {
+  width: 100%;
+  height: 8rpx;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ─── 空状态 ─── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 0;
+}
+
+.empty-icon {
+  font-size: 72rpx;
+}
+
+.empty-text {
+  margin-top: 20rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #5E718D;
+}
+
+.empty-desc {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #95A6BD;
+}
+
+.empty-btn {
+  margin-top: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200rpx;
+  height: 76rpx;
+  border-radius: 38rpx;
+  background: #4A8FEA;
+  color: #ffffff;
+  font-size: 26rpx;
+  font-weight: 700;
+  box-shadow: 0 8rpx 20rpx rgba(37, 99, 235, 0.2);
+}
+
+/* ─── 列表 ─── */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.history-card {
+  padding: 24rpx 22rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.42);
+  border: 1rpx solid rgba(255, 255, 255, 0.45);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.78),
+    0 14rpx 48rpx rgba(74, 143, 234, 0.08);
+  -webkit-backdrop-filter: blur(34rpx);
+  backdrop-filter: blur(34rpx);
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.history-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1E2A3A;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-chevron {
+  width: 22rpx;
+  height: 22rpx;
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  opacity: 0.4;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-top: 14rpx;
+}
+
+.history-tag {
+  font-size: 20rpx;
+  font-weight: 600;
+  padding: 4rpx 14rpx;
+  border-radius: 8rpx;
+}
+
+.history-tag.math {
+  color: #4A8FEA;
+  background: #EDF4FE;
+}
+
+.history-tag.english {
+  color: #10B981;
+  background: #ECFDF5;
+}
+
+.history-tag.politics {
+  color: #FF6B4A;
+  background: #FFF0EC;
+}
+
+.history-date {
+  font-size: 20rpx;
+  color: #95A6BD;
+}
+
+.card-progress {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-top: 18rpx;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background: #E6EAF2;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3rpx;
+}
+
+.progress-fill.math { background: #4A8FEA; }
+.progress-fill.english { background: #10B981; }
+.progress-fill.politics { background: #FF6B4A; }
+
+.progress-count {
+  font-size: 20rpx;
+  color: #95A6BD;
+  flex-shrink: 0;
+}
+
+.pressing {
+  opacity: 0.78;
+  transform: scale(0.985);
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.safe-bottom {
+  height: calc(env(safe-area-inset-bottom) + 48rpx);
+}
+
+/* ─── 深色模式（由 .theme-dark 类驱动） ─── */
+.theme-dark .page-title {
+    color: #FFFFFF;
+    font-weight: 900;
+  }
+
+  .theme-dark .page-desc {
+    color: #1A2538;
+  }
+
+  .theme-dark .history-card {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .theme-dark .history-name {
+    color: #FFFFFF;
+    font-weight: 900;
+  }
+
+  .theme-dark .history-date,
+  .theme-dark .progress-count,
+  .theme-dark .empty-text,
+  .theme-dark .empty-desc {
+    color: #1A2538;
+  }
+
+  .theme-dark .progress-bar,
+  .theme-dark .skeleton-line {
+    background: rgba(255, 255, 255, 0.10);
+  }
+
+  .theme-dark .history-tag.math {
+    color: #60A5FA;
+    background: rgba(59, 130, 246, 0.12);
+  }
+
+  .theme-dark .history-tag.english {
+    color: #34D399;
+    background: rgba(16, 185, 129, 0.12);
+  }
+
+  .theme-dark .history-tag.politics {
+    color: #FF8C69;
+    background: rgba(255, 107, 74, 0.12);
+  }
+
+  .theme-dark .skeleton-card {
+    background: rgba(30, 41, 59, 0.4);
+  }

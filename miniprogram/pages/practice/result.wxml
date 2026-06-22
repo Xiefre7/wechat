@@ -1,0 +1,170 @@
+<view class="result-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.60" />
+  <view class="ambient-strip"></view>
+
+  <scroll-view class="result-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 完成标题 -->
+    <view class="finish-hero">
+      <view class="finish-icon">{{isMemorize ? '🧠' : '🎉'}}</view>
+      <view class="finish-title">{{isMemorize ? '背题完成！' : '练习完成！'}}</view>
+      <view class="finish-bank">{{result.bankName}}</view>
+      <view class="finish-kp" wx:if="{{result.knowledgePointName}}">{{result.knowledgePointName}}</view>
+    </view>
+
+    <!-- 正确率环形图（仅刷题模式） -->
+    <view class="accuracy-card glass-card" wx:if="{{!isMemorize}}">
+      <view class="ring-wrap">
+        <view class="ring-bg">
+          <view class="ring-number" style="color:{{accuracyColor}}">{{accuracy}}%</view>
+          <view class="ring-label" style="color:{{accuracyColor}}">{{accuracyLabel}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 背题模式记忆率 -->
+    <view class="accuracy-card glass-card" wx:if="{{isMemorize}}">
+      <view class="ring-wrap">
+        <view class="ring-bg memorize-ring">
+          <view class="ring-number memorize-rate-num">{{memorizeRate}}%</view>
+          <view class="ring-label memorize-rate-label">记忆率</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 数据统计（刷题模式） -->
+    <view class="stats-grid" wx:if="{{!isMemorize}}">
+      <view class="stat-card glass-card">
+        <view class="stat-value correct-val">{{result.correctCount}}</view>
+        <view class="stat-label">正确</view>
+      </view>
+      <view class="stat-card glass-card">
+        <view class="stat-value wrong-val">{{result.wrongCount}}</view>
+        <view class="stat-label">错误</view>
+      </view>
+      <view class="stat-card glass-card">
+        <view class="stat-value time-val">{{timeFormatted}}</view>
+        <view class="stat-label">总用时</view>
+      </view>
+      <view class="stat-card glass-card">
+        <view class="stat-value avg-val">{{avgTimeFormatted}}</view>
+        <view class="stat-label">平均每题</view>
+      </view>
+    </view>
+
+    <!-- 数据统计（背题模式） -->
+    <view class="stats-grid" wx:if="{{isMemorize}}">
+      <view class="stat-card glass-card">
+        <view class="stat-value correct-val">{{rememberedCount}}</view>
+        <view class="stat-label">记住了</view>
+      </view>
+      <view class="stat-card glass-card">
+        <view class="stat-value wrong-val">{{notRememberedCount}}</view>
+        <view class="stat-label">没记住</view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-group">
+      <button class="action-btn primary glass-card" bindtap="continuePractice" hover-class="pressing">
+        <view class="action-icon">📝</view>
+        <view class="action-label">{{isMemorize ? '继续背题' : '继续刷题'}}</view>
+      </button>
+      <button class="action-btn outline glass-card" bindtap="goHome" hover-class="pressing">
+        <view class="action-icon">🏠</view>
+        <view class="action-label">返回首页</view>
+      </button>
+    </view>
+
+    <!-- 答题详情 -->
+    <view class="detail-section" wx:if="{{answerDetails.length > 0}}">
+      <view class="detail-header glass-button" bindtap="toggleAnswers">
+        <view class="detail-title">{{isMemorize ? '记忆详情' : '答题详情'}}</view>
+        <view class="detail-toggle">{{answersExpanded ? '收起 ▲' : '展开 ▼'}}</view>
+      </view>
+
+      <view class="detail-list" wx:if="{{answersExpanded}}">
+        <!-- 刷题详情 -->
+        <block wx:if="{{!isMemorize}}">
+          <view
+            wx:for="{{answerDetails}}"
+            wx:key="index"
+            class="detail-card glass-card {{item.isCorrect === true ? 'detail-correct' : item.isCorrect === false ? 'detail-wrong' : ''}}"
+          >
+            <view class="detail-q-header">
+              <view class="detail-q-num {{item.isCorrect === true ? 'q-correct' : item.isCorrect === false ? 'q-wrong' : ''}}">
+                {{item.index}}
+              </view>
+              <view class="detail-q-type">{{item.typeLabel}}</view>
+              <view class="detail-q-result">
+                <text wx:if="{{item.isCorrect === true}}" class="r-correct">✓ 正确</text>
+                <text wx:elif="{{item.isCorrect === false}}" class="r-wrong">✗ 错误</text>
+                <text wx:else class="r-pending">? 未判</text>
+              </view>
+              <view class="detail-q-time">{{item.timeSpent}}s</view>
+            </view>
+            <view class="detail-q-stem">{{item.stem}}</view>
+            <view class="detail-q-info" wx:if="{{item.options.length > 0}}">
+              <view wx:for="{{item.options}}" wx:key="key" wx:for-item="opt" class="detail-opt">
+                <text class="detail-opt-key">{{opt.key}}.</text>
+                <text class="detail-opt-text">{{opt.text}}</text>
+              </view>
+            </view>
+            <view class="detail-q-answers">
+              <view class="detail-answer-row" wx:if="{{item.isCorrect === false}}">
+                <text class="da-label wrong-label">你的答案：</text>
+                <text class="da-value wrong-value">{{item.userAnswer}}</text>
+              </view>
+              <view class="detail-answer-row">
+                <text class="da-label correct-label">正确答案：</text>
+                <text class="da-value correct-value">{{item.correctAnswer}}</text>
+              </view>
+            </view>
+            <view class="detail-q-expl" wx:if="{{item.explanation}}">
+              <text class="expl-label">解析：</text>
+              <text class="expl-text">{{item.explanation}}</text>
+            </view>
+          </view>
+        </block>
+
+        <!-- 背题详情 -->
+        <block wx:if="{{isMemorize}}">
+          <view
+            wx:for="{{answerDetails}}"
+            wx:key="index"
+            class="detail-card glass-card {{item.remembered ? 'detail-correct' : 'detail-wrong'}}"
+          >
+            <view class="detail-q-header">
+              <view class="detail-q-num {{item.remembered ? 'q-correct' : 'q-wrong'}}">
+                {{item.index}}
+              </view>
+              <view class="detail-q-type">{{item.typeLabel}}</view>
+              <view class="detail-q-result">
+                <text wx:if="{{item.remembered}}" class="r-correct">✓ 记住了</text>
+                <text wx:else class="r-wrong">✗ 没记住</text>
+              </view>
+            </view>
+            <view class="detail-q-stem">{{item.stem}}</view>
+            <view class="detail-q-info" wx:if="{{item.options.length > 0}}">
+              <view wx:for="{{item.options}}" wx:key="key" wx:for-item="opt" class="detail-opt">
+                <text class="detail-opt-key {{opt.key === item.correctAnswer ? 'opt-correct' : ''}}">{{opt.key}}.</text>
+                <text class="detail-opt-text {{opt.key === item.correctAnswer ? 'opt-correct' : ''}}">{{opt.text}}</text>
+              </view>
+            </view>
+            <view class="detail-q-answers">
+              <view class="detail-answer-row">
+                <text class="da-label correct-label">正确答案：</text>
+                <text class="da-value correct-value">{{item.correctAnswer}}</text>
+              </view>
+            </view>
+            <view class="detail-q-expl" wx:if="{{item.explanation}}">
+              <text class="expl-label">解析：</text>
+              <text class="expl-text">{{item.explanation}}</text>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </scroll-view>
+</view>

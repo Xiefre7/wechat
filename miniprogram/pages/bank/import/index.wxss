@@ -1,0 +1,631 @@
+/* 题库导入页 — 百词斩风格 */
+page {
+  width: 100%;
+  min-height: 100vh;
+  background: #F4F7FC;
+  color: #1E2A3A;
+  overflow-x: hidden;
+}
+
+button {
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  line-height: normal;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+}
+
+button::after {
+  border: 0;
+}
+
+/* ─── 极淡环境光 ─── */
+.ambient-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 260rpx;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 240rpx 160rpx at 50% 0%, rgba(74, 143, 234, 0.05), transparent 70%);
+  filter: blur(12rpx);
+}
+
+/* ─── 滚动区 ─── */
+.import-page {
+  position: relative;
+  min-height: 100vh;
+  padding: calc(env(safe-area-inset-top) + 8rpx) 0 0;
+  overflow: hidden;
+}
+
+.import-scroll {
+  position: relative;
+  z-index: 2;
+  height: calc(100vh - env(safe-area-inset-top) - 8rpx);
+  padding: 0 24rpx;
+}
+
+/* ─── 页面头 ─── */
+.page-header {
+  padding: 20rpx 4rpx 12rpx;
+}
+
+.page-title {
+  font-size: 44rpx;
+  line-height: 1.18;
+  font-weight: 850;
+  color: #1A2538;
+}
+
+.page-desc {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  line-height: 1.45;
+  color: #5E718D;
+}
+
+/* ─── Tab 切换 ─── */
+.method-tabs {
+  display: flex;
+  gap: 12rpx;
+  margin: 16rpx 0 20rpx;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.method-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 146rpx;
+  min-height: 104rpx;
+  padding: 14rpx 10rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.42);
+  border: 1rpx solid rgba(255, 255, 255, 0.45);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.78),
+    0 4rpx 16rpx rgba(74, 143, 234, 0.06);
+  -webkit-backdrop-filter: blur(28rpx);
+  backdrop-filter: blur(28rpx);
+  transition: all 200ms ease;
+}
+
+.method-tab.active {
+  background: #EDF4FE;
+  border-color: #A8CDF8;
+  box-shadow: 0 4rpx 16rpx rgba(74, 143, 234, 0.08);
+}
+
+.tab-icon {
+  width: 32rpx;
+  height: 32rpx;
+  opacity: 0.52;
+}
+
+.method-tab.active .tab-icon {
+  opacity: 1;
+}
+
+.tab-label {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  line-height: 1.2;
+  font-weight: 600;
+  color: #5E718D;
+}
+
+.method-tab.active .tab-label {
+  color: #4A8FEA;
+}
+
+/* ─── 玻璃卡片基类 ─── */
+.glass-card,
+.glass-button {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1rpx solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.42);
+  -webkit-backdrop-filter: blur(34rpx);
+  backdrop-filter: blur(34rpx);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.78),
+    0 14rpx 48rpx rgba(74, 143, 234, 0.08);
+}
+
+.glass-input {
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.42);
+  border: 1rpx solid rgba(255, 255, 255, 0.45);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.78),
+    0 2rpx 8rpx rgba(74, 143, 234, 0.04);
+  -webkit-backdrop-filter: blur(28rpx);
+  backdrop-filter: blur(28rpx);
+}
+
+/* ─── 面板卡片 ─── */
+.panel-card {
+  padding: 28rpx 24rpx;
+  border-radius: 32rpx;
+  border-style: solid;
+  border-color: #E6EAF2;
+}
+
+.panel-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 32rpx;
+  background: #F0F4FA;
+  margin-bottom: 16rpx;
+}
+
+.panel-icon {
+  width: 34rpx;
+  height: 34rpx;
+}
+
+.panel-title {
+  font-size: 32rpx;
+  line-height: 1.2;
+  font-weight: 850;
+  color: #1A2538;
+}
+
+.panel-desc {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #95A6BD;
+}
+
+/* ─── 文件上传区 ─── */
+.file-upload-area {
+  margin-top: 20rpx;
+  padding: 28rpx;
+  border-radius: 20rpx;
+  border: 2rpx dashed #D5DDE8;
+  background: #F4F7FC;
+  transition: all 180ms ease;
+}
+
+.file-upload-area.has-file {
+  border-color: #34D399;
+  background: #F0FDF4;
+}
+
+.upload-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.hint-icon {
+  font-size: 44rpx;
+}
+
+.hint-text {
+  font-size: 26rpx;
+  line-height: 1.4;
+  font-weight: 700;
+  color: #1E2A3A;
+}
+
+.hint-sub {
+  font-size: 22rpx;
+  color: #95A6BD;
+}
+
+/* ─── 格式示例 ─── */
+.format-example {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #E6EAF2;
+}
+
+.example-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.example-title {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #1E2A3A;
+}
+
+.example-toggle {
+  font-size: 22rpx;
+  color: #4A8FEA;
+}
+
+.example-content {
+  margin-top: 16rpx;
+}
+
+.example-block {
+  margin-top: 12rpx;
+}
+
+.example-label {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #5E718D;
+  margin-bottom: 6rpx;
+}
+
+.example-text {
+  display: block;
+  font-size: 22rpx;
+  line-height: 1.65;
+  color: #4A5B72;
+  padding: 14rpx;
+  border-radius: 12rpx;
+  background: #F0F4FA;
+  white-space: pre-wrap;
+}
+
+/* ─── 文本框 ─── */
+.text-input-wrap {
+  margin-top: 20rpx;
+  position: relative;
+}
+
+.text-input {
+  width: 100%;
+  min-height: 320rpx;
+  padding: 20rpx;
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: #1E2A3A;
+  box-sizing: border-box;
+}
+
+.text-input::placeholder {
+  color: #95A6BD;
+}
+
+.char-count {
+  margin-top: 8rpx;
+  font-size: 20rpx;
+  text-align: right;
+  color: #95A6BD;
+}
+
+/* ─── OCR ─── */
+.ocr-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 24rpx;
+}
+
+.ocr-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 140rpx;
+  border-radius: 24rpx;
+  border: 2rpx dashed #D5DDE8;
+  background: #F4F7FC;
+}
+
+.ocr-btn-icon {
+  font-size: 44rpx;
+}
+
+.ocr-btn-label {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #1E2A3A;
+}
+
+.ocr-remaining {
+  margin-top: 20rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #5E718D;
+}
+
+.ocr-count {
+  font-weight: 800;
+  color: #4A8FEA;
+}
+
+/* ─── 手动录入列表 ─── */
+.manual-preview {
+  margin-top: 20rpx;
+}
+
+.manual-count {
+  font-size: 24rpx;
+  font-weight: 800;
+  color: #4A8FEA;
+  margin-bottom: 12rpx;
+}
+
+.manual-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  max-height: 400rpx;
+  overflow-y: auto;
+}
+
+.manual-item {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  padding: 16rpx;
+  border-radius: 20rpx;
+  border: 1rpx solid #E6EAF2;
+  min-height: 76rpx;
+}
+
+.manual-item-num {
+  flex-shrink: 0;
+  width: 42rpx;
+  height: 42rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 21rpx;
+  background: #EDF4FE;
+  font-size: 22rpx;
+  font-weight: 800;
+  color: #4A8FEA;
+}
+
+.manual-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.manual-item-stem {
+  font-size: 24rpx;
+  line-height: 1.4;
+  color: #1E2A3A;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.manual-item-meta {
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: #95A6BD;
+}
+
+.manual-item-actions {
+  display: flex;
+  gap: 8rpx;
+  flex-shrink: 0;
+}
+
+.manual-action {
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  border-radius: 22rpx;
+  background: #F0F4FA;
+}
+
+.add-manual-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  margin-top: 20rpx;
+  min-height: 84rpx;
+  border-radius: 24rpx;
+  border: 2rpx dashed #D5DDE8;
+}
+
+.add-manual-icon {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #4A8FEA;
+}
+
+.add-manual-text {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #4A8FEA;
+}
+
+/* ─── 题库名称 ─── */
+.bank-name-section {
+  margin-top: 24rpx;
+  padding: 24rpx;
+  border-radius: 28rpx;
+  background: #FFFFFF;
+  border: 1rpx solid #E6EAF2;
+  box-shadow: 0 4rpx 16rpx rgba(74, 143, 234, 0.04);
+}
+
+.section-label {
+  font-size: 26rpx;
+  font-weight: 800;
+  color: #1E2A3A;
+  margin-bottom: 14rpx;
+}
+
+.bank-name-input {
+  width: 100%;
+  height: 72rpx;
+  padding: 0 20rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1E2A3A;
+  box-sizing: border-box;
+}
+
+.bank-name-input::placeholder {
+  color: #95A6BD;
+  font-weight: 400;
+}
+
+/* ─── 约束提示 ─── */
+.constraint-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 20rpx;
+}
+
+.constraint-item {
+  font-size: 20rpx;
+  line-height: 1.4;
+  padding: 6rpx 14rpx;
+  border-radius: 12rpx;
+  background: #F0F4FA;
+  color: #5E718D;
+}
+
+/* ─── 操作按钮 ─── */
+.action-area {
+  margin-top: 24rpx;
+}
+
+.preview-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 28rpx;
+  border-radius: 28rpx;
+  border: none;
+  background: #4A8FEA;
+  box-shadow: 0 8rpx 24rpx rgba(74, 143, 234, 0.2);
+}
+
+.btn-content {
+  text-align: left;
+}
+
+.btn-main {
+  font-size: 30rpx;
+  font-weight: 850;
+  color: #ffffff;
+}
+
+.btn-sub {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.btn-arrow {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+/* ─── 安全区 ─── */
+.safe-bottom {
+  height: calc(env(safe-area-inset-bottom) + 48rpx);
+}
+
+/* ─── 按压态 ─── */
+.pressing {
+  opacity: 0.78;
+  transform: scale(0.985);
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+/* ─── 深色模式（由 .theme-dark 类驱动） ─── */
+.theme-dark .page-title,
+  .theme-dark .panel-title,
+  .theme-dark .example-title,
+  .theme-dark .section-label {
+    color: #FFFFFF;
+    font-weight: 900;
+  }
+
+  .theme-dark .hint-text,
+  .theme-dark .ocr-btn-label,
+  .theme-dark .manual-item-stem,
+  .theme-dark .bank-name-input {
+    color: #1A2538;
+  }
+
+  .theme-dark .page-desc,
+  .theme-dark .panel-desc,
+  .theme-dark .hint-sub,
+  .theme-dark .example-label,
+  .theme-dark .manual-item-meta,
+  .theme-dark .constraint-item,
+  .theme-dark .btn-sub,
+  .theme-dark .char-count {
+    color: #1A2538;
+  }
+
+  .theme-dark .example-text {
+    color: #1A2538;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .theme-dark .glass-card,
+  .theme-dark .glass-button,
+  .theme-dark .method-tab,
+  .theme-dark .bank-name-section,
+  .theme-dark .glass-input {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .theme-dark .method-tab.active {
+    background: rgba(37, 99, 235, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  .theme-dark .tab-label,
+  .theme-dark .manual-item-meta {
+    color: #1A2538;
+  }
+
+  .theme-dark .method-tab.active .tab-label {
+    color: #60A5FA;
+  }
+
+  .theme-dark .file-upload-area {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .theme-dark .file-upload-area.has-file {
+    background: rgba(52, 211, 153, 0.08);
+    border-color: rgba(52, 211, 153, 0.25);
+  }
+
+  .theme-dark .manual-item,
+  .theme-dark .format-example,
+  .theme-dark .ocr-btn,
+  .theme-dark .add-manual-btn {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .theme-dark .manual-item-num,
+  .theme-dark .panel-icon-wrap,
+  .theme-dark .constraint-item,
+  .theme-dark .manual-action {
+    background: rgba(255, 255, 255, 0.06);
+  }

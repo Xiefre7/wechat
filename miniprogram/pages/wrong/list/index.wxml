@@ -1,0 +1,126 @@
+<view class="wrong-list-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.60" />
+  <view class="ambient-strip"></view>
+
+  <scroll-view class="page-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 页面头部 -->
+    <view class="page-header">
+      <view class="page-title">错题本</view>
+      <view class="page-desc">巩固错题，查漏补缺</view>
+    </view>
+
+    <!-- 统计卡片 -->
+    <view class="stats-card glass-card" wx:if="{{!isEmpty}}">
+      <view class="stats-grid-top">
+        <view class="stat-item">
+          <view class="stat-number warn">{{globalStats.dueReview}}</view>
+          <view class="stat-label">待复习</view>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <view class="stat-number success">{{globalStats.mastered}}</view>
+          <view class="stat-label">已消灭</view>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <view class="stat-number">{{globalStats.totalWrong}}</view>
+          <view class="stat-label">总计</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 按题库分组 -->
+    <view class="bank-section" wx:if="{{!isEmpty}}">
+      <view class="section-label">按书籍分类</view>
+
+      <view
+        wx:for="{{bankGroups}}"
+        wx:key="bankId"
+        class="bank-group glass-card {{expandedBankId === item.bankId ? 'expanded' : ''}}"
+      >
+        <!-- 题库头 -->
+        <view
+          class="bank-header"
+          data-bank-id="{{item.bankId}}"
+          bindtap="toggleBank"
+        >
+          <view class="bank-icon-wrap">
+            <text class="bank-icon-text">{{item.bankName[0]}}</text>
+          </view>
+          <view class="bank-info">
+            <view class="bank-name">{{item.bankName}}</view>
+            <view class="bank-meta">
+              <text class="meta-item due">待复习 {{item.dueReview}}</text>
+              <text class="meta-div">·</text>
+              <text class="meta-item mastered">已消灭 {{item.mastered}}</text>
+              <text class="meta-div">·</text>
+              <text class="meta-item total">共 {{item.total}} 题</text>
+            </view>
+          </view>
+          <view class="bank-actions">
+            <button
+              class="review-btn"
+              data-bank-id="{{item.bankId}}"
+              bindtap="startReview"
+              wx:if="{{item.dueReview > 0}}"
+            >复习</button>
+            <view class="bank-arrow {{expandedBankId === item.bankId ? 'rotated' : ''}}">
+              <image class="arrow-icon" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
+            </view>
+          </view>
+        </view>
+
+        <!-- 错题列表（展开时） -->
+        <view class="wrong-items" wx:if="{{expandedBankId === item.bankId}}">
+          <view class="kp-divider"></view>
+          <view
+            wx:for="{{item.questions}}"
+            wx:key="_id"
+            class="wrong-item glass-button"
+            data-wrong-id="{{item._id}}"
+            bindtap="viewDetail"
+            hover-class="pressing"
+          >
+            <view class="wrong-item-left">
+              <view class="wrong-status {{item.status === 'mastered' ? 'mastered-dot' : item.isDue ? 'due-dot' : 'reviewing-dot'}}"></view>
+              <view class="wrong-item-info">
+                <view class="wrong-stem">{{item.stem}}</view>
+                <view class="wrong-meta">
+                  <text class="wrong-type">{{item.typeLabel}}</text>
+                  <text class="meta-div">·</text>
+                  <text class="wrong-source">{{item.sourceLabel}}</text>
+                  <text class="meta-div">·</text>
+                  <text class="wrong-review-label">{{item.nextReviewLabel}}</text>
+                </view>
+              </view>
+            </view>
+            <view class="wrong-item-right">
+              <view class="wrong-status-badge {{item.status === 'mastered' ? 'mastered' : item.isDue ? 'due' : ''}}">
+                {{item.status === 'mastered' ? '已消灭' : item.isDue ? '待复习' : '复习中'}}
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 清理按钮 -->
+      <view class="clean-section" wx:if="{{globalStats.mastered > 0}}">
+        <view class="clean-btn glass-button" bindtap="cleanMastered">
+          清理已消灭错题 ({{globalStats.mastered}})
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{isEmpty}}">
+      <view class="empty-icon">📝</view>
+      <view class="empty-title">错题本是空的</view>
+      <view class="empty-desc">做题过程中答错的题目会自动加入错题本，你也可以在答题时手动添加</view>
+      <button class="go-practice-btn glass-card" bindtap="goBack">
+        <view class="go-practice-label">去刷题</view>
+      </button>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </scroll-view>
+</view>

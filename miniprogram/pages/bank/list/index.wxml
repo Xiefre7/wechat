@@ -1,0 +1,137 @@
+<view class="bank-list-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.60" />
+  <view class="ambient-strip"></view>
+
+  <scroll-view class="page-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 页面标题 -->
+    <view class="page-header">
+      <view class="page-title">题库选择</view>
+      <view class="page-desc">选择题库开始刷题，掌握知识点后即可"斩题"</view>
+    </view>
+
+    <!-- Tab 切换 -->
+    <view class="tab-bar">
+      <view
+        class="tab-item {{currentTab === 'official' ? 'active' : ''}}"
+        data-tab="official"
+        bindtap="switchTab"
+      >官方题库</view>
+      <view
+        class="tab-item {{currentTab === 'custom' ? 'active' : ''}}"
+        data-tab="custom"
+        bindtap="switchTab"
+      >自导入题库</view>
+    </view>
+
+    <!-- 题库列表 -->
+    <view class="bank-list" wx:if="{{banks.length > 0}}">
+      <view
+        wx:for="{{banks}}"
+        wx:key="_id"
+        class="bank-card glass-card {{expandedBankId === item._id ? 'expanded' : ''}}"
+      >
+        <view
+          class="bank-header"
+          data-bank-id="{{item._id}}"
+          bindtap="toggleKnowledgePoints"
+        >
+          <view class="bank-icon-wrap" style="background:{{item.categoryColor.bg}}">
+            <text class="bank-icon-text" style="color:{{item.categoryColor.text}}">{{item.category || '自'}}</text>
+          </view>
+          <view class="bank-info">
+            <view class="bank-name">{{item.name}}</view>
+            <view class="bank-meta">
+              <text class="bank-count">{{item.questionCount}}题</text>
+              <text wx:if="{{item.knowledgePointCount > 0}}" class="bank-kp">· {{item.knowledgePointCount}}个知识点</text>
+              <text wx:if="{{item.type === 'custom'}}" class="bank-tag">自导入</text>
+              <view class="bank-progress" wx:if="{{item.progress > 0}}">
+                <view class="progress-bar">
+                  <view class="progress-fill" style="width:{{item.progress}}%"></view>
+                </view>
+                <text class="progress-text">{{item.progress}}%</text>
+              </view>
+            </view>
+          </view>
+          <view class="bank-right">
+            <button
+              wx:if="{{item.type === 'custom'}}"
+              class="share-btn"
+              open-type="share"
+              data-bank-id="{{item._id}}"
+              hover-class="pressing"
+            >
+              <image class="share-icon" src="/images/icons/share.svg" mode="aspectFit"></image>
+              <text class="share-text">分享</text>
+            </button>
+            <view class="bank-arrow {{expandedBankId === item._id ? 'rotated' : ''}}">
+              <image class="arrow-icon" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
+            </view>
+          </view>
+        </view>
+
+        <!-- 知识点列表（仅官方题库展开时显示） -->
+        <view class="kp-list" wx:if="{{expandedBankId === item._id && currentTab === 'official'}}">
+          <view class="kp-divider"></view>
+          <view
+            wx:for="{{kpMap[item._id]}}"
+            wx:key="_id"
+            wx:for-item="kp"
+            class="kp-item"
+            data-bank-id="{{item._id}}"
+            data-kp-id="{{kp._id}}"
+            bindtap="startPractice"
+          >
+            <view class="kp-name">
+              <text class="kp-dot"></text>
+              {{kp.name}}
+            </view>
+            <view class="kp-right">
+              <view class="kp-count">{{kp.questionCount}}题</view>
+              <view class="kp-arrow">→</view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 自导入题库直接刷题 -->
+        <view
+          class="kp-list"
+          wx:if="{{expandedBankId === item._id && currentTab === 'custom'}}"
+        >
+          <view class="kp-divider"></view>
+          <!-- 模式切换 -->
+          <view class="mode-switch">
+            <view class="mode-option {{!memorizeMode ? 'active' : ''}}" bindtap="switchMode" data-mode="practice">刷题模式</view>
+            <view class="mode-option {{memorizeMode ? 'active' : ''}}" bindtap="switchMode" data-mode="memorize">背题模式</view>
+          </view>
+          <view
+            class="kp-item"
+            data-bank-id="{{item._id}}"
+            data-kp-id=""
+            bindtap="startPractice"
+          >
+            <view class="kp-name">
+              <text class="kp-dot"></text>
+              {{memorizeMode ? '开始背题' : '全部题目'}}
+            </view>
+            <view class="kp-right">
+              <view class="kp-count">{{item.questionCount}}题</view>
+              <view class="kp-arrow">→</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{banks.length === 0 && currentTab === 'custom'}}">
+      <view class="empty-icon">📂</view>
+      <view class="empty-text">还没有自导入题库</view>
+      <view class="empty-desc">导入你的题目，系统按单题管理并支持智能练习</view>
+      <button class="import-btn glass-card" bindtap="goImport" hover-class="pressing">
+        <view class="import-btn-label">导入题库</view>
+      </button>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </scroll-view>
+</view>

@@ -1,0 +1,69 @@
+<view class="share-receive-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.60" />
+  <view class="ambient-strip"></view>
+
+  <scroll-view class="page-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 加载中 -->
+    <view class="loading-state" wx:if="{{loading}}">
+      <view class="loading-spinner"></view>
+      <view class="loading-text">正在获取题库信息...</view>
+    </view>
+
+    <!-- 错误 -->
+    <view class="error-state" wx:elif="{{error && !importSuccess}}">
+      <view class="error-icon">😔</view>
+      <view class="error-text">{{error}}</view>
+      <button class="back-btn" bindtap="handleGoHome">返回首页</button>
+    </view>
+
+    <!-- 导入成功 -->
+    <view class="success-state" wx:elif="{{importSuccess}}">
+      <view class="success-card glass-card">
+        <view class="success-icon">✅</view>
+        <view class="success-title">导入成功！</view>
+        <view class="success-desc">
+          题库「{{bank.name}}」已添加到你的自导入题库中
+        </view>
+        <view class="success-meta">{{questionCount}} 道题目已就绪</view>
+        <button class="action-btn primary-btn" bindtap="handleGoPractice">去题库查看</button>
+      </view>
+    </view>
+
+    <!-- 题库预览 -->
+    <view class="preview-state" wx:else>
+      <view class="preview-card glass-card">
+        <view class="preview-header">
+          <view class="preview-label">好友分享了一个题库给你</view>
+        </view>
+
+        <view class="preview-bank">
+          <view class="bank-icon-wrap">
+            <text class="bank-icon-text">📚</text>
+          </view>
+          <view class="bank-name">{{bank.name}}</view>
+          <view class="bank-meta">
+            <text class="bank-tag">自导入</text>
+            <text class="bank-count">{{questionCount}} 题</text>
+          </view>
+          <view class="bank-desc" wx:if="{{bank.description}}">{{bank.description}}</view>
+        </view>
+
+        <view class="preview-actions">
+          <button
+            class="action-btn primary-btn"
+            bindtap="handleImport"
+            disabled="{{importing}}"
+            hover-class="pressing"
+          >
+            {{importing ? '导入中...' : '一键导入'}}
+          </button>
+          <button class="action-btn secondary-btn" bindtap="handleGoHome" hover-class="pressing">
+            返回首页
+          </button>
+        </view>
+      </view>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </scroll-view>
+</view>

@@ -1,0 +1,100 @@
+<view class="mine-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.60" />
+  <view class="ambient-strip"></view>
+
+  <scroll-view class="mine-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 头像 + 昵称 -->
+    <view class="profile-card glass-card">
+      <!-- 头像选择按钮 -->
+      <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+        <image class="avatar" src="{{avatarUrl || ''}}" mode="aspectFill"></image>
+        <view class="avatar-edit-hint">点击更换</view>
+      </button>
+
+      <!-- 昵称输入 -->
+      <view class="nickname-wrap">
+        <input
+          class="nickname-input"
+          type="nickname"
+          value="{{nickname}}"
+          placeholder="请输入昵称"
+          bindblur="onNicknameBlur"
+          bindconfirm="onNicknameConfirm"
+        />
+      </view>
+    </view>
+
+    <!-- 数据统计 -->
+    <view class="stats-card glass-card">
+      <view class="stats-title">学习数据</view>
+      <view class="stats-grid">
+        <view class="stat-item">
+          <view class="stat-icon-wrap blue-bg">
+            <image class="stat-icon" src="/images/kzg/book-blue.svg" mode="aspectFit"></image>
+          </view>
+          <view class="stat-number">{{totalQuestions}}</view>
+          <view class="stat-label">总刷题数</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-icon-wrap teal-bg">
+            <image class="stat-icon" src="/images/kzg/slash-red.svg" mode="aspectFit"></image>
+          </view>
+          <view class="stat-number">{{slashCount}}</view>
+          <view class="stat-label">已斩知识点</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-icon-wrap purple-bg">
+            <image class="stat-icon" src="/images/kzg/history-blue.svg" mode="aspectFit"></image>
+          </view>
+          <view class="stat-number">{{studyTimeText}}</view>
+          <view class="stat-label">总学习时长</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-icon-wrap warm-bg">
+            <image class="stat-icon" src="/images/kzg/pen-blue.svg" mode="aspectFit"></image>
+          </view>
+          <view class="stat-number">{{checkinStreak}}</view>
+          <view class="stat-label">连续打卡</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 斩题管理 -->
+    <view class="feedback-card glass-card" bindtap="goSlashManage" hover-class="pressing">
+      <view class="feedback-row">
+        <image class="feedback-icon" src="/images/kzg/slash-red.svg" mode="aspectFit"></image>
+        <view class="feedback-text">
+          <view class="feedback-title">斩题管理</view>
+          <view class="feedback-desc">查看已斩知识点、撤销斩题</view>
+        </view>
+        <image class="feedback-chevron" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
+      </view>
+    </view>
+
+    <!-- 问题反馈 -->
+    <view class="feedback-card glass-card" bindtap="handleFeedbackTap">
+      <view class="feedback-row">
+        <image class="feedback-icon" src="/images/kzg/chat-blue.svg" mode="aspectFit"></image>
+        <view class="feedback-text">
+          <view class="feedback-title">问题反馈</view>
+          <view class="feedback-desc">遇到问题或有建议？点此反馈</view>
+        </view>
+        <image class="feedback-chevron" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="bottom-dock">
+    <button
+      wx:for="{{dockItems}}"
+      wx:key="id"
+      class="dock-item {{item.active ? 'active' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="handleDockTap"
+      hover-class="dock-pressing"
+    >
+      <image class="dock-icon" src="{{item.icon}}" mode="aspectFit"></image>
+      <view class="dock-label">{{item.label}}</view>
+    </button>
+  </view>
+</view>

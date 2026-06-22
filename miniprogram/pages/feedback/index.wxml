@@ -1,0 +1,46 @@
+<view class="feedback-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.60" />
+  <view class="feedback-form">
+    <view class="form-section">
+      <view class="section-title">反馈类型</view>
+      <view class="type-row">
+        <view
+          wx:for="{{feedbackTypes}}"
+          wx:key="id"
+          class="type-chip {{selectedType === item.id ? 'chip-active' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="handleTypeChange"
+        >{{item.label}}</view>
+      </view>
+    </view>
+
+    <view class="form-section">
+      <view class="section-title">问题描述</view>
+      <textarea
+        class="feedback-textarea"
+        placeholder="请详细描述您遇到的问题或建议…"
+        placeholder-class="placeholder"
+        maxlength="500"
+        auto-height
+        value="{{content}}"
+        bindinput="handleContentInput"
+      ></textarea>
+      <view class="char-count">{{content.length}}/500</view>
+    </view>
+
+    <view class="form-section">
+      <view class="section-title">联系方式（选填）</view>
+      <input
+        class="contact-input"
+        placeholder="微信号 / 手机号，方便我们回复您"
+        placeholder-class="placeholder"
+        value="{{contact}}"
+        bindinput="handleContactInput"
+      ></input>
+    </view>
+
+    <button class="submit-btn" bindtap="handleSubmit" hover-class="pressing">
+      <text>提交反馈</text>
+    </button>
+  </view>
+</view>

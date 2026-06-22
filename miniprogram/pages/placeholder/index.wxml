@@ -1,0 +1,9 @@
+<view class="placeholder-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.60" />
+  <view class="placeholder-panel">
+    <view class="eyebrow">考斩过</view>
+    <view class="title">{{title}}</view>
+    <view class="desc">{{description}}</view>
+    <button class="back-button" bindtap="onBack">返回首页</button>
+  </view>
+</view>

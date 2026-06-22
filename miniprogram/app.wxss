@@ -1,0 +1,38 @@
+/**app.wxss**/
+page {
+  min-height: 100%;
+  background: #F4F7FC;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  color: #1E2A3A;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+button {
+  background: initial;
+}
+
+button:focus{
+  outline: 0;
+}
+
+button::after{
+  border: none;
+}
+
+view,
+text,
+button,
+scroll-view {
+  box-sizing: border-box;
+}
+
+/* ─── 主题由 JS 驱动 .theme-dark 类 + app.applyThemeToUI() 处理 ─── */

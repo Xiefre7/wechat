@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>考斩过 - 管理端</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ==================== 登录页 ==================== -->
+  <div id="loginContainer" class="login-container" style="display:none">
+    <div class="login-card">
+      <div class="login-logo">
+        <h1>考斩过</h1>
+        <p>管理后台</p>
+      </div>
+      <div class="form-group">
+        <label>用户名</label>
+        <input id="loginUsername" placeholder="请输入管理员用户名" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input id="loginPassword" type="password" placeholder="请输入密码" autocomplete="current-password">
+      </div>
+      <button id="loginBtn" class="btn btn-primary btn-block btn-lg">登 录</button>
+      <div id="loginError" class="login-error"></div>
+      <p class="text-muted text-sm" style="text-align:center;margin-top:20px">
+        默认账号：admin / admin123<br>请登录后及时修改密码
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== 主应用 ==================== -->
+  <div id="appContainer" class="app-container" style="display:none">
+
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <a id="sidebarBrand" style="text-decoration:none;cursor:pointer">
+          <h2>考斩过</h2>
+          <span>管理后台</span>
+        </a>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" data-page="dashboard" class="active">
+          <span class="icon">📊</span> <span>数据概览</span>
+        </a>
+        <a href="#" data-page="banks">
+          <span class="icon">📚</span> <span>题库管理</span>
+        </a>
+        <a href="#" data-page="examCategories">
+          <span class="icon">🏷️</span> <span>真题分类</span>
+        </a>
+        <a href="#" data-page="exams">
+          <span class="icon">🎯</span> <span>真题管理</span>
+        </a>
+        <a href="#" data-page="questions">
+          <span class="icon">📝</span> <span>题目管理</span>
+        </a>
+        <a href="#" data-page="news">
+          <span class="icon">📰</span> <span>资讯管理</span>
+        </a>
+        <a href="#" data-page="feedback">
+          <span class="icon">📮</span> <span>反馈查看</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-info">👤 <span id="sidebarUser">admin</span></div>
+        <a id="sidebarChPwd" href="#" style="color:rgba(255,255,255,0.5);font-size:12px;text-decoration:none;margin-right:12px">修改密码</a>
+        <a id="sidebarLogout" href="#" style="color:rgba(255,255,255,0.5);font-size:12px;text-decoration:none">退出登录</a>
+      </div>
+    </aside>
+
+    <!-- 内容区 -->
+    <main class="main-content">
+
+      <!-- 数据概览 -->
+      <section id="page-dashboard" class="page-section active"></section>
+
+      <!-- 真题分类 -->
+      <section id="page-examCategories" class="page-section"></section>
+
+      <!-- 题库管理 -->
+      <section id="page-banks" class="page-section"></section>
+
+      <!-- 真题管理 -->
+      <section id="page-exams" class="page-section"></section>
+
+      <!-- 题目管理 -->
+      <section id="page-questions" class="page-section"></section>
+
+      <!-- 资讯管理 -->
+      <section id="page-news" class="page-section"></section>
+
+      <!-- 反馈查看 -->
+      <section id="page-feedback" class="page-section"></section>
+
+    </main>
+  </div>
+
+  <!-- ==================== 模态框 ==================== -->
+  <div id="modalOverlay" class="modal-overlay">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h4 id="modalTitle">标题</h4>
+        <button class="modal-close" onclick="App.hideModal()">×</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <!-- ==================== Toast 容器 ==================== -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- ==================== JS 脚本（加载顺序很重要） ==================== -->
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

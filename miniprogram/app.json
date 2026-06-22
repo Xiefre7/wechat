@@ -1,0 +1,34 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/bank/list/index",
+    "pages/bank/import/index",
+    "pages/bank/import-preview/index",
+    "pages/bank/import-manual/index",
+    "pages/bank/share-receive/index",
+    "pages/practice/index",
+    "pages/practice/result",
+    "pages/feedback/index",
+    "pages/placeholder/index",
+    "pages/example/index",
+    "pages/mine/index",
+    "pages/history/index",
+    "pages/wrong/list/index",
+    "pages/exam/list/index",
+    "pages/wrong/review/index",
+    "pages/slash/manage/index"
+  ],
+  "window": {
+    "backgroundColor": "#F3F8FF",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#F3F8FF",
+    "navigationBarTitleText": "考斩过",
+    "navigationBarTextStyle": "black"
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "usingComponents": {
+    "background-image": "/components/background-image/index"
+  }
+}

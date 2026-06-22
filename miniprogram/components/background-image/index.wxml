@@ -1,0 +1,2 @@
+<image class="bg-image" src="{{imagePath}}" mode="aspectFill" style="opacity: {{opacity}};"></image>
+<view class="bg-overlay {{overlayClass}}"></view>

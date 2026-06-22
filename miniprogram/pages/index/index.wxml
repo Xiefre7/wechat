@@ -1,0 +1,180 @@
+<view class="home-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image />
+  <view class="ambient-strip"></view>
+
+  <scroll-view class="home-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="hero-copy">
+      <view class="hero-avatar" bindtap="handleAvatarTap" hover-class="pressing">
+        <image class="mini-avatar" src="{{userAvatar || ''}}" mode="aspectFill"></image>
+      </view>
+      <view class="hero-left">
+        <view class="greeting">{{userName}}</view>
+        <view class="subtitle">{{subtitle}}</view>
+      </view>
+    </view>
+
+    <view class="stat-ribbon">
+      <view class="stat-item">
+        <view class="stat-number">{{summary.checkinStreak}}</view>
+        <view class="stat-label">连续打卡</view>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <view class="stat-number">{{summary.slashCount}}</view>
+        <view class="stat-label">已斩知识点</view>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <view class="stat-number">{{summary.todayReview}}</view>
+        <view class="stat-label">待复习</view>
+      </view>
+    </view>
+
+    <!-- 斩题复活通知 -->
+    <view class="revive-badge glass-card" wx:if="{{reviveCount > 0}}" bindtap="goSlashManage" hover-class="pressing">
+      <view class="revive-icon">🔄</view>
+      <view class="revive-text">已复活 {{reviveCount}} 个知识点，点击查看 →</view>
+    </view>
+
+    <view class="primary-row">
+      <view
+        wx:for="{{primaryCards}}"
+        wx:key="id"
+        class="glass-card main-card {{item.tone}}-card"
+        data-id="{{item.id}}"
+        bindtap="handlePrimaryTap"
+        hover-class="pressing"
+      >
+        <view class="card-icon-area">
+          <view class="icon-orbit {{item.tone}}-orbit">
+            <image class="card-icon" src="{{item.icon}}" mode="aspectFit"></image>
+          </view>
+        </view>
+        <view class="card-title">{{item.title}}</view>
+        <view class="card-desc">{{item.desc}}</view>
+        <view class="card-metrics {{item.tone}}-text">
+          <view class="metric-item">
+            <view class="metric-value">{{item.metricValue}}</view>
+            <view class="metric-label-small">{{item.metricLabel}}</view>
+          </view>
+          <view class="metric-divider"></view>
+          <view class="metric-item">
+            <view class="metric-value">{{item.subMetricValue}}</view>
+            <view class="metric-label-small">{{item.subMetricLabel}}</view>
+          </view>
+        </view>
+        <view class="card-arrow">
+          <image class="arrow-icon" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
+        </view>
+      </view>
+    </view>
+
+    <view class="quick-grid">
+      <button
+        wx:for="{{quickActions}}"
+        wx:key="id"
+        class="quick-action glass-button"
+        data-id="{{item.id}}"
+        bindtap="handleQuickAction"
+        hover-class="pressing"
+      >
+        <view class="quick-icon-wrap">
+          <image class="quick-icon" src="{{item.icon}}" mode="aspectFit"></image>
+        </view>
+        <view class="quick-label">{{item.label}}</view>
+      </button>
+    </view>
+
+    <!-- 历史记录 -->
+    <view class="history-section">
+      <view class="section-header">
+        <view class="section-title">历史记录</view>
+        <view class="section-more" bindtap="handleHistoryMore">查看全部 ›</view>
+      </view>
+      <view class="history-list">
+        <view
+          wx:for="{{historyBanks}}"
+          wx:key="id"
+          class="history-card glass-card"
+          data-id="{{item.id}}"
+          bindtap="handleHistoryTap"
+          hover-class="pressing"
+        >
+          <view class="history-info">
+            <view class="history-name">{{item.name}}</view>
+            <view class="history-meta">
+              <text class="history-subject {{item.subject}}">{{item.subjectName}}</text>
+              <text class="history-time">{{item.lastTime}}</text>
+            </view>
+          </view>
+          <view class="history-right">
+            <view class="history-progress-bar">
+              <view class="history-progress-fill {{item.subject}}" style="width: {{item.progress}}%"></view>
+            </view>
+            <view class="history-count">{{item.doneCount}}/{{item.totalCount}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+  </scroll-view>
+
+  <view class="bottom-dock">
+    <button
+      wx:for="{{dockItems}}"
+      wx:key="id"
+      class="dock-item {{item.active ? 'active' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="handleDockTap"
+      hover-class="dock-pressing"
+    >
+      <image class="dock-icon" src="{{item.icon}}" mode="aspectFit"></image>
+      <view class="dock-label">{{item.label}}</view>
+    </button>
+  </view>
+
+    <button class="floating-edit" bindtap="handleQuickAction" data-id="import" aria-label="导入题库">
+      <image class="floating-icon" src="/images/kzg/pen-blue.svg" mode="aspectFit"></image>
+      <text class="floating-label">导入</text>
+    </button>
+
+  <!-- 用户信息卡片弹窗 -->
+  <view class="user-card-overlay {{showUserCard ? 'visible' : ''}}" bindtap="hideUserCard">
+    <view class="user-card glass-card" catchtap="noop">
+      <image class="user-card-avatar" src="{{userAvatar || ''}}" mode="aspectFill"></image>
+      <view class="user-card-nickname">{{nickname || '考斩过用户'}}</view>
+      <view class="user-card-stats">
+        <view class="user-card-stat">
+          <view class="user-card-stat-num">{{summary.totalSolved}}</view>
+          <view class="user-card-stat-label">累计刷题</view>
+        </view>
+        <view class="user-card-stat-divider"></view>
+        <view class="user-card-stat">
+          <view class="user-card-stat-num">{{summary.checkinStreak}}</view>
+          <view class="user-card-stat-label">连续打卡</view>
+        </view>
+        <view class="user-card-stat-divider"></view>
+        <view class="user-card-stat">
+          <view class="user-card-stat-num">{{summary.slashCount}}</view>
+          <view class="user-card-stat-label">已斩知识点</view>
+        </view>
+      </view>
+      <!-- 主题模式切换 -->
+      <view class="user-card-theme-row">
+        <view class="theme-option {{themeMode === 'light' ? 'theme-active' : ''}}" data-mode="light" bindtap="switchTheme" hover-class="pressing">
+          <text class="theme-icon">☀️</text>
+          <text class="theme-label">白天</text>
+        </view>
+        <view class="theme-option {{themeMode === 'dark' ? 'theme-active' : ''}}" data-mode="dark" bindtap="switchTheme" hover-class="pressing">
+          <text class="theme-icon">🌙</text>
+          <text class="theme-label">深夜</text>
+        </view>
+        <view class="theme-option {{themeMode === 'system' ? 'theme-active' : ''}}" data-mode="system" bindtap="switchTheme" hover-class="pressing">
+          <text class="theme-icon">🔄</text>
+          <text class="theme-label">跟随系统</text>
+        </view>
+      </view>
+      <view class="user-card-action" bindtap="goToMine" hover-class="pressing">编辑资料</view>
+    </view>
+  </view>
+</view>

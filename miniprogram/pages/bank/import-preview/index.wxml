@@ -1,0 +1,168 @@
+<view class="preview-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.60" />
+  <view class="ambient-strip"></view>
+
+  <scroll-view class="preview-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 头部信息 -->
+    <view class="page-header">
+      <view class="page-title">预览与修正</view>
+      <view class="page-desc">
+        已解析 <text class="highlight">{{questions.length}}</text> 道题目，确认无误后即可导入题库
+      </view>
+    </view>
+
+    <!-- 统计卡片 -->
+    <view class="stats-card glass-card">
+      <view class="stats-row">
+        <view class="stats-item">
+          <view class="stats-val">{{questions.length}}</view>
+          <view class="stats-lbl">题目总数</view>
+        </view>
+        <view class="stats-div"></view>
+        <view class="stats-item">
+          <view class="stats-val">{{bankName}}</view>
+          <view class="stats-lbl">题库名称</view>
+        </view>
+        <view class="stats-div"></view>
+        <view class="stats-item">
+          <view class="stats-val">{{typeDistribution}}</view>
+          <view class="stats-lbl">题型分布</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 题目列表 -->
+    <view class="question-list">
+      <view
+        wx:for="{{questions}}"
+        wx:key="index"
+        class="question-card glass-card {{item._editing ? 'editing' : ''}}"
+      >
+        <view class="q-header">
+          <view class="q-num">{{index + 1}}</view>
+          <view class="q-type">{{item._typeLabel}}</view>
+          <view class="q-actions">
+            <view class="q-action-btn" data-index="{{index}}" bindtap="toggleEdit">
+              {{item._editing ? '完成' : '编辑'}}
+            </view>
+            <view class="q-action-btn danger" data-index="{{index}}" bindtap="removeQuestion">删除</view>
+          </view>
+        </view>
+
+        <!-- 预览模式 -->
+        <view class="q-body" wx:if="{{!item._editing}}">
+          <view class="q-stem">{{item.stem}}</view>
+          <view class="q-opts" wx:if="{{item.options.length > 0}}">
+            <view wx:for="{{item.options}}" wx:key="key" wx:for-item="opt" class="q-opt">
+              <text class="q-opt-key">{{opt.key}}.</text>
+              <text class="q-opt-text">{{opt.text}}</text>
+            </view>
+          </view>
+          <view class="q-meta">
+            <view class="q-answer {{item.type === 'multi_choice' ? 'multi' : ''}}">
+              答案：<text class="answer-val">{{item.answer}}</text>
+            </view>
+            <view class="q-expl" wx:if="{{item.explanation}}">
+              解析：<text class="expl-val">{{item.explanation}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 编辑模式 -->
+        <view class="q-body" wx:else>
+          <view class="edit-group">
+            <view class="edit-label">题型</view>
+            <view class="type-inline">
+              <view
+                wx:for="{{questionTypes}}"
+                wx:key="value"
+                wx:for-item="qt"
+                wx:for-index="qti"
+                class="type-chip {{item.type === qt.value ? 'active' : ''}}"
+                data-index="{{index}}"
+                data-value="{{qt.value}}"
+                bindtap="onItemTypeChange"
+              >{{qt.label}}</view>
+            </view>
+          </view>
+          <view class="edit-group">
+            <view class="edit-label">题干</view>
+            <textarea
+              class="edit-textarea glass-input"
+              value="{{item.stem}}"
+              data-index="{{index}}"
+              data-field="stem"
+              bindinput="onItemFieldChange"
+              auto-height
+            ></textarea>
+          </view>
+          <view class="edit-group" wx:if="{{item.options.length > 0}}">
+            <view class="edit-label">选项</view>
+            <view class="edit-opts">
+              <view wx:for="{{item.options}}" wx:key="key" wx:for-item="opt" wx:for-index="optIndex" class="edit-opt-row">
+                <view class="edit-opt-key">{{opt.key}}</view>
+                <input
+                  class="edit-opt-input glass-input"
+                  value="{{opt.text}}"
+                  data-index="{{index}}"
+                  data-opt-index="{{optIndex}}"
+                  bindinput="onItemOptionChange"
+                />
+              </view>
+            </view>
+          </view>
+          <view class="edit-group">
+            <view class="edit-label">答案</view>
+            <input
+              class="edit-input glass-input"
+              value="{{item.answer}}"
+              data-index="{{index}}"
+              data-field="answer"
+              bindinput="onItemFieldChange"
+            />
+          </view>
+          <view class="edit-group">
+            <view class="edit-label">解析</view>
+            <textarea
+              class="edit-textarea glass-input"
+              value="{{item.explanation}}"
+              data-index="{{index}}"
+              data-field="explanation"
+              bindinput="onItemFieldChange"
+              auto-height
+            ></textarea>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{questions.length === 0}}">
+      <view class="empty-icon">📋</view>
+      <view class="empty-text">未解析到题目</view>
+      <view class="empty-desc">请检查导入内容格式后重试</view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-bar" wx:if="{{questions.length > 0 || isExcelImport}}">
+      <view class="import-progress">
+        <view class="progress-text" wx:if="{{!isExcelImport}}">准备导入 {{questions.length}} 题到「{{bankName}}」</view>
+        <view class="progress-text" wx:else>Excel 文件将在服务端解析后导入到「{{bankName}}」</view>
+        <view class="import-tip" wx:if="{{importing}}">正在导入中，请勿离开页面...</view>
+      </view>
+      <button
+        class="confirm-btn glass-card"
+        bindtap="confirmImport"
+        hover-class="pressing"
+        disabled="{{importing}}"
+      >
+        <view class="confirm-label">{{importing ? '导入中...' : '确认导入'}}</view>
+      </button>
+      <button class="cancel-btn glass-button" bindtap="goBack" hover-class="pressing">
+        <view class="cancel-label">返回修改</view>
+      </button>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </scroll-view>
+</view>

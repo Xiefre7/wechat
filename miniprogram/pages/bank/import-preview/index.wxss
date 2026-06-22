@@ -1,0 +1,525 @@
+/* 预览修正页 — 百词斩风格 */
+page {
+  width: 100%;
+  min-height: 100vh;
+  background: #F4F7FC;
+  color: #1E2A3A;
+  overflow-x: hidden;
+}
+
+button {
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  line-height: normal;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+}
+
+button::after {
+  border: 0;
+}
+
+button[disabled] {
+  opacity: 0.5;
+}
+
+.ambient-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 240rpx;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 240rpx 160rpx at 50% 0%, rgba(74, 143, 234, 0.05), transparent 70%);
+  filter: blur(12rpx);
+}
+
+.preview-page {
+  position: relative;
+  min-height: 100vh;
+  padding: calc(env(safe-area-inset-top) + 8rpx) 0 0;
+  overflow: hidden;
+}
+
+.preview-scroll {
+  position: relative;
+  z-index: 2;
+  height: calc(100vh - env(safe-area-inset-top) - 8rpx);
+  padding: 0 24rpx;
+}
+
+/* ─── 玻璃基类 ─── */
+.glass-card,
+.glass-button {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1rpx solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.42);
+  -webkit-backdrop-filter: blur(34rpx);
+  backdrop-filter: blur(34rpx);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.78),
+    0 14rpx 48rpx rgba(74, 143, 234, 0.08);
+}
+
+.glass-input {
+  border-radius: 16rpx;
+  background: rgba(255, 255, 255, 0.42);
+  border: 1rpx solid rgba(255, 255, 255, 0.45);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.78),
+    0 2rpx 8rpx rgba(74, 143, 234, 0.04);
+  -webkit-backdrop-filter: blur(28rpx);
+  backdrop-filter: blur(28rpx);
+}
+
+/* ─── 页面头 ─── */
+.page-header {
+  padding: 20rpx 4rpx 12rpx;
+}
+
+.page-title {
+  font-size: 44rpx;
+  line-height: 1.18;
+  font-weight: 850;
+  color: #1A2538;
+}
+
+.page-desc {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  line-height: 1.45;
+  color: #5E718D;
+}
+
+.highlight {
+  color: #FF6B4A;
+  font-weight: 800;
+}
+
+/* ─── 统计卡片 ─── */
+.stats-card {
+  padding: 22rpx 20rpx;
+  border-radius: 24rpx;
+  border-style: solid;
+  border-color: #E6EAF2;
+  margin-top: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.stats-item {
+  text-align: center;
+}
+
+.stats-val {
+  font-size: 28rpx;
+  font-weight: 850;
+  color: #4A8FEA;
+  max-width: 180rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats-lbl {
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: #95A6BD;
+}
+
+.stats-div {
+  width: 1rpx;
+  height: 48rpx;
+  background: #E6EAF2;
+}
+
+/* ─── 题目列表 ─── */
+.question-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.question-card {
+  padding: 22rpx 20rpx;
+  border-radius: 28rpx;
+  border-style: solid;
+  border-color: #E6EAF2;
+  transition: all 200ms ease;
+}
+
+.question-card.editing {
+  border-color: #A8CDF8;
+  box-shadow: 0 8rpx 24rpx rgba(74, 143, 234, 0.08);
+}
+
+/* ─── 题头 ─── */
+.q-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 14rpx;
+}
+
+.q-num {
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22rpx;
+  background: #EDF4FE;
+  font-size: 22rpx;
+  font-weight: 800;
+  color: #4A8FEA;
+  flex-shrink: 0;
+}
+
+.q-type {
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #95A6BD;
+  flex: 1;
+}
+
+.q-actions {
+  display: flex;
+  gap: 8rpx;
+}
+
+.q-action-btn {
+  padding: 6rpx 16rpx;
+  border-radius: 14rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #4A8FEA;
+  background: #EDF4FE;
+}
+
+.q-action-btn.danger {
+  color: #EF4444;
+  background: #FEF2F2;
+}
+
+/* ─── 题体 ─── */
+.q-body {
+  padding-left: 56rpx;
+}
+
+.q-stem {
+  font-size: 28rpx;
+  line-height: 1.6;
+  font-weight: 500;
+  color: #1E2A3A;
+}
+
+.q-opts {
+  margin-top: 12rpx;
+}
+
+.q-opt {
+  font-size: 26rpx;
+  line-height: 1.65;
+  color: #4A5B72;
+  padding: 4rpx 0;
+}
+
+.q-opt-key {
+  font-weight: 800;
+  color: #4A8FEA;
+  margin-right: 6rpx;
+}
+
+.q-meta {
+  margin-top: 14rpx;
+  padding: 14rpx 16rpx;
+  border-radius: 16rpx;
+  background: #F4F7FC;
+}
+
+.q-answer {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #10B981;
+}
+
+.q-answer.multi {
+  color: #F59E0B;
+}
+
+.answer-val {
+  font-weight: 850;
+}
+
+.q-expl {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #5E718D;
+}
+
+.expl-val {
+  color: #4A5B72;
+}
+
+/* ─── 编辑模式 ─── */
+.edit-group {
+  margin-bottom: 18rpx;
+}
+
+.edit-group:last-child {
+  margin-bottom: 0;
+}
+
+.edit-label {
+  font-size: 24rpx;
+  font-weight: 800;
+  color: #5E718D;
+  margin-bottom: 8rpx;
+}
+
+.type-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.type-chip {
+  padding: 6rpx 16rpx;
+  border-radius: 14rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #5E718D;
+  background: #F0F4FA;
+  border: 1rpx solid #E6EAF2;
+}
+
+.type-chip.active {
+  color: #4A8FEA;
+  background: #EDF4FE;
+  border-color: #A8CDF8;
+}
+
+.edit-textarea {
+  width: 100%;
+  min-height: 90rpx;
+  padding: 14rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: #1E2A3A;
+  box-sizing: border-box;
+}
+
+.edit-input {
+  width: 100%;
+  height: 64rpx;
+  padding: 0 14rpx;
+  font-size: 26rpx;
+  color: #1E2A3A;
+  box-sizing: border-box;
+}
+
+.edit-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.edit-opt-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.edit-opt-key {
+  flex-shrink: 0;
+  width: 36rpx;
+  height: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18rpx;
+  background: #EDF4FE;
+  font-size: 22rpx;
+  font-weight: 800;
+  color: #4A8FEA;
+}
+
+.edit-opt-input {
+  flex: 1;
+  height: 56rpx;
+  padding: 0 14rpx;
+  font-size: 24rpx;
+  color: #1E2A3A;
+}
+
+/* ─── 空状态 ─── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 0;
+}
+
+.empty-icon {
+  font-size: 64rpx;
+}
+
+.empty-text {
+  margin-top: 16rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #95A6BD;
+}
+
+.empty-desc {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #D5DDE8;
+}
+
+/* ─── 操作栏 ─── */
+.action-bar {
+  margin-top: 28rpx;
+}
+
+.import-progress {
+  text-align: center;
+  margin-bottom: 16rpx;
+}
+
+.progress-text {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #1E2A3A;
+}
+
+.import-tip {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #EF4444;
+}
+
+.confirm-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  border-radius: 24rpx;
+  border: none;
+  background: #4A8FEA;
+  box-shadow: 0 8rpx 24rpx rgba(74, 143, 234, 0.2);
+}
+
+.confirm-label {
+  font-size: 30rpx;
+  font-weight: 850;
+  color: #ffffff;
+}
+
+.cancel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 76rpx;
+  margin-top: 14rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #E6EAF2;
+}
+
+.cancel-label {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #5E718D;
+}
+
+.safe-bottom {
+  height: calc(env(safe-area-inset-bottom) + 48rpx);
+}
+
+.pressing {
+  opacity: 0.78;
+  transform: scale(0.985);
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+/* ─── 深色模式（由 .theme-dark 类驱动） ─── */
+.theme-dark .page-title,
+  .theme-dark .q-stem {
+    color: #FFFFFF;
+    font-weight: 900;
+  }
+
+  .theme-dark .edit-input,
+  .theme-dark .edit-textarea,
+  .theme-dark .edit-opt-input,
+  .theme-dark .progress-text,
+  .theme-dark .cancel-label {
+    color: #1A2538;
+  }
+
+  .theme-dark .page-desc,
+  .theme-dark .stats-lbl,
+  .theme-dark .q-type,
+  .theme-dark .edit-label,
+  .theme-dark .q-expl,
+  .theme-dark .expl-val {
+    color: #1A2538;
+  }
+
+  .theme-dark .q-opt {
+    color: #1A2538;
+  }
+
+  .theme-dark .q-meta {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .theme-dark .glass-card,
+  .theme-dark .glass-button,
+  .theme-dark .glass-input,
+  .theme-dark .type-chip {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .theme-dark .type-chip.active {
+    background: rgba(37, 99, 235, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #60A5FA;
+  }
+
+  .theme-dark .question-card {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .theme-dark .question-card.editing {
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.2);
+  }
+
+  .theme-dark .q-num,
+  .theme-dark .q-action-btn,
+  .theme-dark .edit-opt-key {
+    background: rgba(37, 99, 235, 0.12);
+    color: #60A5FA;
+  }
+
+  .theme-dark .q-action-btn.danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: #F87171;
+  }
+
+  .theme-dark .cancel-btn {
+    border-color: rgba(255, 255, 255, 0.08);
+  }

@@ -1,0 +1,248 @@
+/* 斩题管理页 — 百词斩风格 */
+page {
+  width: 100%;
+  min-height: 100vh;
+  background: #F8FAFC;
+  color: #1E293B;
+  overflow-x: hidden;
+}
+
+button {
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  line-height: normal;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+}
+
+button::after {
+  border: 0;
+}
+
+button[disabled] {
+  opacity: 0.4;
+}
+
+.ambient-strip {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 240rpx;
+  pointer-events: none;
+  background: radial-gradient(ellipse 240rpx 160rpx at 50% 0%, rgba(59, 130, 246, 0.05), transparent 70%);
+  filter: blur(12rpx);
+}
+
+.manage-page {
+  position: relative;
+  min-height: 100vh;
+  padding: calc(env(safe-area-inset-top) + 8rpx) 0 0;
+  overflow: hidden;
+}
+
+.manage-scroll {
+  position: relative;
+  z-index: 2;
+  height: calc(100vh - env(safe-area-inset-top) - 8rpx);
+  padding: 0 24rpx;
+}
+
+.page-header {
+  padding: 20rpx 4rpx 12rpx;
+}
+
+.page-title {
+  font-size: 44rpx;
+  line-height: 1.18;
+  font-weight: 850;
+  color: #0F172A;
+}
+
+.page-desc {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #64748B;
+}
+
+.rollback-info {
+  display: block;
+  margin-top: 6rpx;
+  font-weight: 700;
+  color: #2563EB;
+}
+
+.rollback-info.exhausted {
+  color: #EF4444;
+}
+
+/* ─── 玻璃基类 ─── */
+.glass-card {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1rpx solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(34rpx);
+  backdrop-filter: blur(34rpx);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.03);
+}
+
+/* ─── 分区 ─── */
+.section {
+  margin-top: 24rpx;
+}
+
+.section-title {
+  font-size: 26rpx;
+  font-weight: 800;
+  color: #64748B;
+  margin-bottom: 12rpx;
+  padding-left: 4rpx;
+}
+
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+/* ─── 斩题条目 ─── */
+.slash-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 20rpx;
+  border-radius: 24rpx;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1E293B;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-meta {
+  margin-top: 6rpx;
+  display: flex;
+  gap: 16rpx;
+  font-size: 20rpx;
+  color: #94A3B8;
+}
+
+.item-revive {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #64748B;
+}
+
+.revive-days {
+  font-weight: 800;
+  color: #F5A623;
+}
+
+.revive-tag {
+  margin-left: 10rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+  background: #FEF3C7;
+  color: #D97706;
+  font-size: 18rpx;
+  font-weight: 700;
+}
+
+/* ─── 撤销按钮 ─── */
+.rollback-btn {
+  flex-shrink: 0;
+  padding: 10rpx 24rpx;
+  border-radius: 16rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #EF4444;
+  background: #FEF2F2;
+  border: 1rpx solid #FECACA;
+}
+
+.rollback-btn.disabled {
+  color: #94A3B8;
+  background: #F1F5F9;
+  border-color: #E2E8F0;
+}
+
+/* ─── 空状态 ─── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 0;
+}
+
+.empty-icon {
+  font-size: 72rpx;
+}
+
+.empty-text {
+  margin-top: 20rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #94A3B8;
+}
+
+.empty-desc {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #CBD5E1;
+}
+
+.safe-bottom {
+  height: calc(env(safe-area-inset-bottom) + 48rpx);
+}
+
+/* ─── 深色模式 ─── */
+@media (prefers-color-scheme: dark) {
+  page {
+    background: #0F172A;
+  }
+
+  .page-title, .item-name {
+    color: #F1F5F9;
+  }
+
+  .page-desc, .item-meta, .item-revive, .section-title {
+    color: #64748B;
+  }
+
+  .glass-card {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .rollback-btn {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #F87171;
+  }
+
+  .rollback-btn.disabled {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #64748B;
+  }
+
+  .revive-tag {
+    background: rgba(245, 158, 11, 0.15);
+    color: #FBBF24;
+  }
+}

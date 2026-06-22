@@ -1,0 +1,68 @@
+<view class="exam-list-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.60" />
+  <view class="ambient-strip"></view>
+
+  <scroll-view class="page-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 页面标题 -->
+    <view class="page-header">
+      <view class="page-title">历届真题</view>
+      <view class="page-desc">查看各年份考试真题，熟悉考试题型和难度</view>
+    </view>
+
+    <!-- 动态 Tab 栏（水平可滚动） -->
+    <scroll-view class="tab-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="tab-bar">
+        <view
+          wx:for="{{tabs}}"
+          wx:key="id"
+          class="tab-item {{currentTab === item.id ? 'active' : ''}}"
+          data-tab="{{item.id}}"
+          bindtap="switchTab"
+        >{{item.name}}</view>
+      </view>
+    </scroll-view>
+
+    <!-- 真题试卷列表 -->
+    <view class="exam-list" wx:if="{{exams.length > 0}}">
+      <view
+        wx:for="{{exams}}"
+        wx:key="_id"
+        class="exam-card glass-card"
+        data-id="{{item._id}}"
+        bindtap="startExam"
+        hover-class="pressing"
+      >
+        <view class="exam-card-left">
+          <view class="exam-icon-wrap" style="background:{{item.categoryColor.bg}}">
+            <text class="exam-icon-text" style="color:{{item.categoryColor.text}}">{{item.category || '真'}}</text>
+          </view>
+          <view class="exam-info">
+            <view class="exam-name">{{item.name}}</view>
+            <view class="exam-meta">
+              <text class="exam-subcategory">{{item.subCategory || item.category || ''}}</text>
+              <text class="exam-count" wx:if="{{item.questionCount > 0}}">{{item.questionCount}}题</text>
+            </view>
+          </view>
+        </view>
+        <view class="exam-arrow">
+          <image class="arrow-icon" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{exams.length === 0 && loaded}}">
+      <view class="empty-icon">📋</view>
+      <view class="empty-text">暂无真题试卷</view>
+      <view class="empty-desc">管理员正在整理中，敬请期待</view>
+    </view>
+
+    <!-- 加载中 -->
+    <view class="empty-state" wx:if="{{!loaded}}">
+      <view class="empty-icon">⏳</view>
+      <view class="empty-text">加载中...</view>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </scroll-view>
+</view>

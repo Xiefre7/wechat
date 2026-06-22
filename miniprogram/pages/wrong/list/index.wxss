@@ -1,0 +1,452 @@
+/* 错题本列表页 — iOS26 液态玻璃风格 */
+page {
+  width: 100%;
+  min-height: 100vh;
+  background: #F4F7FC;
+  color: #1E2A3A;
+  overflow-x: hidden;
+}
+
+button {
+  padding: 0; margin: 0;
+  text-align: left;
+  line-height: normal;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+}
+
+button::after { border: 0; }
+
+/* ─── 环境光 ─── */
+.ambient-strip {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 260rpx;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 240rpx 160rpx at 50% 0%, rgba(255, 107, 74, 0.06), transparent 70%);
+  filter: blur(12rpx);
+}
+
+.wrong-list-page {
+  position: relative;
+  min-height: 100vh;
+  padding: calc(env(safe-area-inset-top) + 8rpx) 0 0;
+  overflow: hidden;
+}
+
+.page-scroll {
+  position: relative;
+  z-index: 2;
+  height: calc(100vh - env(safe-area-inset-top) - 8rpx);
+  padding: 0 24rpx;
+}
+
+/* ─── 页面头 ─── */
+.page-header {
+  padding: 20rpx 4rpx 12rpx;
+}
+
+.page-title {
+  font-size: 44rpx;
+  line-height: 1.18;
+  font-weight: 850;
+  color: #1A2538;
+}
+
+.page-desc {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  line-height: 1.45;
+  color: #5E718D;
+}
+
+/* ─── 玻璃基类 ─── */
+.glass-card,
+.glass-button {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1rpx solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.42);
+  -webkit-backdrop-filter: blur(34rpx);
+  backdrop-filter: blur(34rpx);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.78),
+    0 14rpx 48rpx rgba(74, 143, 234, 0.08);
+}
+
+/* ─── 统计卡片 ─── */
+.stats-card {
+  border-radius: 28rpx;
+  padding: 28rpx 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.stats-grid-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stats-card .stat-item {
+  flex: 1;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 40rpx;
+  line-height: 1.1;
+  font-weight: 900;
+  color: #1E2A3A;
+}
+
+.stat-number.warn { color: #FF9500; }
+.stat-number.success { color: #34C759; }
+
+.stats-card .stat-label {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #95A6BD;
+}
+
+.stat-divider {
+  width: 1rpx;
+  height: 52rpx;
+  background: #E6EAF2;
+}
+
+/* ─── 分组区域 ─── */
+.bank-section {
+  margin-top: 8rpx;
+}
+
+.section-label {
+  font-size: 26rpx;
+  font-weight: 800;
+  color: #5E718D;
+  margin-bottom: 16rpx;
+  padding-left: 4rpx;
+}
+
+.bank-group {
+  border-radius: 28rpx;
+  margin-bottom: 16rpx;
+  transition: all 200ms ease;
+}
+
+.bank-group.expanded {
+  border-color: rgba(74,143,234,0.2);
+  box-shadow: 0 8rpx 32rpx rgba(74,143,234,0.08);
+}
+
+.bank-header {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx;
+  min-height: 96rpx;
+}
+
+.bank-icon-wrap {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 107, 74, 0.1);
+}
+
+.bank-icon-text {
+  font-size: 28rpx;
+  font-weight: 850;
+  color: #FF6B4A;
+}
+
+.bank-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bank-name {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #1A2538;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bank-meta {
+  margin-top: 6rpx;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  font-size: 22rpx;
+}
+
+.meta-item.due { color: #FF9500; font-weight: 600; }
+.meta-item.mastered { color: #34C759; font-weight: 600; }
+.meta-item.total { color: #95A6BD; }
+.meta-div { color: #CBD5E1; margin: 0 2rpx; }
+
+.bank-actions {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
+.review-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56rpx;
+  padding: 0 24rpx;
+  border-radius: 16rpx;
+  font-size: 24rpx;
+  font-weight: 800;
+  color: #ffffff;
+  background: linear-gradient(135deg, #FF6B4A, #FF5C4A);
+  box-shadow: 0 4rpx 12rpx rgba(255, 107, 74, 0.28);
+}
+
+.bank-arrow {
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22rpx;
+  background: #F0F4FA;
+  transition: transform 200ms ease;
+}
+
+.bank-arrow.rotated { transform: rotate(90deg); }
+
+.arrow-icon {
+  width: 24rpx;
+  height: 24rpx;
+}
+
+/* ─── 错题列表 ─── */
+.wrong-items {
+  padding: 0 24rpx 20rpx;
+}
+
+.kp-divider {
+  height: 1rpx;
+  margin-bottom: 16rpx;
+  background: #E6EAF2;
+}
+
+.wrong-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 16rpx;
+  border-radius: 16rpx;
+  background: #F4F7FC;
+  border: 1rpx solid #E6EAF2;
+  margin-top: 8rpx;
+  min-height: 76rpx;
+}
+
+.wrong-item-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.wrong-status {
+  flex-shrink: 0;
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 6rpx;
+  margin-top: 8rpx;
+}
+
+.due-dot { background: #FF9500; box-shadow: 0 2rpx 6rpx rgba(255,149,0,0.4); }
+.reviewing-dot { background: #4A8FEA; }
+.mastered-dot { background: #34C759; }
+
+.wrong-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wrong-stem {
+  font-size: 26rpx;
+  line-height: 1.45;
+  color: #1E2A3A;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wrong-meta {
+  margin-top: 6rpx;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  font-size: 20rpx;
+  color: #95A6BD;
+}
+
+.wrong-source {
+  color: #4A8FEA;
+}
+
+.wrong-review-label {
+  color: #5E718D;
+}
+
+.wrong-item-right {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+}
+
+.wrong-status-badge {
+  padding: 4rpx 14rpx;
+  border-radius: 12rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+  background: #EDF4FE;
+  color: #4A8FEA;
+}
+
+.wrong-status-badge.mastered {
+  background: #F0FDF4;
+  color: #34C759;
+}
+
+.wrong-status-badge.due {
+  background: #FFF7ED;
+  color: #FF9500;
+}
+
+/* ─── 清理按钮 ─── */
+.clean-section {
+  margin-top: 8rpx;
+}
+
+.clean-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 76rpx;
+  border-radius: 20rpx;
+  border-color: rgba(52,199,89,0.15);
+  background: rgba(52,199,89,0.04);
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #34C759;
+}
+
+/* ─── 空状态 ─── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 32rpx;
+}
+
+.empty-icon {
+  font-size: 72rpx;
+}
+
+.empty-title {
+  margin-top: 20rpx;
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #95A6BD;
+}
+
+.empty-desc {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #CBD5E1;
+  text-align: center;
+  line-height: 1.55;
+  max-width: 480rpx;
+}
+
+.go-practice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-top: 36rpx;
+  padding: 0 48rpx;
+  border-radius: 24rpx;
+  border: none;
+  background: linear-gradient(135deg, #4A8FEA, #3B7AD8);
+  box-shadow: 0 8rpx 24rpx rgba(74,143,234,0.22);
+}
+
+.go-practice-label {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+/* ─── 安全区 ─── */
+.safe-bottom {
+  height: calc(env(safe-area-inset-bottom) + 48rpx);
+}
+
+/* ─── 按压态 ─── */
+.pressing {
+  opacity: 0.78;
+  transform: scale(0.985);
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+/* ─── 深色模式（由 .theme-dark 类驱动） ─── */
+.theme-dark .page-title,
+  .theme-dark .bank-name,
+  .theme-dark .wrong-stem { color: #FFFFFF; font-weight: 900; }
+
+  .theme-dark .page-desc,
+  .theme-dark .stat-label,
+  .theme-dark .section-label,
+  .theme-dark .wrong-meta,
+  .theme-dark .wrong-review-label,
+  .theme-dark .meta-item.total { color: #1A2538; }
+
+  .theme-dark .glass-card,
+  .theme-dark .glass-button {
+    background: rgba(30,41,59,0.6);
+    border-color: rgba(255,255,255,0.08);
+  }
+
+  .theme-dark .wrong-item {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.06);
+  }
+
+  .theme-dark .kp-divider,
+  .theme-dark .stat-divider { background: rgba(255,255,255,0.06); }
+
+  .theme-dark .bank-arrow { background: rgba(255,255,255,0.06); }
+
+  .theme-dark .wrong-item-left .wrong-status-badge {
+    background: rgba(0,122,255,0.12);
+  }
+
+  .theme-dark .wrong-item-left .wrong-status-badge.mastered {
+    background: rgba(52,199,89,0.12);
+  }
+
+  .theme-dark .wrong-item-left .wrong-status-badge.due {
+    background: rgba(255,149,0,0.12);
+  }
+
+  .theme-dark .empty-title { color: #1A2538; }
+  .theme-dark .empty-desc { color: #1A2538; }

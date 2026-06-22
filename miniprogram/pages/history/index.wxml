@@ -1,0 +1,66 @@
+<view class="history-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.60" />
+  <view class="ambient-strip"></view>
+
+  <scroll-view
+    class="history-scroll"
+    scroll-y
+    enhanced
+    show-scrollbar="{{false}}"
+  >
+    <view class="page-header">
+      <view class="page-title">历史记录</view>
+      <view class="page-desc">你练习过的题库都会在这里</view>
+    </view>
+
+    <!-- 加载中 -->
+    <view class="loading-state" wx:if="{{loading}}">
+      <view class="loading-row" wx:for="{{[1,2,3]}}" wx:key="*this">
+        <view class="skeleton-card">
+          <view class="skeleton-line skeleton-name"></view>
+          <view class="skeleton-line skeleton-meta"></view>
+          <view class="skeleton-line skeleton-bar"></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:elif="{{empty}}">
+      <view class="empty-icon">📚</view>
+      <view class="empty-text">暂无历史记录</view>
+      <view class="empty-desc">完成一次练习后，记录会出现在这里</view>
+      <button class="empty-btn" bindtap="handleBack">去学习</button>
+    </view>
+
+    <!-- 历史列表 -->
+    <view class="history-list" wx:else>
+      <view
+        wx:for="{{historyList}}"
+        wx:key="id"
+        class="history-card"
+        data-id="{{item.id}}"
+        bindtap="handleItemTap"
+        hover-class="pressing"
+      >
+        <view class="card-top">
+          <view class="history-name">{{item.name}}</view>
+          <image class="card-chevron" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
+        </view>
+
+        <view class="card-meta">
+          <text class="history-tag {{item.subject}}">{{item.subjectName}}</text>
+          <text class="history-date">{{item.lastTimeText}}</text>
+        </view>
+
+        <view class="card-progress">
+          <view class="progress-bar">
+            <view class="progress-fill {{item.subject}}" style="width: {{item.progress}}%"></view>
+          </view>
+          <view class="progress-count">{{item.doneCount}}/{{item.totalCount}} 题</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </scroll-view>
+</view>

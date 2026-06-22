@@ -1,0 +1,495 @@
+const { parseQuestions } = require('../../../utils/questionParser');
+
+const TYPE_LABELS = {
+  single_choice: '单选题',
+  multi_choice: '多选题',
+  true_false: '判断题',
+  fill_blank: '填空题',
+  short_answer: '简答题',
+};
+
+Page({
+  data: {
+    isDark: false,
+    currentMethod: 'excel',
+    methods: [
+      { id: 'excel', label: 'Excel', icon: '/images/kzg/file-blue.svg' },
+      { id: 'word', label: 'Word文档', icon: '/images/kzg/book-blue.svg' },
+      { id: 'text', label: '文本粘贴', icon: '/images/kzg/pen-blue.svg' },
+      { id: 'ocr', label: '拍照OCR', icon: '/images/kzg/chat-blue.svg' },
+      { id: 'manual', label: '手动录入', icon: '/images/kzg/plus-blue.svg' },
+    ],
+    // Excel
+    uploadFile: null,
+    // Word
+    uploadWordFile: null,
+    // 文本粘贴
+    textContent: '',
+    showFormatHelp: false,
+    parsedQuestions: [],
+    parseStatsText: '',
+    // OCR
+    ocrImagePath: '',
+    ocrRemaining: 20,
+    // 手动录入
+    manualQuestions: [],
+    // 题库名称
+    bankName: '',
+    // 状态
+    canProceed: false,
+  },
+
+  onLoad() {
+    var app = getApp();
+    var effectiveTheme = app.globalData.effectiveTheme || 'light';
+    this.setData({ isDark: effectiveTheme === 'dark' });
+    this.loadOcrRemaining();
+  },
+
+  onShow() {
+    var app = getApp();
+    var effectiveTheme = app.globalData.effectiveTheme || 'light';
+    this.setData({ isDark: effectiveTheme === 'dark' });
+    // 从手动录入页返回时刷新列表
+    const manualQuestions = wx.getStorageSync('manualDraft') || [];
+    if (manualQuestions.length > 0) {
+      this.setData({
+        manualQuestions: manualQuestions.map((q) => ({
+          ...q,
+          typeLabel: TYPE_LABELS[q.type] || '未知题型',
+        })),
+      });
+    }
+    this.updateCanProceed();
+  },
+
+  /* ─── Tab 切换 ─── */
+  switchMethod(e) {
+    const { method } = e.currentTarget.dataset;
+    this.setData({ currentMethod: method });
+    this.updateCanProceed();
+  },
+
+  /* ─── 格式帮助 ─── */
+  toggleFormatHelp() {
+    this.setData({ showFormatHelp: !this.data.showFormatHelp });
+  },
+
+  /* ─── 题库名称 ─── */
+  onBankNameInput(e) {
+    this.setData({ bankName: e.detail.value });
+    this.updateCanProceed();
+  },
+
+  /* ─── 文本输入 ─── */
+  onTextInput(e) {
+    const textContent = e.detail.value;
+    this.setData({ textContent });
+
+    // 实时解析预览
+    if (textContent.trim().length > 10) {
+      const result = parseQuestions(textContent);
+      this.setData({
+        parsedQuestions: result.questions,
+        parseStatsText: `识别到 ${result.stats.parsed} 题（共 ${result.stats.total} 个文本块）`,
+      });
+    } else {
+      this.setData({ parsedQuestions: [], parseStatsText: '' });
+    }
+    this.updateCanProceed();
+  },
+
+  /* ─── Excel 操作 ─── */
+  downloadTemplate() {
+    wx.showLoading({ title: '生成模板中...' });
+    // 调用云函数生成 Excel 模板并下载
+    wx.cloud
+      .callFunction({
+        name: 'quickstartFunctions',
+        data: { type: 'downloadImportTemplate' },
+      })
+      .then((res) => {
+        wx.hideLoading();
+        if (res.result && res.result.fileID) {
+          wx.cloud.downloadFile({
+            fileID: res.result.fileID,
+            success: (downloadRes) => {
+              wx.openDocument({
+                filePath: downloadRes.tempFilePath,
+                showMenu: true,
+              });
+            },
+          });
+        }
+      })
+      .catch((err) => {
+        wx.hideLoading();
+        console.error('下载模板失败:', err);
+        wx.showToast({ title: '模板下载失败，请重试', icon: 'none' });
+      });
+  },
+
+  chooseExcel() {
+    wx.chooseMessageFile({
+      count: 1,
+      type: 'file',
+      extension: ['xlsx', 'xls'],
+      success: (res) => {
+        const file = res.tempFiles[0];
+        if (file.size > 10 * 1024 * 1024) {
+          wx.showToast({ title: '文件大小不能超过10MB', icon: 'none' });
+          return;
+        }
+        this.setData({
+          uploadFile: {
+            name: file.name,
+            size: this.formatSize(file.size),
+            path: file.path,
+          },
+        });
+        this.updateCanProceed();
+      },
+      fail: (err) => {
+        if (err.errMsg.includes('cancel')) return;
+        wx.showToast({ title: '选择文件失败', icon: 'none' });
+      },
+    });
+  },
+
+  /* ─── Word 文档 ─── */
+  downloadWordTemplate() {
+    wx.showLoading({ title: '生成模板中...' });
+    wx.cloud
+      .callFunction({
+        name: 'quickstartFunctions',
+        data: { type: 'downloadImportTemplate' },
+      })
+      .then((res) => {
+        wx.hideLoading();
+        if (res.result && res.result.fileID) {
+          wx.cloud.downloadFile({
+            fileID: res.result.fileID,
+            success: (downloadRes) => {
+              wx.openDocument({
+                filePath: downloadRes.tempFilePath,
+                showMenu: true,
+              });
+            },
+          });
+        }
+      })
+      .catch((err) => {
+        wx.hideLoading();
+        console.error('下载模板失败:', err);
+        wx.showToast({ title: '模板下载失败，请重试', icon: 'none' });
+      });
+  },
+
+  chooseWord() {
+    wx.chooseMessageFile({
+      count: 1,
+      type: 'file',
+      extension: ['docx', 'doc'],
+      success: (res) => {
+        const file = res.tempFiles[0];
+        if (file.size > 10 * 1024 * 1024) {
+          wx.showToast({ title: '文件大小不能超过10MB', icon: 'none' });
+          return;
+        }
+        this.setData({
+          uploadWordFile: {
+            name: file.name,
+            size: this.formatSize(file.size),
+            path: file.path,
+          },
+        });
+        this.updateCanProceed();
+      },
+      fail: (err) => {
+        if (err.errMsg.includes('cancel')) return;
+        wx.showToast({ title: '选择文件失败', icon: 'none' });
+      },
+    });
+  },
+
+  processWordDocument() {
+    const { uploadWordFile } = this.data;
+    if (!uploadWordFile) return;
+
+    wx.showLoading({ title: '解析Word文档中...', mask: true });
+
+    const cloudPath = `word/${Date.now()}_${Math.random().toString(36).slice(2)}.docx`;
+    wx.cloud
+      .uploadFile({ cloudPath, filePath: uploadWordFile.path })
+      .then((uploadRes) => {
+        return wx.cloud.callFunction({
+          name: 'quickstartFunctions',
+          data: {
+            type: 'parseWordDocument',
+            fileID: uploadRes.fileID,
+          },
+        });
+      })
+      .then((res) => {
+        wx.hideLoading();
+        if (res.result && res.result.success) {
+          const questions = (res.result.questions || []).map((q) => ({
+            type: q.type || 'single_choice',
+            stem: q.stem || '',
+            options: q.options || [],
+            answer: q.answer || '',
+            explanation: q.explanation || '',
+          }));
+
+          this.setData({
+            parsedQuestions: questions,
+            parseStatsText: `Word文档识别到 ${questions.length} 题`,
+          });
+
+          // 自动跳转到预览页
+          this.goPreviewWithData(questions, 'word');
+        } else {
+          wx.showToast({
+            title: res.result ? res.result.errMsg : '解析失败',
+            icon: 'none',
+            duration: 2000,
+          });
+        }
+      })
+      .catch((err) => {
+        wx.hideLoading();
+        console.error('Word解析失败:', err);
+        wx.showToast({ title: 'Word文档解析失败，请检查网络后重试', icon: 'none' });
+      });
+  },
+
+  /* ─── OCR ─── */
+  takePhoto() {
+    if (!this.checkOcrAvailable()) return;
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['camera'],
+      sizeType: ['compressed'],
+      success: (res) => this.processOcrImage(res.tempFiles[0].tempFilePath),
+    });
+  },
+
+  chooseImage() {
+    if (!this.checkOcrAvailable()) return;
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album'],
+      sizeType: ['compressed'],
+      success: (res) => this.processOcrImage(res.tempFiles[0].tempFilePath),
+    });
+  },
+
+  checkOcrAvailable() {
+    if (this.data.ocrRemaining <= 0) {
+      wx.showToast({ title: '今日OCR次数已用完，请使用Excel导入', icon: 'none' });
+      return false;
+    }
+    return true;
+  },
+
+  processOcrImage(filePath) {
+    wx.showLoading({ title: 'OCR识别中...' });
+    // 先上传到云存储
+    const cloudPath = `ocr/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+    wx.cloud
+      .uploadFile({ cloudPath, filePath })
+      .then((uploadRes) => {
+        // 调用云函数进行OCR
+        return wx.cloud.callFunction({
+          name: 'quickstartFunctions',
+          data: {
+            type: 'parseOCR',
+            fileID: uploadRes.fileID,
+          },
+        });
+      })
+      .then((res) => {
+        wx.hideLoading();
+        if (res.result && res.result.questions) {
+          this.setData({
+            parsedQuestions: this.mapOcrResult(res.result.questions),
+            parseStatsText: `OCR识别到 ${res.result.questions.length} 题`,
+            ocrRemaining: Math.max(0, this.data.ocrRemaining - 1),
+          });
+          this.saveOcrRemaining();
+          // 跳转到预览页
+          this.goPreviewWithData(res.result.questions);
+        } else {
+          wx.showToast({ title: '未识别到题目，请重试', icon: 'none' });
+        }
+      })
+      .catch((err) => {
+        wx.hideLoading();
+        console.error('OCR失败:', err);
+        wx.showToast({ title: 'OCR识别失败，请检查网络后重试', icon: 'none' });
+      });
+  },
+
+  mapOcrResult(rawQuestions) {
+    return rawQuestions.map((q) => ({
+      type: q.type || 'single_choice',
+      stem: q.stem || '',
+      options: q.options || [],
+      answer: q.answer || '',
+      explanation: q.explanation || '',
+    }));
+  },
+
+  // TODO: 后续接入云函数端 OCR 次数校验，防止客户端绕过本地 Storage 限制
+  loadOcrRemaining() {
+    const today = new Date().toISOString().slice(0, 10);
+    const stored = wx.getStorageSync('ocrUsage');
+    if (stored && stored.date === today) {
+      this.setData({ ocrRemaining: Math.max(0, 20 - stored.count) });
+    } else {
+      this.setData({ ocrRemaining: 20 });
+    }
+  },
+
+  saveOcrRemaining() {
+    const today = new Date().toISOString().slice(0, 10);
+    const stored = wx.getStorageSync('ocrUsage');
+    const prevCount = (stored && stored.date === today) ? stored.count : 0;
+    wx.setStorageSync('ocrUsage', {
+      date: today,
+      count: prevCount + 1,
+    });
+  },
+
+  /* ─── 手动录入 ─── */
+  goManualEntry() {
+    wx.navigateTo({
+      url: '/pages/bank/import-manual/index',
+    });
+  },
+
+  editManualQuestion(e) {
+    const { index } = e.currentTarget.dataset;
+    wx.navigateTo({
+      url: `/pages/bank/import-manual/index?editIndex=${index}`,
+    });
+  },
+
+  deleteManualQuestion(e) {
+    const { index } = e.currentTarget.dataset;
+    // 过滤掉被删除的题目，同时清除 typeLabel 防止污染存储
+    const cleanQuestions = this.data.manualQuestions
+      .filter((_, i) => i !== index)
+      .map(({ typeLabel, ...q }) => q);
+    wx.setStorageSync('manualDraft', cleanQuestions);
+    this.setData({
+      manualQuestions: cleanQuestions.map((q) => ({
+        ...q,
+        typeLabel: TYPE_LABELS[q.type] || '未知题型',
+      })),
+    });
+    this.updateCanProceed();
+  },
+
+  /* ─── 预览跳转 ─── */
+  goPreview() {
+    const { currentMethod, parsedQuestions, manualQuestions, bankName, uploadFile } = this.data;
+
+    if (!bankName.trim()) {
+      wx.showToast({ title: '请先输入题库名称', icon: 'none' });
+      return;
+    }
+
+    let questions = [];
+    if (currentMethod === 'text') {
+      questions = parsedQuestions;
+    } else if (currentMethod === 'manual') {
+      questions = manualQuestions;
+    } else if (currentMethod === 'excel') {
+      // Excel 在服务端解析，预览页只需文件信息即可
+      if (!uploadFile) {
+        wx.showToast({ title: '请先选择 Excel 文件', icon: 'none' });
+        return;
+      }
+      questions = [];
+    } else if (currentMethod === 'word') {
+      // Word 点击预览按钮 → 触发解析后跳转
+      if (!uploadWordFile) {
+        wx.showToast({ title: '请先选择 Word 文件', icon: 'none' });
+        return;
+      }
+      this.processWordDocument();
+      return;
+    }
+
+    if (currentMethod !== 'excel' && questions.length === 0) {
+      wx.showToast({ title: '请先添加题目', icon: 'none' });
+      return;
+    }
+
+    if (questions.length > 500) {
+      wx.showToast({ title: '单次最多导入500题，请删减后重试', icon: 'none' });
+      return;
+    }
+
+    // 存入缓存传递给预览页
+    wx.setStorageSync('importPreviewData', {
+      bankName,
+      questions,
+      source: currentMethod,
+      filePath: uploadFile ? uploadFile.path : null,
+    });
+
+    wx.navigateTo({
+      url: '/pages/bank/import-preview/index',
+    });
+  },
+
+  goPreviewWithData(questions, source) {
+    wx.setStorageSync('importPreviewData', {
+      bankName: this.data.bankName,
+      questions,
+      source: source || 'ocr',
+      filePath: null,
+    });
+    wx.navigateTo({
+      url: '/pages/bank/import-preview/index',
+    });
+  },
+
+  /* ─── 状态 ─── */
+  updateCanProceed() {
+    const { currentMethod, parsedQuestions, manualQuestions, uploadFile, uploadWordFile, bankName } = this.data;
+    let canProceed = false;
+    let parseStatsText = this.data.parseStatsText;
+
+    if (!bankName.trim()) {
+      canProceed = false;
+    } else if (currentMethod === 'excel') {
+      canProceed = !!uploadFile;
+    } else if (currentMethod === 'word') {
+      canProceed = !!uploadWordFile;
+    } else if (currentMethod === 'text') {
+      canProceed = parsedQuestions.length > 0;
+      if (canProceed && !parseStatsText) {
+        parseStatsText = `识别到 ${parsedQuestions.length} 题`;
+      }
+    } else if (currentMethod === 'manual') {
+      canProceed = manualQuestions.length > 0;
+      parseStatsText = `已录入 ${manualQuestions.length} 题`;
+    } else if (currentMethod === 'ocr') {
+      canProceed = false; // OCR 由拍照后自动跳转
+    }
+
+    this.setData({ canProceed, parseStatsText });
+  },
+
+  /* ─── 工具 ─── */
+  formatSize(bytes) {
+    if (bytes < 1024) return bytes + 'B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + 'MB';
+  },
+});

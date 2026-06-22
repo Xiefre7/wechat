@@ -1,0 +1,175 @@
+<view class="manual-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.60" />
+  <view class="ambient-strip"></view>
+
+  <scroll-view class="manual-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="page-header">
+      <view class="page-title">{{isEditing ? '编辑题目' : '录入题目'}}</view>
+      <view class="page-desc">逐题填写以下信息，完成后可继续添加下一题</view>
+    </view>
+
+    <view class="form-card glass-card">
+      <!-- 题型选择 -->
+      <view class="form-group">
+        <view class="form-label">题型 <text class="required">*</text></view>
+        <view class="type-selector">
+          <view
+            wx:for="{{questionTypes}}"
+            wx:key="value"
+            class="type-item {{form.type === item.value ? 'active' : ''}}"
+            data-type="{{item.value}}"
+            bindtap="selectType"
+          >
+            {{item.label}}
+          </view>
+        </view>
+      </view>
+
+      <!-- 题干 -->
+      <view class="form-group">
+        <view class="form-label">题干 <text class="required">*</text></view>
+        <textarea
+          class="form-textarea glass-input"
+          placeholder="请输入题目内容"
+          value="{{form.stem}}"
+          bindinput="onFieldChange"
+          data-field="stem"
+          maxlength="2000"
+          auto-height
+        ></textarea>
+      </view>
+
+      <!-- 选项（非简答题显示） -->
+      <view class="form-group" wx:if="{{showOptions}}">
+        <view class="form-label">选项 <text class="required">*</text></view>
+        <view class="options-area">
+          <view
+            wx:for="{{form.options}}"
+            wx:key="key"
+            class="option-row"
+          >
+            <view class="option-key">{{item.key}}</view>
+            <input
+              class="option-input glass-input"
+              placeholder="选项{{item.key}}内容"
+              value="{{item.text}}"
+              bindinput="onOptionChange"
+              data-index="{{index}}"
+              maxlength="500"
+            />
+            <view
+              class="option-delete"
+              data-index="{{index}}"
+              bindtap="deleteOption"
+              wx:if="{{form.options.length > 2}}"
+            >×</view>
+          </view>
+          <view
+            class="add-option glass-button"
+            bindtap="addOption"
+            wx:if="{{form.options.length < 6}}"
+          >
+            ＋ 添加选项
+          </view>
+        </view>
+      </view>
+
+      <!-- 判断题选项 -->
+      <view class="form-group" wx:if="{{form.type === 'true_false'}}">
+        <view class="form-label">选项</view>
+        <view class="tf-options">
+          <view class="tf-option glass-button {{form.answer === '对' ? 'selected' : ''}}" bindtap="setTfAnswer" data-value="对">
+            <view class="tf-key">A</view>
+            <view class="tf-text">对 ✓</view>
+          </view>
+          <view class="tf-option glass-button {{form.answer === '错' ? 'selected' : ''}}" bindtap="setTfAnswer" data-value="错">
+            <view class="tf-key">B</view>
+            <view class="tf-text">错 ✗</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 答案 -->
+      <view class="form-group" wx:if="{{form.type !== 'short_answer'}}">
+        <view class="form-label">答案 <text class="required">*</text></view>
+        <view wx:if="{{form.type === 'single_choice' || form.type === 'multi_choice'}}">
+          <view class="answer-selector">
+            <view
+              wx:for="{{form.options}}"
+              wx:key="key"
+              class="answer-item {{selectedAnswers[item.key] ? 'selected' : ''}}"
+              data-key="{{item.key}}"
+              bindtap="toggleAnswer"
+            >
+              {{item.key}}
+            </view>
+          </view>
+          <view class="answer-hint" wx:if="{{form.type === 'multi_choice'}}">多选题请点击所有正确选项</view>
+        </view>
+        <view wx:elif="{{form.type === 'true_false'}}">
+          <view class="answer-selector">
+            <view
+              class="answer-item {{form.answer === '对' ? 'selected' : ''}}"
+              data-value="对"
+              bindtap="setAnswer"
+            >对</view>
+            <view
+              class="answer-item {{form.answer === '错' ? 'selected' : ''}}"
+              data-value="错"
+              bindtap="setAnswer"
+            >错</view>
+          </view>
+        </view>
+        <input
+          wx:if="{{form.type === 'fill_blank'}}"
+          class="form-input glass-input"
+          placeholder="请输入答案（多个填空用 | 分隔）"
+          value="{{form.answer}}"
+          bindinput="onFieldChange"
+          data-field="answer"
+          maxlength="500"
+        />
+      </view>
+
+      <!-- 简答题答案 -->
+      <view class="form-group" wx:if="{{form.type === 'short_answer'}}">
+        <view class="form-label">参考答案 <text class="required">*</text></view>
+        <textarea
+          class="form-textarea glass-input"
+          placeholder="请输入参考答案"
+          value="{{form.answer}}"
+          bindinput="onFieldChange"
+          data-field="answer"
+          maxlength="2000"
+          auto-height
+        ></textarea>
+      </view>
+
+      <!-- 解析 -->
+      <view class="form-group">
+        <view class="form-label">解析 <text class="optional">（选填）</text></view>
+        <textarea
+          class="form-textarea glass-input"
+          placeholder="请输入题目解析"
+          value="{{form.explanation}}"
+          bindinput="onFieldChange"
+          data-field="explanation"
+          maxlength="2000"
+          auto-height
+        ></textarea>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-row">
+      <button class="action-btn save-add glass-card" bindtap="saveAndContinue" hover-class="pressing">
+        <view class="btn-label">保存并继续添加</view>
+      </button>
+      <button class="action-btn save-done glass-card" bindtap="saveAndFinish" hover-class="pressing">
+        <view class="btn-label">保存并完成</view>
+      </button>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </scroll-view>
+</view>

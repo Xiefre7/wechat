@@ -1,0 +1,208 @@
+<view class="practice-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.12" />
+  <!-- 顶部导航栏 -->
+  <view class="top-bar">
+    <view class="back-btn" bindtap="goBack" aria-label="返回">
+      <image class="back-icon" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
+    </view>
+    <view class="progress-info">
+      <view class="progress-bar-wrap">
+        <view class="progress-fill" style="width:{{(currentIndex + 1) / totalQuestions * 100}}%"></view>
+      </view>
+      <view class="progress-text">{{currentIndex + 1}}/{{totalQuestions}}</view>
+    </view>
+    <view class="stats-mini">
+      <text class="correct-num">{{correctCount}}</text>
+      <text class="stats-div">/</text>
+      <text class="total-num">{{answeredCount}}</text>
+    </view>
+  </view>
+
+  <scroll-view
+    class="question-scroll"
+    scroll-y
+    enhanced
+    show-scrollbar="{{false}}"
+    scroll-top="{{scrollTop}}"
+  >
+    <!-- 题型标签 -->
+    <view class="type-badge">{{questionTypeLabel}}</view>
+
+    <!-- 题干 -->
+    <view class="stem-card glass-card">
+      <view class="stem-text">{{currentQuestion.content.stem}}</view>
+    </view>
+
+    <!-- 选择题（单选/多选/判断） -->
+    <view class="options-area" wx:if="{{currentQuestion.hasOptions}}">
+      <view
+        wx:for="{{processedOptions}}"
+        wx:key="key"
+        class="option-item glass-card {{item._cls}}"
+        data-key="{{item.key}}"
+        bindtap="selectOption"
+        hover-class="{{isMemorizeMode ? '' : 'option-pressing'}}"
+      >
+        <view class="option-key {{isMultiChoice ? 'checkbox' : ''}}">
+          <text wx:if="{{!isMultiChoice}}">{{item.key}}</text>
+          <text wx:else>{{selectedAnswers[item.key] ? '✓' : ''}}</text>
+        </view>
+        <view class="option-text">{{item.text}}</view>
+        <view class="option-icon" wx:if="{{submitted || isMemorizeMode}}">
+          <text wx:if="{{item.key === currentQuestion.content.answer}}">✓</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 填空题 -->
+    <view class="input-area" wx:if="{{currentQuestion.isFillBlank}}">
+      <view class="input-label">请输入答案（多个填空用 | 分隔）</view>
+      <input
+        class="answer-input glass-input"
+        placeholder="输入你的答案..."
+        value="{{userInput}}"
+        bindinput="onInputChange"
+        disabled="{{submitted}}"
+        maxlength="500"
+      />
+    </view>
+
+    <!-- 简答题 -->
+    <view class="input-area" wx:if="{{currentQuestion.isShortAnswer}}">
+      <view class="input-label">请输入你的答案</view>
+      <textarea
+        class="answer-textarea glass-input"
+        placeholder="输入你的答案..."
+        value="{{userInput}}"
+        bindinput="onInputChange"
+        disabled="{{submitted}}"
+        maxlength="2000"
+        auto-height
+      ></textarea>
+    </view>
+
+    <!-- 提交按钮（刷题模式） -->
+    <view class="submit-area" wx:if="{{!submitted && !isMemorizeMode}}">
+      <button
+        class="submit-btn glass-card"
+        bindtap="submitAnswer"
+        hover-class="pressing"
+      >
+        <view class="submit-label">提交答案</view>
+      </button>
+
+      <!-- 加入错题本 -->
+      <view class="wrong-book-action" wx:if="{{!inWrongBook}}">
+        <button
+          class="add-wrong-btn glass-button"
+          bindtap="manualAddToWrong"
+          hover-class="pressing"
+          disabled="{{wrongBookAdding}}"
+        >
+          <view class="add-wrong-icon">📝</view>
+          <view class="add-wrong-label">{{wrongBookAdding ? '添加中...' : '加入错题本'}}</view>
+        </button>
+      </view>
+      <view class="wrong-book-action" wx:else>
+        <view class="in-wrong-book glass-button">
+          <view class="in-wrong-icon">✓</view>
+          <view class="in-wrong-label">已在错题本</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 背题模式操作区 -->
+    <view class="memorize-actions" wx:if="{{isMemorizeMode}}">
+      <button class="memorize-btn forget-btn glass-card" bindtap="markNotMemorized" hover-class="pressing">
+        <view class="memorize-btn-icon">✗</view>
+        <view class="memorize-btn-label">没记住</view>
+      </button>
+      <button class="memorize-btn remember-btn" bindtap="markMemorized" hover-class="pressing">
+        <view class="memorize-btn-icon">✓</view>
+        <view class="memorize-btn-label">记住了</view>
+      </button>
+    </view>
+
+    <!-- 答题反馈（仅刷题模式） -->
+    <view class="feedback-area" wx:if="{{submitted && !isMemorizeMode}}">
+      <!-- 选择题/判断题/填空题反馈 -->
+      <view class="feedback-card glass-card {{isCorrect === true ? 'correct-card' : isCorrect === false ? 'wrong-card' : 'pending-card'}}"
+        wx:if="{{!isShortAnswer || shortAnswerJudged}}"
+      >
+        <view class="feedback-header">
+          <view class="feedback-icon">
+            <text wx:if="{{isCorrect === true}}">✓</text>
+            <text wx:elif="{{isCorrect === false}}">✗</text>
+          </view>
+          <view class="feedback-title">
+            {{isCorrect === true ? '回答正确！' : '回答错误'}}
+          </view>
+          <view class="feedback-time">用时 {{questionTimeSpent}}s</view>
+        </view>
+      </view>
+
+      <!-- 简答题自判区域 -->
+      <view class="feedback-card glass-card pending-card" wx:if="{{isShortAnswer && !shortAnswerJudged}}">
+        <view class="feedback-header">
+          <view class="feedback-icon pending-icon">?</view>
+          <view class="feedback-title">请自行判断对错</view>
+        </view>
+        <view class="reference-answer">
+          <view class="ref-label">参考要点：</view>
+          <view class="ref-text">{{currentQuestion.content.answer}}</view>
+        </view>
+        <view class="self-judge-btns">
+          <button class="judge-btn wrong-btn" bindtap="judgeShortAnswer" data-correct="false">标记错误 ✗</button>
+          <button class="judge-btn correct-btn" bindtap="judgeShortAnswer" data-correct="true">标记正确 ✓</button>
+        </view>
+      </view>
+
+      <!-- 解析区域 -->
+      <view class="explanation-card glass-card" wx:if="{{showExplanation && currentQuestion.content.explanation}}">
+        <view class="expl-header" bindtap="toggleExplanation">
+          <view class="expl-title">📖 题目解析</view>
+          <view class="expl-toggle">{{showExplanation ? '收起' : '展开'}}</view>
+        </view>
+        <view class="expl-content" wx:if="{{showExplanation}}">
+          {{currentQuestion.content.explanation}}
+        </view>
+      </view>
+
+      <!-- 答案解析（无解析时显示正确答案） -->
+      <view class="correct-answer-card glass-card" wx:if="{{isCorrect === false && !currentQuestion.content.explanation}}">
+        <view class="ca-label">正确答案：</view>
+        <view class="ca-value">
+          {{currentQuestion.content.answer}}
+          <text wx:if="{{currentQuestion.hasOptions && currentQuestion.content.answer.length === 1}}">
+            ({{currentQuestion.content.answer}})
+          </text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 下一题按钮（仅刷题模式） -->
+    <view class="next-area" wx:if="{{submitted && !isMemorizeMode && (!isShortAnswer || shortAnswerJudged)}}">
+      <button
+        class="next-btn glass-card"
+        bindtap="nextQuestion"
+        hover-class="pressing"
+      >
+        <view class="next-label">
+          {{currentIndex + 1 >= totalQuestions ? '查看结果' : '下一题'}}
+        </view>
+        <view class="next-arrow">→</view>
+      </button>
+      <view class="next-hint" wx:if="{{currentIndex + 1 < totalQuestions}}">
+        第 {{currentIndex + 2}} 题 / 共 {{totalQuestions}} 题
+      </view>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </scroll-view>
+
+  <!-- 斩题浮动按钮 -->
+  <view class="slash-float-btn {{showSlashButton ? 'active' : ''}}" wx:if="{{showSlashButton}}" bindtap="onSlashButtonTap">
+    <view class="slash-float-ring"></view>
+    <text class="slash-float-text">斩</text>
+  </view>
+</view>

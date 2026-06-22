@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "openapi": [
+      "wxacode.get"
+    ]
+  },
+  "timeout": 120,
+  "memorySize": 512,
+  "envVariables": {
+    "EMAIL_USER": "",
+    "EMAIL_PASS": "",
+    "EMAIL_TO": "",
+    "EMAIL_HOST": "smtp.qq.com",
+    "EMAIL_PORT": "465"
+  },
+  "triggers": []
+}

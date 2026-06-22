@@ -1,0 +1,80 @@
+<view class="manage-page">
+  <view class="ambient-strip"></view>
+
+  <scroll-view class="manage-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="page-header">
+      <view class="page-title">斩题管理</view>
+      <view class="page-desc">
+        查看已斩题类与题目，7天后将自动复活。
+        <text wx:if="{{rollbackRemaining > 0}}" class="rollback-info">今日剩余撤销次数：{{rollbackRemaining}} 次</text>
+        <text wx:else class="rollback-info exhausted">今日撤销次数已用完</text>
+      </view>
+    </view>
+
+    <!-- 官方题库已斩题类 -->
+    <view class="section" wx:if="{{classItems.length > 0}}">
+      <view class="section-title">官方题库 · 已斩题类</view>
+      <view class="item-list">
+        <view
+          wx:for="{{classItems}}"
+          wx:key="id"
+          class="slash-item glass-card"
+        >
+          <view class="item-info">
+            <view class="item-name">{{item.name}}</view>
+            <view class="item-meta" wx:if="{{item.kpName}}">
+              <text class="item-bank">{{item.kpName}}</text>
+              <text class="item-date">斩于 {{item.slashedAt.slice(0, 10)}}</text>
+            </view>
+            <view class="item-revive">
+              距离复活还有 <text class="revive-days">{{item.daysUntilRevive}}</text> 天
+            </view>
+          </view>
+          <button
+            class="rollback-btn {{rollbackRemaining > 0 ? '' : 'disabled'}}"
+            data-id="{{item.id}}"
+            bindtap="rollbackClass"
+            disabled="{{rollbackRemaining <= 0}}"
+          >撤销</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 自导入题库已斩题目 -->
+    <view class="section" wx:if="{{customItems.length > 0}}">
+      <view class="section-title">自导入题库 · 已斩题目</view>
+      <view class="item-list">
+        <view
+          wx:for="{{customItems}}"
+          wx:key="id"
+          class="slash-item glass-card"
+        >
+          <view class="item-info">
+            <view class="item-name">{{item.name}}</view>
+            <view class="item-meta">
+              <text class="item-date">斩于 {{item.slashedAt.slice(0, 10)}}</text>
+            </view>
+            <view class="item-revive">
+              距离复活还有 <text class="revive-days">{{item.daysUntilRevive}}</text> 天
+            </view>
+          </view>
+          <button
+            class="rollback-btn {{rollbackRemaining > 0 ? '' : 'disabled'}}"
+            data-id="{{item.id}}"
+            bindtap="rollbackCustom"
+            disabled="{{rollbackRemaining <= 0}}"
+          >撤销</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!hasItems}}">
+      <view class="empty-icon">⚔️</view>
+      <view class="empty-text">还没有斩掉任何题类</view>
+      <view class="empty-desc">刷题时做3道同类题且正确率≥2/3即可触发斩题</view>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </scroll-view>
+</view>

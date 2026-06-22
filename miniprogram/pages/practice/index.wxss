@@ -1,0 +1,873 @@
+/* 答题页 — iOS26 液态玻璃风格，全屏沉浸式 */
+page {
+  width: 100%;
+  min-height: 100vh;
+  background: #F4F7FC;
+  color: #1E2A3A;
+  overflow: hidden;
+}
+
+button {
+  padding: 0; margin: 0;
+  text-align: left;
+  line-height: normal;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+}
+
+button::after { border: 0; }
+
+/* ─── 顶部栏 ─── */
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: calc(env(safe-area-inset-top) + 4rpx) 24rpx 10rpx;
+  background: #FFFFFF;
+  -webkit-backdrop-filter: blur(40rpx);
+  backdrop-filter: blur(40rpx);
+  border-bottom: 1rpx solid rgba(74, 143, 234, 0.05);
+  z-index: 10;
+  position: relative;
+}
+
+.back-btn {
+  flex-shrink: 0;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 28rpx;
+  background: #F0F4FA;
+}
+
+.back-icon {
+  width: 24rpx;
+  height: 24rpx;
+  transform: rotate(180deg);
+}
+
+.progress-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  min-width: 0;
+}
+
+.progress-bar-wrap {
+  flex: 1;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background: #E6EAF2;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3rpx;
+  background: linear-gradient(90deg, #4A8FEA, #8FC4FB);
+  transition: width 300ms ease;
+}
+
+.progress-text {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #5E718D;
+  min-width: 72rpx;
+  text-align: right;
+}
+
+.stats-mini {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.correct-num { color: #34C759; }
+.stats-div { color: #CBD5E1; margin: 0 2rpx; }
+.total-num { color: #5E718D; }
+
+/* ─── 滚动区 ─── */
+.practice-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.question-scroll {
+  flex: 1;
+  padding: 24rpx 24rpx 0;
+  height: calc(100vh - env(safe-area-inset-top) - 56rpx - 38rpx);
+}
+
+/* ─── 玻璃基类 ─── */
+.glass-card {
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1rpx solid #E6EAF2;
+  background: #FFFFFF;
+  -webkit-backdrop-filter: blur(34rpx);
+  backdrop-filter: blur(34rpx);
+  box-shadow: 0 4rpx 16rpx rgba(74, 143, 234, 0.04);
+}
+
+.glass-input {
+  border-radius: 20rpx;
+  background: #FFFFFF;
+  border: 1rpx solid #E6EAF2;
+  box-shadow: 0 2rpx 8rpx rgba(74, 143, 234, 0.04);
+}
+
+/* ─── 题型标签 ─── */
+.type-badge {
+  display: inline-block;
+  padding: 6rpx 20rpx;
+  border-radius: 14rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #4A8FEA;
+  background: #EDF4FE;
+  margin-bottom: 16rpx;
+}
+
+/* ─── 题干 ─── */
+.stem-card {
+  padding: 28rpx 24rpx;
+  border-radius: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.stem-text {
+  font-size: 30rpx;
+  line-height: 1.7;
+  font-weight: 500;
+  color: #1E2A3A;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ─── 选项区 ─── */
+.options-area {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.option-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 22rpx 20rpx;
+  border-radius: 20rpx;
+  border: 1.5rpx solid #E6EAF2;
+  transition: all 180ms ease;
+  min-height: 76rpx;
+}
+
+.option-item.selected {
+  border-color: #4A8FEA;
+  background: rgba(74,143,234,0.06);
+  box-shadow: 0 4rpx 16rpx rgba(74,143,234,0.1);
+}
+
+.option-item.correct {
+  border-color: #34C759;
+  background: rgba(52,199,89,0.08);
+}
+
+.option-item.wrong {
+  border-color: #F2545B;
+  background: rgba(242,84,91,0.06);
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6rpx); }
+  75% { transform: translateX(6rpx); }
+}
+
+.option-key {
+  flex-shrink: 0;
+  width: 52rpx;
+  height: 52rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 26rpx;
+  background: #F0F4FA;
+  font-size: 24rpx;
+  font-weight: 800;
+  color: #5E718D;
+  transition: all 180ms ease;
+}
+
+.option-item.selected .option-key {
+  background: #4A8FEA;
+  color: #ffffff;
+  box-shadow: 0 4rpx 14rpx rgba(74,143,234,0.25);
+}
+
+.option-item.correct .option-key {
+  background: #34C759;
+  color: #ffffff;
+}
+
+.option-item.wrong .option-key {
+  background: #F2545B;
+  color: #ffffff;
+}
+
+.option-key.checkbox {
+  border-radius: 14rpx;
+}
+
+.option-text {
+  flex: 1;
+  font-size: 28rpx;
+  line-height: 1.55;
+  color: #1E2A3A;
+}
+
+.option-icon {
+  flex-shrink: 0;
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.option-item.correct .option-icon {
+  color: #34C759;
+}
+
+.option-item.wrong .option-icon {
+  color: #F2545B;
+}
+
+.option-pressing {
+  opacity: 0.8;
+  transform: scale(0.985);
+}
+
+/* ─── 填空/简答输入区 ─── */
+.input-area {
+  margin-top: 8rpx;
+}
+
+.input-label {
+  font-size: 24rpx;
+  color: #5E718D;
+  margin-bottom: 12rpx;
+}
+
+.answer-input {
+  width: 100%;
+  height: 80rpx;
+  padding: 0 20rpx;
+  font-size: 28rpx;
+  color: #1E2A3A;
+  box-sizing: border-box;
+}
+
+.answer-input::placeholder { color: #95A6BD; }
+
+.answer-textarea {
+  width: 100%;
+  min-height: 200rpx;
+  padding: 20rpx;
+  font-size: 26rpx;
+  line-height: 1.65;
+  color: #1E2A3A;
+  box-sizing: border-box;
+}
+
+.answer-textarea::placeholder { color: #95A6BD; }
+
+/* ─── 提交按钮 ─── */
+.submit-area {
+  margin-top: 36rpx;
+}
+
+.submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96rpx;
+  border-radius: 24rpx;
+  border: none;
+  background: linear-gradient(135deg, #4A8FEA, #3B7AD8);
+  box-shadow: 0 12rpx 32rpx rgba(74,143,234,0.28);
+}
+
+.submit-label {
+  font-size: 32rpx;
+  font-weight: 850;
+  color: #ffffff;
+}
+
+/* ─── 错题本操作 ─── */
+.wrong-book-action {
+  margin-top: 20rpx;
+}
+
+.add-wrong-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-height: 80rpx;
+  border-radius: 24rpx;
+  border: 1.5rpx solid #E6EAF2;
+  background: #FFFFFF;
+}
+
+.add-wrong-icon {
+  font-size: 28rpx;
+}
+
+.add-wrong-label {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #FF6B4A;
+}
+
+.in-wrong-book {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  min-height: 80rpx;
+  border-radius: 24rpx;
+  border: 1.5rpx solid rgba(52, 199, 89, 0.25);
+  background: rgba(52, 199, 89, 0.05);
+}
+
+.in-wrong-icon {
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20rpx;
+  background: #34C759;
+  color: #ffffff;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.in-wrong-label {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #34C759;
+}
+
+/* ─── 反馈区 ─── */
+.feedback-area {
+  margin-top: 24rpx;
+}
+
+.feedback-card {
+  padding: 28rpx 24rpx;
+  border-radius: 24rpx;
+  margin-bottom: 16rpx;
+}
+
+.correct-card {
+  border-color: rgba(52,199,89,0.25);
+  background: rgba(52,199,89,0.06);
+}
+
+.wrong-card {
+  border-color: rgba(242,84,91,0.25);
+  background: rgba(242,84,91,0.05);
+}
+
+.pending-card {
+  border-color: rgba(74,143,234,0.15);
+  background: rgba(74,143,234,0.04);
+}
+
+.feedback-header {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.feedback-icon {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 28rpx;
+  font-size: 28rpx;
+  font-weight: 850;
+}
+
+.correct-card .feedback-icon {
+  background: #34C759;
+  color: #ffffff;
+}
+
+.wrong-card .feedback-icon {
+  background: #F2545B;
+  color: #ffffff;
+}
+
+.pending-icon {
+  background: #FF9500 !important;
+  color: #ffffff !important;
+}
+
+.feedback-title {
+  flex: 1;
+  font-size: 30rpx;
+  font-weight: 850;
+}
+
+.correct-card .feedback-title { color: #34C759; }
+.wrong-card .feedback-title { color: #F2545B; }
+.pending-card .feedback-title { color: #FF9500; }
+
+.feedback-time {
+  font-size: 22rpx;
+  color: #95A6BD;
+}
+
+/* ─── 简答题自判 ─── */
+.reference-answer {
+  margin-top: 20rpx;
+  padding: 18rpx;
+  border-radius: 16rpx;
+  background: #F4F7FC;
+  border: 1rpx solid #E6EAF2;
+}
+
+.ref-label {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #5E718D;
+  margin-bottom: 8rpx;
+}
+
+.ref-text {
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #4A5B72;
+  white-space: pre-wrap;
+}
+
+.self-judge-btns {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.judge-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72rpx;
+  border-radius: 18rpx;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.wrong-btn {
+  border: 1.5rpx solid #F2545B;
+  color: #F2545B;
+  background: rgba(242,84,91,0.04);
+}
+
+.correct-btn {
+  border: none;
+  color: #ffffff;
+  background: #34C759;
+  box-shadow: 0 6rpx 20rpx rgba(52,199,89,0.22);
+}
+
+/* ─── 解析区域 ─── */
+.explanation-card {
+  padding: 22rpx 24rpx;
+  border-radius: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.expl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.expl-title {
+  font-size: 26rpx;
+  font-weight: 800;
+  color: #1E2A3A;
+}
+
+.expl-toggle {
+  font-size: 22rpx;
+  color: #4A8FEA;
+  font-weight: 600;
+}
+
+.expl-content {
+  margin-top: 14rpx;
+  padding-top: 14rpx;
+  border-top: 1rpx solid #E6EAF2;
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: #4A5B72;
+  white-space: pre-wrap;
+}
+
+/* ─── 正确答案展示 ─── */
+.correct-answer-card {
+  padding: 22rpx 24rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-bottom: 16rpx;
+  border-color: rgba(74,143,234,0.15);
+}
+
+.ca-label {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #5E718D;
+}
+
+.ca-value {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #4A8FEA;
+}
+
+/* ─── 下一题按钮 ─── */
+.next-area {
+  margin-top: 28rpx;
+  text-align: center;
+}
+
+.next-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  min-height: 88rpx;
+  border-radius: 24rpx;
+  border: none;
+  background: #4A8FEA;
+  box-shadow: 0 8rpx 24rpx rgba(74,143,234,0.2);
+}
+
+.next-label {
+  font-size: 30rpx;
+  font-weight: 850;
+  color: #ffffff;
+}
+
+.next-arrow {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.next-hint {
+  margin-top: 14rpx;
+  font-size: 22rpx;
+  color: #95A6BD;
+}
+
+/* ─── 斩题弹窗 ─── */
+.slash-overlay {
+  position: fixed;
+  z-index: 100;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.45);
+  -webkit-backdrop-filter: blur(12rpx);
+  backdrop-filter: blur(12rpx);
+  animation: fadeIn 250ms ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.slash-modal {
+  width: 600rpx;
+  padding: 44rpx 36rpx 36rpx;
+  border-radius: 36rpx;
+  text-align: center;
+  border-color: rgba(74,143,234,0.3);
+  box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.18);
+  animation: scaleIn 300ms cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.slash-icon {
+  font-size: 64rpx;
+  margin-bottom: 16rpx;
+}
+
+.slash-title {
+  font-size: 40rpx;
+  font-weight: 850;
+  color: #4A8FEA;
+  margin-bottom: 12rpx;
+}
+
+.slash-body {
+  font-size: 26rpx;
+  line-height: 1.55;
+  color: #4A5B72;
+  margin-bottom: 8rpx;
+}
+
+.slash-rate {
+  font-weight: 850;
+  color: #34C759;
+  font-size: 30rpx;
+}
+
+.slash-desc {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: #95A6BD;
+}
+
+.slash-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 32rpx;
+}
+
+.slash-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80rpx;
+  border-radius: 20rpx;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.slash-btn.cancel {
+  border: 1.5rpx solid #E6EAF2;
+  color: #5E718D;
+  background: #F4F7FC;
+}
+
+.slash-btn.confirm {
+  border: none;
+  color: #ffffff;
+  background: linear-gradient(135deg, #4A8FEA, #8FC4FB);
+  box-shadow: 0 8rpx 24rpx rgba(74,143,234,0.28);
+}
+
+/* ─── 斩题浮动按钮 ─── */
+.slash-float-btn {
+  position: fixed;
+  z-index: 90;
+  right: 56rpx;
+  bottom: 160rpx;
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0);
+  transition: all 300ms cubic-bezier(0.34,1.56,0.64,1);
+
+  /* 毛玻璃质感 */
+  background: rgba(249, 115, 22, 0.82);
+  border: 1.5rpx solid rgba(255, 255, 255, 0.3);
+  -webkit-backdrop-filter: blur(40rpx);
+  backdrop-filter: blur(40rpx);
+  box-shadow: 0 12rpx 36rpx rgba(249, 115, 22, 0.22), 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+.slash-float-btn.active {
+  opacity: 1;
+  transform: scale(1);
+}
+.slash-float-text {
+  font-size: 52rpx;
+  font-weight: 900;
+  color: #ffffff;
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
+}
+/* 脉冲光环 */
+.slash-float-ring {
+  position: absolute;
+  inset: -6rpx;
+  border-radius: 50%;
+  border: 2rpx solid rgba(249, 115, 22, 0.35);
+  animation: slashPulse 1.8s ease-out infinite;
+}
+@keyframes slashPulse {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+/* 深色模式 */
+@media (prefers-color-scheme: dark) {
+  .slash-float-btn {
+    background: rgba(249, 115, 22, 0.7);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 12rpx 36rpx rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ─── 背题模式操作区 ─── */
+.memorize-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 36rpx;
+}
+
+.memorize-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-height: 88rpx;
+  border-radius: 24rpx;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.forget-btn {
+  border: 1.5rpx solid #E6EAF2;
+  background: #FFFFFF;
+  color: #5E718D;
+}
+
+.remember-btn {
+  border: none;
+  background: linear-gradient(135deg, #34C759, #30B350);
+  box-shadow: 0 8rpx 24rpx rgba(52,199,89,0.28);
+  color: #ffffff;
+}
+
+.memorize-btn-icon {
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.memorize-btn-label {
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+/* ─── 安全区 ─── */
+.safe-bottom {
+  height: calc(env(safe-area-inset-bottom) + 60rpx);
+}
+
+/* ─── 按压态 ─── */
+.pressing {
+  opacity: 0.78;
+  transform: scale(0.985);
+}
+
+/* ─── 深色模式（由 .theme-dark 类驱动） ─── */
+.theme-dark .top-bar {
+    background: rgba(15,23,42,0.9);
+    border-bottom-color: rgba(255,255,255,0.06);
+  }
+
+  .theme-dark .back-btn { background: rgba(255,255,255,0.06); }
+  .theme-dark .progress-bar-wrap { background: rgba(255,255,255,0.08); }
+
+  .theme-dark .stem-text,
+  .theme-dark .expl-title { color: #FFFFFF; font-weight: 900; }
+
+  .theme-dark .option-text,
+  .theme-dark .ref-text,
+  .theme-dark .answer-input,
+  .theme-dark .answer-textarea { color: #1A2538; }
+
+  .theme-dark .type-badge { background: rgba(0,122,255,0.12); color: #5AC8FA; }
+
+  .theme-dark .glass-card,
+  .theme-dark .glass-input {
+    background: rgba(30,41,59,0.6);
+    border-color: rgba(255,255,255,0.08);
+  }
+
+  .theme-dark .option-item { border-color: rgba(255,255,255,0.08); }
+  .theme-dark .option-item.selected {
+    border-color: rgba(0,122,255,0.3);
+    background: rgba(0,122,255,0.08);
+  }
+
+  .theme-dark .option-key { background: rgba(255,255,255,0.06); color: #1A2538; }
+
+  .theme-dark .submit-btn { background: #007AFF; }
+
+  .theme-dark .correct-card { background: rgba(52,199,89,0.1); border-color: rgba(52,199,89,0.2); }
+  .theme-dark .wrong-card { background: rgba(255,59,48,0.08); border-color: rgba(255,59,48,0.2); }
+  .theme-dark .pending-card { background: rgba(0,122,255,0.06); border-color: rgba(0,122,255,0.15); }
+
+  .theme-dark .reference-answer { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.06); }
+
+  .theme-dark .expl-content,
+  .theme-dark .slash-body { color: #1A2538; }
+
+  .theme-dark .expl-content { border-top-color: rgba(255,255,255,0.06); }
+
+  .theme-dark .slash-btn.cancel {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.1);
+    color: #1A2538;
+  }
+
+  .theme-dark .progress-text,
+  .theme-dark .feedback-time,
+  .theme-dark .next-hint,
+  .theme-dark .ref-label,
+  .theme-dark .slash-desc { color: #1A2538; }
+
+  .theme-dark .add-wrong-btn {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .theme-dark .in-wrong-book {
+    background: rgba(52, 199, 89, 0.08);
+    border-color: rgba(52, 199, 89, 0.2);
+  }
+
+  .theme-dark .forget-btn {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.1);
+    color: #1A2538;
+  }

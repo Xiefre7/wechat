@@ -1,0 +1,427 @@
+/* 题库选择页 — iOS26 液态玻璃风格 */
+page {
+  width: 100%;
+  min-height: 100vh;
+  background: #F4F7FC;
+  color: #1E2A3A;
+  overflow-x: hidden;
+}
+
+button {
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  line-height: normal;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+}
+
+button::after { border: 0; }
+
+/* ─── 环境光 ─── */
+.ambient-strip {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 260rpx;
+  pointer-events: none;
+  background: radial-gradient(ellipse 240rpx 160rpx at 50% 0%, rgba(74,143,234,0.05), transparent 70%);
+  filter: blur(12rpx);
+}
+
+.bank-list-page {
+  position: relative;
+  min-height: 100vh;
+  padding: calc(env(safe-area-inset-top) + 8rpx) 0 0;
+  overflow: hidden;
+}
+
+.page-scroll {
+  position: relative;
+  z-index: 2;
+  height: calc(100vh - env(safe-area-inset-top) - 8rpx);
+  padding: 0 24rpx;
+}
+
+/* ─── 页面头 ─── */
+.page-header {
+  padding: 20rpx 4rpx 8rpx;
+}
+
+.page-title {
+  font-size: 44rpx;
+  line-height: 1.18;
+  font-weight: 850;
+  color: #1A2538;
+}
+
+.page-desc {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  line-height: 1.45;
+  color: #5E718D;
+}
+
+/* ─── Tab ─── */
+.tab-bar {
+  display: flex;
+  gap: 12rpx;
+  margin: 20rpx 0 18rpx;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  border-radius: 20rpx;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #5E718D;
+  background: #FFFFFF;
+  border: 1rpx solid #E6EAF2;
+  transition: all 180ms ease;
+}
+
+.tab-item.active {
+  color: #4A8FEA;
+  background: #EDF4FE;
+  border-color: #A8CDF8;
+}
+
+/* ─── 玻璃基类 ─── */
+.glass-card {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1rpx solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.42);
+  -webkit-backdrop-filter: blur(34rpx);
+  backdrop-filter: blur(34rpx);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.78),
+    0 14rpx 48rpx rgba(74, 143, 234, 0.08);
+}
+
+/* ─── 题库卡片 ─── */
+.bank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.bank-card {
+  border-radius: 28rpx;
+  transition: all 200ms ease;
+}
+
+.bank-card.expanded {
+  border-color: rgba(74,143,234,0.2);
+  box-shadow: 0 8rpx 32rpx rgba(74,143,234,0.08);
+}
+
+.bank-header {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx;
+  min-height: 100rpx;
+}
+
+.bank-icon-wrap {
+  flex-shrink: 0;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bank-icon-text {
+  font-size: 30rpx;
+  font-weight: 850;
+}
+
+.bank-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bank-name {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #1A2538;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bank-meta {
+  margin-top: 6rpx;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  font-size: 22rpx;
+  color: #95A6BD;
+}
+
+.bank-tag {
+  margin-left: 8rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #FF9500;
+  background: rgba(255,149,0,0.08);
+}
+
+.bank-right {
+  display: flex;
+  align-items: center;
+  gap: 2rpx;
+  flex-shrink: 0;
+}
+
+.bank-progress {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  margin-left: 12rpx;
+}
+
+.progress-bar {
+  width: 64rpx;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background: #E6EAF2;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3rpx;
+  background: linear-gradient(90deg, #4A8FEA, #8FC4FB);
+  transition: width 300ms ease;
+}
+
+.progress-text {
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #4A8FEA;
+}
+
+.bank-arrow {
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22rpx;
+  background: #F0F4FA;
+  transition: transform 200ms ease;
+  flex-shrink: 0;
+}
+
+.bank-arrow.rotated {
+  transform: rotate(90deg);
+}
+
+.arrow-icon {
+  width: 24rpx;
+  height: 24rpx;
+}
+
+/* ─── 分享按钮 ─── */
+.share-btn {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  opacity: 0.5;
+}
+
+.share-icon {
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.share-text {
+  font-size: 20rpx;
+  color: #5E718D;
+  font-weight: 500;
+}
+
+/* ─── 模式切换（自导入题库） ─── */
+.mode-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: 0 24rpx 16rpx;
+  padding: 6rpx;
+  border-radius: 20rpx;
+  background: #F0F4FA;
+}
+
+.mode-option {
+  flex: 1;
+  text-align: center;
+  padding: 14rpx 0;
+  border-radius: 16rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #5E718D;
+  transition: all 180ms ease;
+}
+
+.mode-option.active {
+  color: #ffffff;
+  background: #4A8FEA;
+  box-shadow: 0 4rpx 12rpx rgba(74,143,234,0.22);
+}
+
+/* ─── 知识点列表 ─── */
+.kp-list {
+  padding: 0 24rpx 20rpx;
+}
+
+.kp-divider {
+  height: 1rpx;
+  margin-bottom: 16rpx;
+  background: #E6EAF2;
+}
+
+.kp-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 16rpx;
+  border-radius: 16rpx;
+  background: #F4F7FC;
+  margin-top: 8rpx;
+  transition: background 150ms ease;
+}
+
+.kp-item:active {
+  background: #EDF4FE;
+}
+
+.kp-name {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #1E2A3A;
+}
+
+.kp-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 5rpx;
+  background: #4A8FEA;
+}
+
+.kp-right {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.kp-count {
+  font-size: 22rpx;
+  color: #95A6BD;
+}
+
+.kp-arrow {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #4A8FEA;
+}
+
+/* ─── 空状态 ─── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 32rpx;
+}
+
+.empty-icon {
+  font-size: 64rpx;
+}
+
+.empty-text {
+  margin-top: 16rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #95A6BD;
+}
+
+.empty-desc {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #D5DDE8;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.import-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-top: 32rpx;
+  padding: 0 48rpx;
+  border-radius: 24rpx;
+  border: none;
+  background: #4A8FEA;
+  box-shadow: 0 8rpx 24rpx rgba(74,143,234,0.2);
+}
+
+.import-btn-label {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+/* ─── 安全区 ─── */
+.safe-bottom {
+  height: calc(env(safe-area-inset-bottom) + 48rpx);
+}
+
+.pressing {
+  opacity: 0.78;
+  transform: scale(0.985);
+}
+
+/* ─── 深色模式（由 .theme-dark 类驱动） ─── */
+.theme-dark .page-title,
+  .theme-dark .bank-name,
+  .theme-dark .kp-name { color: #FFFFFF; font-weight: 900; }
+
+  .theme-dark .page-desc,
+  .theme-dark .bank-meta,
+  .theme-dark .kp-count { color: #1A2538; }
+
+  .theme-dark .glass-card,
+  .theme-dark .tab-item {
+    background: rgba(30,41,59,0.6);
+    border-color: rgba(255,255,255,0.08);
+  }
+
+  .theme-dark .tab-item.active {
+    background: rgba(0,122,255,0.12);
+    border-color: rgba(0,122,255,0.25);
+    color: #5AC8FA;
+  }
+
+  .theme-dark .kp-item { background: rgba(255,255,255,0.04); }
+  .theme-dark .kp-item:active { background: rgba(0,122,255,0.08); }
+
+  .theme-dark .kp-divider { background: rgba(255,255,255,0.06); }
+  .theme-dark .bank-arrow { background: rgba(255,255,255,0.06); }
+  .theme-dark .progress-bar { background: rgba(255,255,255,0.1); }

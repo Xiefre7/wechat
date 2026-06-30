@@ -1,0 +1,12 @@
+var fs=require("fs");
+var backup=fs.readFileSync("cloudfunctions/quickstartFunctions/index.js.bak");
+var content=backup.toString("utf8");
+content=content.replace(/^\uFEFF/,"");
+var lines=content.split("\n");
+var l=lines[171];
+console.log("Line 172: "+JSON.stringify(l));
+var errIdx=l.indexOf("errMsg:");
+console.log("errMsg at: "+errIdx);
+var rest=l.substring(errIdx+7);
+console.log("Rest: "+JSON.stringify(rest));
+console.log("Rest[0] charCode: "+rest.charCodeAt(0));

@@ -1,0 +1,1 @@
+﻿var fs=require('fs');var c=fs.readFileSync('cloudfunctions/quickstartFunctions/index.js','utf8').replace(/^\uFEFF/,'');var total=0;var even=true;for(var ci=0;ci<c.length;ci++){if(c.charCodeAt(ci)===96){total++;even=!even;}}console.log('Total backticks: '+total+', balanced: '+even);

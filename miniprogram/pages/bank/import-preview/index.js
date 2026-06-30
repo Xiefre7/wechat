@@ -30,15 +30,36 @@ Page({
     var effectiveTheme = app.globalData.effectiveTheme || 'light';
     this.setData({ isDark: effectiveTheme === 'dark' });
 
-    const data = wx.getStorageSync('importPreviewData');
+    console.log('[import-preview onLoad] Page loaded');
+
+    // 读取导入数据（加 try/catch 防止 Storage 读取失败）
+    var data;
+    try {
+      data = wx.getStorageSync('importPreviewData');
+    } catch (e) {
+      console.error('[import-preview onLoad] Failed to read storage:', e);
+      wx.showToast({ title: '数据读取失败，请返回重试', icon: 'none' });
+      setTimeout(function () { wx.navigateBack(); }, 1500);
+      return;
+    }
+
+    console.log('[import-preview onLoad] Storage data:', {
+      hasData: !!data,
+      source: data ? data.source : 'N/A',
+      bankName: data ? data.bankName : 'N/A',
+      questionCount: data && data.questions ? data.questions.length : 0,
+    });
+
     if (!data) {
+      console.warn('[import-preview onLoad] No importPreviewData in storage');
       wx.showToast({ title: '未找到待导入的题目', icon: 'none' });
-      setTimeout(() => wx.navigateBack(), 1000);
+      setTimeout(function () { wx.navigateBack(); }, 1000);
       return;
     }
 
     // Excel 导入的特殊处理：题目在服务端解析，预览页展示导入确认信息
     if (data.source === 'excel') {
+      console.log('[import-preview onLoad] Excel import mode');
       this.setData({
         bankName: data.bankName || '未命名题库',
         questions: [],
@@ -50,26 +71,53 @@ Page({
     }
 
     if (!data.questions || data.questions.length === 0) {
+      console.warn('[import-preview onLoad] Empty questions array');
       wx.showToast({ title: '未找到待导入的题目', icon: 'none' });
-      setTimeout(() => wx.navigateBack(), 1000);
+      setTimeout(function () { wx.navigateBack(); }, 1000);
       return;
     }
 
-    const questions = data.questions.map((q) => ({
-      ...q,
-      _editing: false,
-      _typeLabel: TYPE_LABELS[q.type] || '未知',
-    }));
+    try {
+      var questions = data.questions.map(function (q, idx) {
+        // 跳过 null/undefined 条目
+        if (!q) {
+          console.warn('[import-preview onLoad] Null question at index', idx);
+          return null;
+        }
+        return {
+          type: q.type || 'single_choice',
+          stem: q.stem || '',
+          options: q.options || [],
+          answer: q.answer || '',
+          explanation: q.explanation || '',
+          _editing: false,
+          _typeLabel: TYPE_LABELS[q.type] || '未知',
+        };
+      }).filter(Boolean); // 移除 null 条目
 
-    const bankName = data.bankName || '未命名题库';
+      if (questions.length === 0) {
+        console.warn('[import-preview onLoad] All questions filtered out as null');
+        wx.showToast({ title: '题目数据异常，请返回重试', icon: 'none' });
+        setTimeout(function () { wx.navigateBack(); }, 1000);
+        return;
+      }
 
-    this.setData({
-      bankName,
-      questions,
-      typeDistribution: this.countTypes(questions),
-      source: data.source,
-      filePath: data.filePath,
-    });
+      var bankName = data.bankName || '未命名题库';
+
+      console.log('[import-preview onLoad] Processed', questions.length, 'questions');
+
+      this.setData({
+        bankName: bankName,
+        questions: questions,
+        typeDistribution: this.countTypes(questions),
+        source: data.source,
+        filePath: data.filePath,
+      });
+    } catch (e) {
+      console.error('[import-preview onLoad] Error processing questions:', e);
+      wx.showToast({ title: '题目数据处理失败，请返回重试', icon: 'none' });
+      setTimeout(function () { wx.navigateBack(); }, 1000);
+    }
   },
 
   onShow() {

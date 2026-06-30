@@ -1,0 +1,1112 @@
+﻿const cloud = require("wx-server-sdk");
+cloud.init({
+  env: cloud.DYNAMIC_CURRENT_ENV,
+});
+
+const db = cloud.database();
+// 鑾峰彇openid
+const getOpenId = async () => {
+  // 鑾峰彇鍩虹淇℃伅
+  const wxContext = cloud.getWXContext();
+  return {
+    openid: wxContext.OPENID,
+    appid: wxContext.APPID,
+    unionid: wxContext.UNIONID,
+  };
+};
+
+// 鑾峰彇灏忕▼搴忎簩缁寸爜
+const getMiniProgramCode = async () => {
+  // 鑾峰彇灏忕▼搴忎簩缁寸爜鐨刡uffer
+  const resp = await cloud.openapi.wxacode.get({
+    path: "pages/index/index",
+  });
+  const { buffer } = resp;
+  // 灏嗗浘鐗囦笂浼犱簯瀛樺偍绌洪棿
+  const upload = await cloud.uploadFile({
+    cloudPath: "code.png",
+    fileContent: buffer,
+  });
+  return upload.fileID;
+};
+
+// 鍒涘缓闆嗗悎
+const createCollection = async () => {
+  try {
+    // 鍒涘缓闆嗗悎
+    await db.createCollection("sales");
+    await db.collection("sales").add({
+      // data 瀛楁琛ㄧず闇€鏂板鐨?JSON 鏁版嵁
+      data: {
+        region: "鍗庝笢",
+        city: "涓婃捣",
+        sales: 11,
+      },
+    });
+    await db.collection("sales").add({
+      // data 瀛楁琛ㄧず闇€鏂板鐨?JSON 鏁版嵁
+      data: {
+        region: "鍗庝笢",
+        city: "鍗椾含",
+        sales: 11,
+      },
+    });
+    await db.collection("sales").add({
+      // data 瀛楁琛ㄧず闇€鏂板鐨?JSON 鏁版嵁
+      data: {
+        region: "鍗庡崡",
+        city: "骞垮窞",
+        sales: 22,
+      },
+    });
+    await db.collection("sales").add({
+      // data 瀛楁琛ㄧず闇€鏂板鐨?JSON 鏁版嵁
+      data: {
+        region: "鍗庡崡",
+        city: "娣卞湷",
+        sales: 22,
+      },
+    });
+    return {
+      success: true,
+    };
+  } catch (e) {
+    // 杩欓噷catch鍒扮殑鏄collection宸茬粡瀛樺湪锛屼粠涓氬姟閫昏緫涓婃潵璇存槸杩愯鎴愬姛鐨勶紝鎵€浠atch杩斿洖success缁欏墠绔紝閬垮厤宸ュ叿鍦ㄥ墠绔姏鍑哄紓甯?
+    return {
+      success: true,
+      data: "create collection success",
+    };
+  }
+};
+
+// 鏌ヨ鏁版嵁
+const selectRecord = async () => {
+  // 杩斿洖鏁版嵁搴撴煡璇㈢粨鏋?
+  return await db.collection("sales").get();
+};
+
+// 鏇存柊鏁版嵁
+const updateRecord = async (event) => {
+  try {
+    // 閬嶅巻淇敼鏁版嵁搴撲俊鎭?
+    for (let i = 0; i < event.data.length; i++) {
+      await db
+        .collection("sales")
+        .where({
+          _id: event.data[i]._id,
+        })
+        .update({
+          data: {
+            sales: event.data[i].sales,
+          },
+        });
+    }
+    return {
+      success: true,
+      data: event.data,
+    };
+  } catch (e) {
+    return {
+      success: false,
+      errMsg: e,
+    };
+  }
+};
+
+// 鏂板鏁版嵁
+const insertRecord = async (event) => {
+  try {
+    const insertRecord = event.data;
+    // 鎻掑叆鏁版嵁
+    await db.collection("sales").add({
+      data: {
+        region: insertRecord.region,
+        city: insertRecord.city,
+        sales: Number(insertRecord.sales),
+      },
+    });
+    return {
+      success: true,
+      data: event.data,
+    };
+  } catch (e) {
+    return {
+      success: false,
+      errMsg: e,
+    };
+  }
+};
+
+// 鍒犻櫎鏁版嵁
+const deleteRecord = async (event) => {
+  try {
+    await db
+      .collection("sales")
+      .where({
+        _id: event.data._id,
+      })
+      .remove();
+    return {
+      success: true,
+    };
+  } catch (e) {
+    return {
+      success: false,
+      errMsg: e,
+    };
+  }
+};
+
+// 鈹€鈹€鈹€ 棰樺簱瀵煎叆 鈹€鈹€鈹€
+
+/**
+ * 瀵煎叆棰樺簱锛堟枃鏈?鎵嬪姩褰曞叆/OCR缁撴灉锛?
+ * 鍒涘缓 bank + 鎵归噺鍐欏叆 questions
+ */
+const importBank = async (event) => {
+  const { bankName, bankType, questions, source } = event;
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+
+  if (!bankName || !questions || !Array.isArray(questions) || questions.length === 0) {
+    return { success: false, errMsg: '缂哄皯棰樺簱鍚嶇О鎴栭鐩暟鎹? };
+  }
+
+  if (questions.length > 500) {
+    return { success: false, errMsg: '鍗曟鏈€澶氬鍏?500 棰? };
+  }
+
+  try {
+    // 1. 鍒涘缓棰樺簱
+    const bankRes = await db.collection('banks').add({
+      data: {
+        name: bankName,
+        type: 'custom',
+        category: '',
+        subCategory: '',
+        description: `鐢ㄦ埛鑷鍏ラ搴擄紙${source}鏂瑰紡瀵煎叆锛塦,
+        coverImage: '',
+        ownerId: openid,
+        isPublic: false,
+        questionCount: questions.length,
+        knowledgePointCount: 0,
+        tags: ['鑷鍏?],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    });
+
+    const bankId = bankRes._id;
+
+    // 2. 鎵归噺鍐欏叆棰樼洰锛堝垎鎵?100 鏉?鎵癸紝寰俊浜戞暟鎹簱鍗曟闄愬埗锛?
+    const BATCH_SIZE = 100;
+    let insertedCount = 0;
+
+    for (let i = 0; i < questions.length; i += BATCH_SIZE) {
+      const batch = questions.slice(i, i + BATCH_SIZE).map((q) => ({
+        bankId,
+        knowledgePointId: '', // 鑷鍏ユ棤鐭ヨ瘑鐐?
+        type: q.type || 'single_choice',
+        difficulty: 2,
+        content: {
+          stem: q.stem || '',
+          options: q.options || [],
+          answer: q.answer || '',
+          explanation: q.explanation || '',
+        },
+        tags: ['鑷鍏?],
+        status: 'active',
+        createdAt: new Date().toISOString(),
+      }));
+
+      // 閫愭潯娣诲姞锛堜簯鏁版嵁搴撴壒閲廰dd闄愬埗锛?
+      for (const item of batch) {
+        await db.collection('questions').add({ data: item });
+        insertedCount++;
+      }
+    }
+
+    // 3. 鏇存柊棰樺簱棰樼洰璁℃暟
+    await db
+      .collection('banks')
+      .doc(bankId)
+      .update({
+        data: {
+          questionCount: insertedCount,
+          updatedAt: new Date().toISOString(),
+        },
+      });
+
+    return {
+      success: true,
+      bankId,
+      questionCount: insertedCount,
+    };
+  } catch (err) {
+    console.error('瀵煎叆棰樺簱澶辫触:', err);
+    return {
+      success: false,
+      errMsg: '瀵煎叆澶辫触: ' + (err.message || '鏁版嵁搴撳啓鍏ュ紓甯?),
+    };
+  }
+};
+
+/**
+ * Excel 鏂囦欢瀵煎叆
+ * 浜戝嚱鏁扮浣跨敤 SheetJS 瑙ｆ瀽 xlsx 鍚庤皟鐢?importBank
+ */
+const importBankByExcel = async (event) => {
+  const { fileID, bankName } = event;
+
+  if (!fileID || !bankName) {
+    return { success: false, errMsg: '缂哄皯鏂囦欢鎴栭搴撳悕绉? };
+  }
+
+  try {
+    // 涓嬭浇浜戝瓨鍌ㄦ枃浠?
+    const downloadRes = await cloud.downloadFile({ fileID });
+    const fileBuffer = downloadRes.fileContent;
+
+    // 鍔ㄦ€佸姞杞?SheetJS锛堥渶鍦?package.json 涓坊鍔犱緷璧栵級
+    let XLSX;
+    try {
+      XLSX = require('xlsx');
+    } catch (e) {
+      return {
+        success: false,
+        errMsg: 'Excel瑙ｆ瀽缁勪欢鏈氨缁紝璇蜂娇鐢ㄦ枃鏈矘璐存柟寮忓鍏ャ€傞敊璇? ' + e.message,
+      };
+    }
+
+    // 瑙ｆ瀽 Excel
+    const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+    if (!rawData || rawData.length < 2) {
+      return { success: false, errMsg: 'Excel 鏂囦欢涓虹┖鎴栨牸寮忎笉姝ｇ‘' };
+    }
+
+    // 鎸夋ā鏉胯В鏋愶細绗?琛屼负琛ㄥご
+    // 妯℃澘鍒楋細棰樺瀷 | 棰樺共 | 閫夐」A | 閫夐」B | 閫夐」C | 閫夐」D | 閫夐」E | 閫夐」F | 绛旀 | 瑙ｆ瀽
+    const header = rawData[0];
+    const rows = rawData.slice(1).filter((row) => row.some((cell) => cell != null && cell !== ''));
+
+    if (rows.length > 500) {
+      return { success: false, errMsg: `Excel 鍖呭惈 ${rows.length} 棰橈紝鍗曟鏈€澶氬鍏?500 棰榒 };
+    }
+
+    const typeMap = {
+      鍗曢€夐: 'single_choice',
+      澶氶€夐: 'multi_choice',
+      鍒ゆ柇棰? 'true_false',
+      濉┖棰? 'fill_blank',
+      绠€绛旈: 'short_answer',
+    };
+
+    const questions = rows
+      .map((row) => {
+        const rawType = (row[0] || '鍗曢€夐').toString().trim();
+        const type = typeMap[rawType] || 'single_choice';
+        const stem = (row[1] || '').toString().trim();
+        const answer = (row[8] || '').toString().trim();
+        const explanation = (row[9] || '').toString().trim();
+
+        // 鎻愬彇閫夐」
+        const optionKeys = ['A', 'B', 'C', 'D', 'E', 'F'];
+        const options = [];
+        for (let i = 0; i < 6; i++) {
+          const text = row[2 + i];
+          if (text != null && text.toString().trim() !== '') {
+            options.push({ key: optionKeys[i], text: text.toString().trim() });
+          }
+        }
+
+        if (!stem) return null;
+
+        return { type, stem, options, answer, explanation };
+      })
+      .filter(Boolean);
+
+    if (questions.length === 0) {
+      return { success: false, errMsg: '鏈兘浠?Excel 涓В鏋愬埌鏈夋晥棰樼洰' };
+    }
+
+    // 澶嶇敤 importBank 閫昏緫
+    return await importBank({
+      bankName,
+      bankType: 'custom',
+      questions,
+      source: 'excel',
+    });
+  } catch (err) {
+    console.error('Excel瀵煎叆澶辫触:', err);
+    return {
+      success: false,
+      errMsg: 'Excel 鏂囦欢瑙ｆ瀽澶辫触: ' + (err.message || '鏈煡閿欒'),
+    };
+  }
+};
+
+/**
+ * Word 鏂囨。瑙ｆ瀽锛堜粎鎻愬彇鏂囨湰+缁撴瀯鍖栵紝涓嶅叆搴擄級
+ * 鐢ㄤ簬棰勮椤靛睍绀鸿В鏋愮粨鏋?
+ */
+const parseWordDocument = async (event) => {
+  const { fileID } = event;
+
+  if (!fileID) {
+    return { success: false, errMsg: '缂哄皯 Word 鏂囦欢' };
+  }
+
+  try {
+    // 涓嬭浇浜戝瓨鍌ㄦ枃浠?
+    const downloadRes = await cloud.downloadFile({ fileID });
+    const fileBuffer = downloadRes.fileContent;
+
+    // 鍔ㄦ€佸姞杞?mammoth
+    let mammoth;
+    try {
+      mammoth = require('mammoth');
+    } catch (e) {
+      return {
+        success: false,
+        errMsg: 'Word瑙ｆ瀽缁勪欢鏈氨缁紝璇疯繍琛?npm install 瀹夎 mammoth 渚濊禆銆傞敊璇? ' + e.message,
+      };
+    }
+
+    // 鎻愬彇绾枃鏈?
+    const extractResult = await mammoth.extractRawText({ buffer: fileBuffer });
+    const rawText = extractResult.value;
+
+    if (!rawText || !rawText.trim()) {
+      return { success: false, errMsg: 'Word 鏂囨。涓湭鎻愬彇鍒版枃瀛楀唴瀹癸紝璇锋鏌ユ枃浠? };
+    }
+
+    // 鐢ㄨ鍒欏紩鎿庣粨鏋勫寲锛堝鐢?OCR 鐨勮В鏋愰€昏緫锛?
+    const questions = parseOcrText(rawText);
+
+    if (questions.length === 0) {
+      return {
+        success: false,
+        errMsg: '鏈兘浠庢枃妗ｄ腑璇嗗埆鍒伴鐩€傝纭繚鏂囨。鏍煎紡涓猴細棰樺彿. 棰樺共 + 閫夐」(A/B/C/D) + 绛旀',
+        rawText: rawText.substring(0, 200),
+      };
+    }
+
+    // 鎴柇杩囬暱鏂囨湰
+    const warnings = [];
+    if (rawText.length > 50000) {
+      warnings.push('鏂囨。鍐呭杈冮暱锛屼粎瑙ｆ瀽浜嗗墠50000瀛楃');
+    }
+
+    return {
+      success: true,
+      rawText: rawText.substring(0, 500),
+      questions,
+      questionCount: questions.length,
+      warnings,
+    };
+  } catch (err) {
+    console.error('Word瑙ｆ瀽澶辫触:', err);
+    return {
+      success: false,
+      errMsg: 'Word 鏂囨。瑙ｆ瀽澶辫触: ' + (err.message || '鏈煡閿欒'),
+    };
+  }
+};
+
+/**
+ * Word 鏂囨。鐩存帴瀵煎叆锛堣В鏋?鍏ュ簱锛?
+ */
+const importBankByWord = async (event) => {
+  const { fileID, bankName } = event;
+
+  if (!fileID || !bankName) {
+    return { success: false, errMsg: '缂哄皯鏂囦欢鎴栭搴撳悕绉? };
+  }
+
+  // 鍏堣В鏋?
+  const parseResult = await parseWordDocument({ fileID });
+  if (!parseResult.success) {
+    return parseResult;
+  }
+
+  if (parseResult.questions.length > 500) {
+    return { success: false, errMsg: `Word 鏂囨。鍖呭惈 ${parseResult.questions.length} 棰橈紝鍗曟鏈€澶氬鍏?500 棰榒 };
+  }
+
+  // 澶嶇敤 importBank 閫昏緫鍏ュ簱
+  return await importBank({
+    bankName,
+    bankType: 'custom',
+    questions: parseResult.questions,
+    source: 'word',
+  });
+};
+
+/**
+ * 鐢熸垚涓嬭浇鐢?Excel 妯℃澘
+ */
+const downloadImportTemplate = async () => {
+  try {
+    // 妯℃澘鍐呭锛氱函鏂囨湰 CSV 鏍煎紡浣滀负绠€鏄撴ā鏉?
+    const csvHeader = '棰樺瀷,棰樺共,閫夐」A,閫夐」B,閫夐」C,閫夐」D,绛旀,瑙ｆ瀽';
+    const csvExample =
+      '鍗曢€夐,璁鹃泦鍚圓={1,2,3}, B={2,3,4}, 鍒橝鈭〣=?,{1,2,3,4},{2,3},{1,4},{1},B,浜ら泦鏄悓鏃跺睘浜庝袱涓泦鍚堢殑鍏冪礌';
+
+    const csvContent = csvHeader + '\n' + csvExample;
+
+    const uploadRes = await cloud.uploadFile({
+      cloudPath: `templates/import_template_${Date.now()}.csv`,
+      fileContent: Buffer.from('锘? + csvContent, 'utf-8'), // BOM for Excel UTF-8
+    });
+
+    return {
+      success: true,
+      fileID: uploadRes.fileID,
+    };
+  } catch (err) {
+    console.error('鐢熸垚妯℃澘澶辫触:', err);
+    return { success: false, errMsg: '妯℃澘鐢熸垚澶辫触' };
+  }
+};
+
+/**
+ * OCR 鏂囧瓧璇嗗埆
+ * 浣跨敤寰俊浜戝紑鍙?OCR 鎵╁睍
+ */
+const parseOCR = async (event) => {
+  const { fileID } = event;
+
+  if (!fileID) {
+    return { success: false, errMsg: '缂哄皯鍥剧墖鏂囦欢' };
+  }
+
+  try {
+    // 浣跨敤浜戣皟鐢?OCR 鎺ュ彛锛堟棤闇€瀹夎鎵╁睍锛岄渶寮€鍚簯璋冪敤鏉冮檺锛?    let ocrResult;
+    try {
+      ocrResult = await cloud.openapi.ocr.printedText({
+        imgUrl: fileID,
+      });
+    } catch (e) {
+      return {
+        success: false,
+        errMsg: 'OCR 璇嗗埆澶辫触銆傝纭浜戝嚱鏁板凡寮€閫氫簯璋冪敤鏉冮檺锛堜簯寮€鍙戞帶鍒跺彴 鈫?浜戝嚱鏁?鈫?quickstartFunctions 鈫?瑙﹀彂閰嶇疆 鈫?寮€鍚簯璋冪敤锛夈€傞敊璇? ' + e.message,
+      };
+    }
+
+    if (!ocrResult || !ocrResult.items || ocrResult.items.length === 0) {
+      return { success: false, errMsg: 'OCR 鏈瘑鍒埌鏂囧瓧鍐呭锛岃妫€鏌ュ浘鐗囪川閲? };
+    }
+
+    // 鎷兼帴璇嗗埆缁撴灉
+    const rawText = ocrResult.items.map(function(item) { return item.text; }).join('\n');
+
+    // 鐢ㄨ鍒欏紩鎿庣粨鏋勫寲
+    const questions = parseOcrText(rawText);
+
+    return {
+      success: true,
+      rawText: rawText.substring(0, 200),
+      questions,
+      questionCount: questions.length,
+    };
+  } catch (err) {
+    console.error('OCR澶辫触:', err);
+    return { success: false, errMsg: 'OCR 璇嗗埆澶辫触: ' + (err.message || '鏈煡閿欒') };
+  }
+};
+
+/**
+ * OCR 鏂囨湰瑙ｆ瀽锛堢畝鍖栫増瑙勫垯寮曟搸锛?
+ * 鍦ㄤ簯鍑芥暟绔墽琛岋紝閬垮厤鍓嶇渚濊禆闂
+ */
+function parseOcrText(rawText) {
+  if (!rawText || !rawText.trim()) return [];
+
+  const TYPE_KEYWORDS = {
+    single_choice: ['单选', '单选题', '单项选择', '单项选择题'],
+    multi_choice: ['多选', '多选题', '多项选择', '多项选择题', '不定项', '多项', '不定项选择题'],
+    true_false: ['判断', '判断题', '是非题'],
+    fill_blank: ['填空', '填空题'],
+    short_answer: ['简答', '简答题', '问答', '问答题', '论述', '名词解释'],
+  };
+
+  const OPT_LETTER_RE = /^\s*([A-Za-z])\s*[\.、\)）．:：]\s*/;
+  const TF_TRUE = /^(对|正确|√|✓|T|true|True|YES)$/;
+  const TF_FALSE = /^(错|错误|×|✗|F|false|False|NO)$/;
+  const TF_RE = /^(?:[对错]|正确|错误|√|×|✓|✗|T|F|True|False|YES|NO)$/i;
+  const ANSWER_RE = /^(?:【?答案】?|【?参考答案】?|【?正确答案】?)\s*[：:]?\s*(.+)/i;
+  const ANSWER_EXPL_RE = /^(?:【?答案】?|【?参考答案】?|【?正确答案】?)\s*[：:]?\s*(.+?)\s*(?:\|\s*|\s{3,})\s*(?:解析|答案解析|详解)\s*[：:]\s*(.+)/i;
+  const EXPLANATION_RE = /^(?:【?解析】?|【?答案解析】?|【?详解】?|【?试题解析】?|解析|答案解析|详解|试题解析)\s*[：:]?\s*(.+)/i;
+
+  function hasMultipleOptions(line) {
+    var matches = [], re = /([A-Za-z])\s*[\.、\)）．:：]\s*/g, m;
+    while ((m = re.exec(line)) !== null) matches.push(m);
+    return matches.length >= 2;
+  }
+
+  function extractOptionsFromLine(line) {
+    var options = [], re = /([A-Za-z])\s*[\.、\)）．:：]\s*/g, lastMatch = null;
+    while ((currentMatch = re.exec(line)) !== null) {
+      if (lastMatch !== null) {
+        var optText = line.substring(lastMatch.endIndex, currentMatch.index).trim();
+        if (optText) options.push({ key: lastMatch.key, text: optText });
+      }
+      lastMatch = { endIndex: currentMatch.index + currentMatch[0].length, key: currentMatch[1].toUpperCase() };
+    }
+    if (lastMatch !== null) {
+      var lastText = line.substring(lastMatch.endIndex).trim();
+      if (lastText) options.push({ key: lastMatch.key, text: lastText });
+    }
+    return options;
+  }
+
+  function detectType(text, optionsCount, answer) {
+    var lower = (text || '').toLowerCase();
+    var tagMatch = text.match(/^\s*[【\[]\s*([^】\]]+)\s*[】\]]/);
+    if (tagMatch) {
+      var tagText = tagMatch[1];
+      for (var k = 0; k < Object.keys(TYPE_KEYWORDS).length; k++) {
+        var key = Object.keys(TYPE_KEYWORDS)[k];
+        var kws = TYPE_KEYWORDS[key];
+        for (var w = 0; w < kws.length; w++) { if (tagText.indexOf(kws[w]) !== -1) return key; }
+      }
+    }
+    var keys = ['single_choice','multi_choice','true_false','fill_blank','short_answer'];
+    for (var k = 0; k < keys.length; k++) {
+      var key = keys[k], kws = TYPE_KEYWORDS[key];
+      for (var w = 0; w < kws.length; w++) { if (lower.indexOf(kws[w]) !== -1) return key; }
+    }
+    if (/(?:多选|多项|不定项)[选题]|下列.*正确|下列哪些|以下哪些|不正确的是|错误的是|下列说法正确的是/.test(text)) return 'multi_choice';
+    if (optionsCount === 0 && /_{3,}|（\s*）|\(\s*\)|____/.test(text)) return 'fill_blank';
+    if (answer && /^[A-Da-d]([,\s、]*[A-Da-d]){1,}$/.test(answer.replace(/[,\s、]/g, ''))) return 'multi_choice';
+    if (optionsCount >= 2) return 'single_choice';
+    if (optionsCount === 0) return 'short_answer';
+    return 'single_choice';
+  }
+
+  function cleanStem(raw) {
+    var result = raw, prev = '';
+    while (result !== prev) {
+      prev = result;
+      result = result.replace(/^\s*[【\[]\s*(?:单选|多选|判断|填空|简答|问答|论述|名词解释)(?:题)?\s*[】\]]\s*/, '');
+      result = result.replace(/^\s*(?:\d{1,4}[.、\)）]|①|②|③|④|[【\[]\s*\d+\s*[】\]]|第\d+题|（\d+）|\d+[.、\)）])\s*/, '');
+      result = result.replace(/^(?:题目\s*[：:]|题干\s*[：:])\s*/, '');
+    }
+    return result.trim();
+  }
+
+  function parseQuestionBlock(blockText) {
+    if (!blockText || !blockText.trim()) return null;
+    var lines = blockText.split(/\n|\r\n/);
+    var trimmedLines = lines.map(function(l) { return l.trim(); }).filter(Boolean);
+    if (trimmedLines.length === 0) return null;
+
+    var question = { type: 'single_choice', stem: '', options: [], answer: '', explanation: '' };
+    var stemLines = [], optionLines = [], answerText = '', explanationLines = [];
+    var foundAnswer = false, foundExplanation = false;
+
+    for (var li = 0; li < trimmedLines.length; li++) {
+      var line = trimmedLines[li];
+      if (!line) continue;
+
+      var aeMatch = line.match(ANSWER_EXPL_RE);
+      if (aeMatch) { answerText = aeMatch[1].trim(); explanationLines.push(aeMatch[2].trim()); foundAnswer = true; foundExplanation = true; continue; }
+      var aMatch = line.match(ANSWER_RE);
+      if (aMatch && !foundAnswer) { answerText = aMatch[1].trim(); foundAnswer = true; continue; }
+      var eMatch = line.match(EXPLANATION_RE);
+      if (eMatch && !foundExplanation) { explanationLines.push(eMatch[1].trim()); foundExplanation = true; continue; }
+
+      if (hasMultipleOptions(line)) {
+        var inlineOpts = extractOptionsFromLine(line);
+        for (var io = 0; io < inlineOpts.length; io++) optionLines.push(inlineOpts[io]);
+        continue;
+      }
+      var optMatch = line.match(OPT_LETTER_RE);
+      if (optMatch) { optionLines.push({ key: optMatch[1].toUpperCase(), text: line.substring(optMatch[0].length).trim() }); continue; }
+      if (TF_RE.test(line) && line.length <= 4) {
+        var tfKey = optionLines.length === 0 ? 'A' : String.fromCharCode(65 + optionLines.length);
+        optionLines.push({ key: tfKey, text: line }); continue;
+      }
+      stemLines.push(line);
+    }
+
+      if (answerText) { question.answer = answerText.trim(); }
+  question.stem = cleanStem(stemLines.join('\n')) || '（无题干）';
+    if (optionLines.length > 0) {
+      question.options = optionLines.map(function(o) { return { key: o.key, text: o.text }; });
+      if (optionLines.length === 2 && optionLines.every(function(o) { return TF_TRUE.test(o.text) || TF_FALSE.test(o.text); })) {
+        question.type = 'true_false';
+        question.options = optionLines.map(function(o) { return { key: o.key, text: TF_TRUE.test(o.text) ? '对' : '错', isTrue: TF_TRUE.test(o.text) }; });
+      }
+    }
+    if (answerText) question.answer = answerText.trim();
+    question.type = detectType(question.stem, question.options.length, question.answer);
+    if (question.type === 'true_false') {
+      var ans = (question.answer || '').trim();
+      if (TF_TRUE.test(ans)) question.answer = 'A'; else if (TF_FALSE.test(ans)) question.answer = 'B';
+    }
+    if (explanationLines.length > 0) question.explanation = explanationLines.join('\n').trim();
+    return question;
+  }
+
+  function splitIntoBlocks(text) {
+    if (!text || !text.trim()) return [];
+    var normalized = text.replace(/\r\n/g, '\n');
+    var lines = normalized.split('\n'), splitPoints = [];
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i], trimmed = line.trim();
+      if (!trimmed) continue;
+      if (/^\s*[【\[]\s*(?:单选|多选|判断|填空|简答|问答|论述|不定项)[^】\]]*[】\]]/.test(line)) { splitPoints.push(i); continue; }
+      if (/^\s*[（(]\s*(?:单选|多选|判断|填空|简答|问答|论述|不定项)[^）)]*[）)]/.test(line)) { splitPoints.push(i); continue; }
+      if (!ANSWER_RE.test(trimmed) && !EXPLANATION_RE.test(trimmed)) {
+        if (/^\s*\d{1,4}[.、\)）]\s*/.test(line)) {
+          var afterNum = line.replace(/^\s*\d{1,4}[.、\)）]\s*/, '').trim();
+          if (!ANSWER_RE.test(afterNum) && !EXPLANATION_RE.test(afterNum) && !/^[A-Za-z]\s*[\.、\)）．:]/.test(afterNum)) { splitPoints.push(i); continue; }
+        }
+        if (/^\s*[（(]\d{1,2}[）)]\s*/.test(line) || /^\s*【\d{1,2}】\s*/.test(line)) {
+          var afterB = line.replace(/^\s*[（(【]\d{1,2}[）)】]\s*/, '').trim();
+          if (!ANSWER_RE.test(afterB) && !EXPLANATION_RE.test(afterB)) { splitPoints.push(i); continue; }
+        }
+        if (/^\s*第\d{1,4}题\s*/.test(line) || /^\s*[①②③④⑤⑥⑦⑧⑨⑩]/.test(line)) { splitPoints.push(i); continue; }
+      }
+    }
+
+    if (splitPoints.length === 0) return [normalized.trim()];
+    splitPoints.sort(function(a, b) { return a - b; });
+    var blocks = [];
+    for (var si = 0; si < splitPoints.length; si++) {
+      var start = splitPoints[si], end = si < splitPoints.length - 1 ? splitPoints[si + 1] : lines.length;
+      var block = lines.slice(start, end).join('\n').trim();
+      if (block) blocks.push(block);
+    }
+    return blocks;
+  }
+
+  var blocks = splitIntoBlocks(rawText);
+  var questions = [];
+  for (var bi = 0; bi < blocks.length; bi++) {
+    var q = parseQuestionBlock(blocks[bi]);
+    if (q) questions.push(q);
+  }
+  return questions;
+}const sendFeedback = async (event) => {
+  const { feedbackType, content, contact } = event;
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+
+  if (!content || !content.trim()) {
+    return { success: false, errMsg: '璇峰～鍐欏弽棣堝唴瀹? };
+  }
+
+  const typeMap = {
+    bug: '鍔熻兘寮傚父',
+    suggest: '鍔熻兘寤鸿',
+    content: '棰樼洰閿欒',
+    other: '鍏朵粬闂',
+  };
+  const typeLabel = typeMap[feedbackType] || '鍏朵粬闂';
+  const createdAt = new Date().toISOString();
+
+  // 1. 瀛樺叆鏁版嵁搴?
+  try {
+    await db.collection('feedback').add({
+      data: {
+        openid,
+        type: feedbackType,
+        typeLabel,
+        content: content.trim(),
+        contact: contact || '',
+        status: 'pending',
+        createdAt,
+      },
+    });
+  } catch (dbErr) {
+    console.error('鍙嶉鍏ュ簱澶辫触:', dbErr);
+    // 鍏ュ簱澶辫触涓嶉樆濉為偖浠跺彂閫?
+  }
+
+  // 2. 鍙戦€侀偖浠堕€氱煡
+  let nodemailer;
+  try {
+    nodemailer = require('nodemailer');
+  } catch (e) {
+    return {
+      success: false,
+      errMsg: '閭欢鏈嶅姟鏈氨缁紝璇峰厛鎵ц npm install銆傞敊璇? ' + e.message,
+    };
+  }
+
+  try {
+    const transporter = nodemailer.createTransport(EMAIL_CONFIG);
+
+    const mailBody = `
+      <h3>鑰冩柀杩?- 鐢ㄦ埛鍙嶉</h3>
+      <table style="border-collapse:collapse;width:100%;max-width:600px;">
+        <tr><td style="padding:8px;border:1px solid #e0e0e0;background:#f5f5f5;width:80px;">鍙嶉绫诲瀷</td><td style="padding:8px;border:1px solid #e0e0e0;">${typeLabel}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #e0e0e0;background:#f5f5f5;">鐢ㄦ埛OpenID</td><td style="padding:8px;border:1px solid #e0e0e0;">${openid}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #e0e0e0;background:#f5f5f5;">鑱旂郴鏂瑰紡</td><td style="padding:8px;border:1px solid #e0e0e0;">${contact || '鏈～鍐?}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #e0e0e0;background:#f5f5f5;">鍙嶉鏃堕棿</td><td style="padding:8px;border:1px solid #e0e0e0;">${createdAt}</td></tr>
+      </table>
+      <h4>璇︾粏鎻忚堪锛?/h4>
+      <p style="white-space:pre-wrap;background:#f9f9f9;padding:12px;border-radius:4px;">${content.trim()}</p>
+    `;
+
+    await transporter.sendMail({
+      from: `鑰冩柀杩囧弽棣?<${EMAIL_CONFIG.auth.user}>`,
+      to: EMAIL_CONFIG.to,
+      subject: `[鑰冩柀杩囧弽棣圿 ${typeLabel} - ${createdAt.slice(0, 10)}`,
+      html: mailBody,
+    });
+
+    return { success: true };
+  } catch (mailErr) {
+    console.error('閭欢鍙戦€佸け璐?', mailErr);
+    return {
+      success: false,
+      errMsg: '閭欢鍙戦€佸け璐? ' + (mailErr.message || '鏈煡閿欒'),
+    };
+  }
+};
+
+// 鈹€鈹€鈹€ 閿欓鏈簯鍑芥暟锛堟湰鍦扳啋浜戠杩佺Щ棰勫锛?鈹€鈹€鈹€
+
+/** 鎵嬪姩娣诲姞閿欓 */
+const addWrongQuestion = async (event) => {
+  const { questionId, bankId, knowledgePointId, source } = event;
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+  if (!questionId || !bankId) return { success: false, errMsg: '缂哄皯蹇呰鍙傛暟' };
+  try {
+    const exists = await db.collection('wrong_questions')
+      .where({ userId: openid, questionId, status: 'reviewing' }).get();
+    if (exists.data.length > 0) return { success: true, alreadyExists: true };
+    const now = new Date().toISOString();
+    await db.collection('wrong_questions').add({ data: {
+      userId: openid, questionId, bankId, knowledgePointId: knowledgePointId || '',
+      source: source || 'manual', errorCount: 1, reviewCount: 0,
+      consecutiveReviewCorrect: 0, status: 'reviewing', nextReviewAt: now,
+      currentIntervalIndex: 0, createdAt: now, updatedAt: now,
+    }});
+    return { success: true };
+  } catch (err) {
+    return { success: false, errMsg: err.message };
+  }
+};
+
+/** 鑾峰彇寰呭涔犻敊棰樺垪琛?*/
+const getWrongReviewList = async (event) => {
+  const { bankId } = event || {};
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+  try {
+    const now = new Date().toISOString();
+    let query = db.collection('wrong_questions').where({
+      userId: openid, status: 'reviewing',
+      nextReviewAt: db.command.lte(now),
+    });
+    if (bankId) query = query.where({ bankId });
+    const { data } = await query.limit(100).get();
+    const qIds = [...new Set(data.map(w => w.questionId))];
+    const questions = {};
+    if (qIds.length > 0) {
+      const qRes = await db.collection('questions').where({ _id: db.command.in(qIds) }).get();
+      qRes.data.forEach(q => { questions[q._id] = q; });
+    }
+    return { success: true, data: data.map(w => ({ ...w, question: questions[w.questionId] || null })) };
+  } catch (err) {
+    return { success: false, errMsg: err.message };
+  }
+};
+
+/** 閿欓澶嶄範鎻愪氦锛圫M-2锛?*/
+const reviewWrongAnswer = async (event) => {
+  const { wrongId, isCorrect } = event;
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+  if (!wrongId) return { success: false, errMsg: '缂哄皯閿欓ID' };
+  try {
+    const record = await db.collection('wrong_questions').doc(wrongId).get();
+    if (!record.data || record.data.userId !== openid) return { success: false, errMsg: '璁板綍涓嶅瓨鍦? };
+    const r = record.data;
+    const now = new Date();
+    const INTERVALS = [1, 2, 4, 7, 15, 30, 60];
+    let update = { reviewCount: r.reviewCount + 1, updatedAt: now.toISOString() };
+    if (isCorrect) {
+      const ni = Math.min(r.currentIntervalIndex + 1, INTERVALS.length - 1);
+      update.consecutiveReviewCorrect = r.consecutiveReviewCorrect + 1;
+      update.currentIntervalIndex = ni;
+      update.nextReviewAt = new Date(now.getTime() + INTERVALS[ni] * 86400000).toISOString();
+      if (update.consecutiveReviewCorrect >= 3) update.status = 'mastered';
+    } else {
+      update.consecutiveReviewCorrect = 0;
+      update.currentIntervalIndex = 0;
+      update.nextReviewAt = new Date(now.getTime() + 86400000).toISOString();
+    }
+    await db.collection('wrong_questions').doc(wrongId).update({ data: update });
+    return { success: true, data: update };
+  } catch (err) {
+    return { success: false, errMsg: err.message };
+  }
+};
+
+/** 鑾峰彇閿欓缁熻 */
+const getWrongStats = async (event) => {
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+  try {
+    const now = new Date().toISOString();
+    const [totalRes, dueRes, masteredRes] = await Promise.all([
+      db.collection('wrong_questions').where({ userId: openid }).count(),
+      db.collection('wrong_questions').where({ userId: openid, status: 'reviewing', nextReviewAt: db.command.lte(now) }).count(),
+      db.collection('wrong_questions').where({ userId: openid, status: 'mastered' }).count(),
+    ]);
+    return { success: true, data: {
+      totalWrong: totalRes.total, dueReview: dueRes.total, mastered: masteredRes.total,
+    }};
+  } catch (err) {
+    return { success: false, errMsg: err.message };
+  }
+};
+
+// 鈹€鈹€鈹€ 棰樺簱鍒嗕韩 鈹€鈹€鈹€
+
+/** 鍒嗕韩棰樺簱锛氬瓨鍌ㄩ搴撴暟鎹苟杩斿洖鍒嗕韩鐮?*/
+const shareBank = async (event) => {
+  const { bank, questions } = event;
+  if (!bank || !questions) {
+    return { success: false, message: '缂哄皯棰樺簱鏁版嵁' };
+  }
+
+  const shareCode = 'S' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 6).toUpperCase();
+
+  try {
+    await db.collection('sharedBanks').add({
+      data: {
+        shareCode,
+        bank,
+        questions,
+        createdAt: new Date(),
+        // 7澶╄繃鏈?
+        expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+    return { success: true, shareCode };
+  } catch (e) {
+    return { success: false, message: e.message };
+  }
+};
+
+/** 閫氳繃鍒嗕韩鐮佽幏鍙栭搴撴暟鎹?*/
+const getSharedBank = async (event) => {
+  const { shareCode } = event;
+  if (!shareCode) {
+    return { success: false, message: '缂哄皯鍒嗕韩鐮? };
+  }
+
+  try {
+    const res = await db.collection('sharedBanks')
+      .where({ shareCode })
+      .limit(1)
+      .get();
+
+    if (res.data.length === 0) {
+      return { success: false, message: '鍒嗕韩宸茶繃鏈熸垨涓嶅瓨鍦? };
+    }
+
+    const shared = res.data[0];
+    return {
+      success: true,
+      data: {
+        bank: shared.bank,
+        questions: shared.questions,
+      },
+    };
+  } catch (e) {
+    return { success: false, message: e.message };
+  }
+};
+
+// 鈹€鈹€鈹€ 鐪熼妯″潡锛堝皬绋嬪簭绔煡璇級 鈹€鈹€鈹€
+
+/** 鑾峰彇鐪熼鍒嗙被鍒楄〃 */
+const getExamCategories = async () => {
+  try {
+    const list = (await db.collection('exam_categories')
+      .orderBy('order', 'asc')
+      .limit(50)
+      .get()).data;
+    return { success: true, data: list };
+  } catch (e) {
+    return { success: false, errMsg: e.message };
+  }
+};
+
+/** 鑾峰彇鐪熼璇曞嵎鍒楄〃锛堝彲閫夋寜鍒嗙被杩囨护锛?*/
+const getExamBanks = async (event) => {
+  const { examCategoryId } = event || {};
+  try {
+    const condition = { type: 'exam' };
+    if (examCategoryId) condition.examCategoryId = examCategoryId;
+    const list = (await db.collection('banks')
+      .where(condition)
+      .orderBy('createdAt', 'desc')
+      .limit(100)
+      .get()).data;
+    return { success: true, data: list };
+  } catch (e) {
+    return { success: false, errMsg: e.message };
+  }
+};
+
+/** 鑾峰彇棰樺簱涓嬬殑鎵€鏈夐鐩?*/
+const getBankQuestions = async (event) => {
+  const { bankId } = event || {};
+  if (!bankId) return { success: false, errMsg: '缂哄皯棰樺簱ID' };
+  try {
+    const list = (await db.collection('questions')
+      .where({ bankId, status: 'active' })
+      .limit(500)
+      .get()).data;
+    return { success: true, data: list };
+  } catch (e) {
+    return { success: false, errMsg: e.message };
+  }
+};
+
+// 鈹€鈹€鈹€ 鐢ㄦ埛淇℃伅 鈹€鈹€鈹€
+
+/** 鑾峰彇鐢ㄦ埛璧勬枡锛堜笉瀛樺湪鍒欒嚜鍔ㄥ垱寤猴級 */
+const getUserProfile = async () => {
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+
+  try {
+    const res = await db.collection('users').where({ openid }).limit(1).get();
+    if (res.data.length > 0) {
+      return { success: true, data: res.data[0] };
+    }
+
+    // 鐢ㄦ埛涓嶅瓨鍦紝鍒涘缓榛樿璁板綍
+    const defaultUser = {
+      openid,
+      nickname: '鑰冩柀杩囩敤鎴?,
+      avatarUrl: '',
+      checkinStreak: 0,
+      checkinHistory: [],
+      totalQuestions: 0,
+      totalCorrect: 0,
+      totalSlash: 0,
+      totalStudyTime: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const createRes = await db.collection('users').add({ data: defaultUser });
+    return { success: true, data: { ...defaultUser, _id: createRes._id } };
+  } catch (err) {
+    return { success: false, errMsg: err.message };
+  }
+};
+
+/** 鏇存柊鐢ㄦ埛璧勬枡锛堜粎鏇存柊浼犲叆鐨勫瓧娈碉級 */
+const updateUserProfile = async (event) => {
+  const { nickname, avatarUrl } = event;
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+
+  if (!nickname && !avatarUrl) {
+    return { success: false, errMsg: '璇锋彁渚涜鏇存柊鐨勬樀绉版垨澶村儚' };
+  }
+
+  try {
+    // 鏌ユ壘鐢ㄦ埛璁板綍
+    const res = await db.collection('users').where({ openid }).limit(1).get();
+    if (res.data.length === 0) {
+      return { success: false, errMsg: '鐢ㄦ埛涓嶅瓨鍦? };
+    }
+
+    const userId = res.data[0]._id;
+    const updateData = { updatedAt: new Date().toISOString() };
+    if (nickname !== undefined && nickname !== null) {
+      updateData.nickname = nickname;
+    }
+    if (avatarUrl !== undefined && avatarUrl !== null) {
+      updateData.avatarUrl = avatarUrl;
+    }
+
+    await db.collection('users').doc(userId).update({ data: updateData });
+
+    // 杩斿洖鏇存柊鍚庣殑瀹屾暣鐢ㄦ埛鏁版嵁
+    const updated = await db.collection('users').doc(userId).get();
+    return { success: true, data: updated.data };
+  } catch (err) {
+    return { success: false, errMsg: err.message };
+  }
+};
+
+// 鈹€鈹€鈹€ 浜戝嚱鏁板叆鍙?鈹€鈹€鈹€
+exports.main = async (event, context) => {
+  switch (event.type) {
+    case 'getOpenId':
+      return await getOpenId();
+    case 'getMiniProgramCode':
+      return await getMiniProgramCode();
+    case 'createCollection':
+      return await createCollection();
+    case 'selectRecord':
+      return await selectRecord();
+    case 'updateRecord':
+      return await updateRecord(event);
+    case 'insertRecord':
+      return await insertRecord(event);
+    case 'deleteRecord':
+      return await deleteRecord(event);
+    // 棰樺簱瀵煎叆
+    case 'importBank':
+      return await importBank(event);
+    case 'importBankByExcel':
+      return await importBankByExcel(event);
+    case 'downloadImportTemplate':
+      return await downloadImportTemplate();
+    case 'parseOCR':
+      return await parseOCR(event);
+    case 'parseWordDocument':
+      return await parseWordDocument(event);
+    case 'importBankByWord':
+      return await importBankByWord(event);
+    // 闂鍙嶉
+    case 'sendFeedback':
+      return await sendFeedback(event);
+    // 閿欓鏈紙鏈湴鈫掍簯绔縼绉婚澶囷級
+    case 'addWrongQuestion':
+      return await addWrongQuestion(event);
+    case 'getWrongReviewList':
+      return await getWrongReviewList(event);
+    case 'reviewWrongAnswer':
+      return await reviewWrongAnswer(event);
+    case 'getWrongStats':
+      return await getWrongStats(event);
+    // 棰樺簱鍒嗕韩
+    case 'shareBank':
+      return await shareBank(event);
+    case 'getSharedBank':
+      return await getSharedBank(event);
+    // 鐢ㄦ埛淇℃伅
+    case 'getUserProfile':
+      return await getUserProfile();
+    case 'updateUserProfile':
+      return await updateUserProfile(event);
+    // 鐪熼妯″潡
+    case 'getExamCategories':
+      return await getExamCategories();
+    case 'getExamBanks':
+      return await getExamBanks(event);
+    case 'getBankQuestions':
+      return await getBankQuestions(event);
+  }
+};

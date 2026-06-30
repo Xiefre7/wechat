@@ -197,22 +197,70 @@ button::after {
   opacity: 0.4;
 }
 
-/* ─── 底部导航 ─── */
+/* ─── 底部导航 — 液态玻璃浮动胶囊 ─── */
 .bottom-dock {
   position: fixed;
   z-index: 6;
+  left: 40rpx;
+  right: 40rpx;
+  bottom: calc(env(safe-area-inset-bottom) + 12rpx);
+  min-height: 96rpx;
+  border-radius: 48rpx;
+  overflow: hidden;
+  box-shadow:
+    0 6rpx 24rpx rgba(0, 0, 0, 0.12),
+    0 0 40rpx rgba(74, 143, 234, 0.06);
+  transition: all 700ms cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+/* 三层玻璃叠层 */
+.dock-glass-blur {
+  position: absolute;
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
+  z-index: 0;
+  border-radius: inherit;
+  -webkit-backdrop-filter: saturate(180%) blur(30rpx);
+  backdrop-filter: saturate(180%) blur(30rpx);
+  isolation: isolate;
+}
+
+.dock-glass-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.dock-glass-shine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  border-radius: inherit;
+  box-shadow:
+    inset 2rpx 2rpx 1rpx 0 rgba(255, 255, 255, 0.5),
+    inset -1rpx -1rpx 1rpx 1rpx rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+
+/* 内容层 */
+.dock-content {
+  position: relative;
+  z-index: 30;
   display: flex;
   align-items: center;
   justify-content: space-around;
-  min-height: calc(env(safe-area-inset-bottom) + 72rpx);
-  padding: 6rpx 40rpx calc(env(safe-area-inset-bottom) + 6rpx);
-  background: rgba(255, 255, 255, 0.94);
-  border-top: 1rpx solid rgba(74, 143, 234, 0.08);
-  -webkit-backdrop-filter: blur(40rpx);
-  backdrop-filter: blur(40rpx);
+  min-height: 96rpx;
+  padding: 6rpx 16rpx;
 }
 
 .dock-item {
@@ -221,29 +269,50 @@ button::after {
   align-items: center;
   justify-content: center;
   min-width: 72rpx;
-  min-height: 52rpx;
-  border-radius: 16rpx;
+  min-height: 56rpx;
+  border-radius: 24rpx;
   text-align: center;
   opacity: 0.52;
-  transition: opacity 180ms ease;
+  transition: all 700ms cubic-bezier(0.175, 0.885, 0.32, 2.2);
 }
 
 .dock-item.active {
   opacity: 1;
 }
 
+.dock-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 28rpx;
+  transition: all 700ms cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.dock-item.active .dock-icon-wrap {
+  background: rgba(74, 143, 234, 0.12);
+  box-shadow: 0 0 20rpx rgba(74, 143, 234, 0.18);
+}
+
 .dock-icon {
-  width: 32rpx;
-  height: 32rpx;
+  width: 40rpx;
+  height: 40rpx;
+  transition: transform 700ms cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.dock-item.active .dock-icon {
+  transform: scale(1.08);
 }
 
 .dock-label {
   margin-top: 4rpx;
-  font-size: 20rpx;
+  font-size: 22rpx;
   line-height: 1.2;
   font-weight: 500;
   color: #1E2A3A;
   text-align: center;
+  transition: all 700ms cubic-bezier(0.175, 0.885, 0.32, 2.2);
 }
 
 .dock-item.active .dock-label {
@@ -337,12 +406,28 @@ button::after {
   }
 
   .theme-dark .bottom-dock {
-    background: rgba(12, 24, 48, 0.94);
-    border-top-color: rgba(255, 255, 255, 0.06);
+    box-shadow:
+      0 6rpx 24rpx rgba(0, 0, 0, 0.35),
+      0 0 40rpx rgba(74, 143, 234, 0.08);
+  }
+
+  .theme-dark .dock-glass-fill {
+    background: rgba(15, 23, 42, 0.55);
+  }
+
+  .theme-dark .dock-glass-shine {
+    box-shadow:
+      inset 1rpx 1rpx 0 0 rgba(255, 255, 255, 0.08),
+      inset -1rpx -1rpx 0 0 rgba(255, 255, 255, 0.04);
   }
 
   .theme-dark .dock-label {
-    color: #1A2538;
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  .theme-dark .dock-item.active .dock-icon-wrap {
+    background: rgba(74, 143, 234, 0.2);
+    box-shadow: 0 0 24rpx rgba(74, 143, 234, 0.22);
   }
 
   .theme-dark .feedback-title {

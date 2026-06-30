@@ -1,0 +1,1 @@
+﻿var fs=require('fs');var c=fs.readFileSync('cloudfunctions/quickstartFunctions/index.js','utf8').replace(/^\uFEFF/,'');var ls=c.split('\n');for(var i=295;i<310;i++){var l=ls[i];var cnt=0;for(var ci=0;ci<l.length;ci++){if(l.charCodeAt(ci)===96)cnt++;}if(cnt>0){console.log('Line '+(i+1)+': '+cnt+' backticks');}}

@@ -1,0 +1,1 @@
+﻿var fs=require('fs');var buf=fs.readFileSync('cloudfunctions/quickstartFunctions/index.js');var content=buf.toString('utf8').replace(/^\uFEFF/,'');var lines=content.split('\n');for(var i=295;i<310;i++){console.log('Line '+(i+1)+': '+JSON.stringify(lines[i]));}

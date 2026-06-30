@@ -85,16 +85,23 @@
   </scroll-view>
 
   <view class="bottom-dock">
-    <button
-      wx:for="{{dockItems}}"
-      wx:key="id"
-      class="dock-item {{item.active ? 'active' : ''}}"
-      data-id="{{item.id}}"
-      bindtap="handleDockTap"
-      hover-class="dock-pressing"
-    >
-      <image class="dock-icon" src="{{item.icon}}" mode="aspectFit"></image>
-      <view class="dock-label">{{item.label}}</view>
-    </button>
+    <view class="dock-glass-blur"></view>
+    <view class="dock-glass-fill"></view>
+    <view class="dock-glass-shine"></view>
+    <view class="dock-content">
+      <button
+        wx:for="{{dockItems}}"
+        wx:key="id"
+        class="dock-item {{item.active ? 'active' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="handleDockTap"
+        hover-class="dock-pressing"
+      >
+        <view class="dock-icon-wrap">
+          <image class="dock-icon" src="{{item.icon}}" mode="aspectFit"></image>
+        </view>
+        <view class="dock-label">{{item.label}}</view>
+      </button>
+    </view>
   </view>
 </view>

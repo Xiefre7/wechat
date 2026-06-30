@@ -120,22 +120,34 @@
   </scroll-view>
 
   <view class="bottom-dock">
-    <button
-      wx:for="{{dockItems}}"
-      wx:key="id"
-      class="dock-item {{item.active ? 'active' : ''}}"
-      data-id="{{item.id}}"
-      bindtap="handleDockTap"
-      hover-class="dock-pressing"
-    >
-      <image class="dock-icon" src="{{item.icon}}" mode="aspectFit"></image>
-      <view class="dock-label">{{item.label}}</view>
-    </button>
+    <view class="dock-glass-blur"></view>
+    <view class="dock-glass-fill"></view>
+    <view class="dock-glass-shine"></view>
+    <view class="dock-content">
+      <button
+        wx:for="{{dockItems}}"
+        wx:key="id"
+        class="dock-item {{item.active ? 'active' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="handleDockTap"
+        hover-class="dock-pressing"
+      >
+        <view class="dock-icon-wrap">
+          <image class="dock-icon" src="{{item.icon}}" mode="aspectFit"></image>
+        </view>
+        <view class="dock-label">{{item.label}}</view>
+      </button>
+    </view>
   </view>
 
-    <button class="floating-edit" bindtap="handleQuickAction" data-id="import" aria-label="导入题库">
-      <image class="floating-icon" src="/images/kzg/pen-blue.svg" mode="aspectFit"></image>
-      <text class="floating-label">导入</text>
+    <button class="floating-edit" bindtap="handleQuickAction" data-id="import" aria-label="导入题库" hover-class="fab-pressing">
+      <view class="fab-glass-blur"></view>
+      <view class="fab-glass-fill"></view>
+      <view class="fab-glass-shine"></view>
+      <view class="fab-content">
+        <image class="floating-icon" src="/images/kzg/pen-blue.svg" mode="aspectFit"></image>
+        <text class="floating-label">导入</text>
+      </view>
     </button>
 
   <!-- 用户信息卡片弹窗 -->
@@ -159,19 +171,24 @@
           <view class="user-card-stat-label">已斩知识点</view>
         </view>
       </view>
-      <!-- 主题模式切换 -->
-      <view class="user-card-theme-row">
-        <view class="theme-option {{themeMode === 'light' ? 'theme-active' : ''}}" data-mode="light" bindtap="switchTheme" hover-class="pressing">
-          <text class="theme-icon">☀️</text>
-          <text class="theme-label">白天</text>
-        </view>
-        <view class="theme-option {{themeMode === 'dark' ? 'theme-active' : ''}}" data-mode="dark" bindtap="switchTheme" hover-class="pressing">
-          <text class="theme-icon">🌙</text>
-          <text class="theme-label">深夜</text>
-        </view>
-        <view class="theme-option {{themeMode === 'system' ? 'theme-active' : ''}}" data-mode="system" bindtap="switchTheme" hover-class="pressing">
-          <text class="theme-icon">🔄</text>
-          <text class="theme-label">跟随系统</text>
+      <!-- 主题模式切换 — 液态玻璃胶囊 -->
+      <view class="theme-switch-glass">
+        <view class="theme-glass-blur"></view>
+        <view class="theme-glass-fill"></view>
+        <view class="theme-glass-shine"></view>
+        <view class="user-card-theme-row">
+          <view class="theme-option {{themeMode === 'light' ? 'theme-active' : ''}}" data-mode="light" bindtap="switchTheme" hover-class="pressing">
+            <image class="theme-icon-svg" src="/images/kzg/sun-blue.svg" mode="aspectFit"></image>
+            <text class="theme-label">白天</text>
+          </view>
+          <view class="theme-option {{themeMode === 'dark' ? 'theme-active' : ''}}" data-mode="dark" bindtap="switchTheme" hover-class="pressing">
+            <image class="theme-icon-svg" src="/images/kzg/moon-blue.svg" mode="aspectFit"></image>
+            <text class="theme-label">深夜</text>
+          </view>
+          <view class="theme-option {{themeMode === 'system' ? 'theme-active' : ''}}" data-mode="system" bindtap="switchTheme" hover-class="pressing">
+            <image class="theme-icon-svg" src="/images/kzg/auto-blue.svg" mode="aspectFit"></image>
+            <text class="theme-label">跟随系统</text>
+          </view>
         </view>
       </view>
       <view class="user-card-action" bindtap="goToMine" hover-class="pressing">编辑资料</view>

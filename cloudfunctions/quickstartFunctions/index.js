@@ -356,20 +356,27 @@ const importBankByExcel = async (event) => {
 const parseWordDocument = async (event) => {
   const { fileID } = event;
 
+  console.log('[parseWordDocument] Started, fileID:', fileID);
+
   if (!fileID) {
+    console.warn('[parseWordDocument] Missing fileID');
     return { success: false, errMsg: '缺少 Word 文件' };
   }
 
   try {
     // 下载云存储文件
+    console.log('[parseWordDocument] Downloading file from cloud storage...');
     const downloadRes = await cloud.downloadFile({ fileID });
     const fileBuffer = downloadRes.fileContent;
+    console.log('[parseWordDocument] File downloaded, buffer size:', fileBuffer ? fileBuffer.length : 0, 'bytes');
 
     // 动态加载 mammoth
     let mammoth;
     try {
       mammoth = require('mammoth');
+      console.log('[parseWordDocument] mammoth loaded successfully');
     } catch (e) {
+      console.error('[parseWordDocument] mammoth require failed:', e.message);
       return {
         success: false,
         errMsg: 'Word解析组件未就绪，请运行 npm install 安装 mammoth 依赖。错误: ' + e.message,
@@ -377,23 +384,39 @@ const parseWordDocument = async (event) => {
     }
 
     // 提取纯文本
+    console.log('[parseWordDocument] Extracting text with mammoth...');
     const extractResult = await mammoth.extractRawText({ buffer: fileBuffer });
     const rawText = extractResult.value;
+    console.log('[parseWordDocument] Text extracted, length:', rawText ? rawText.length : 0, 'chars');
 
     if (!rawText || !rawText.trim()) {
-      return { success: false, errMsg: 'Word 文档中未提取到文字内容，请检查文件' };
+      return {
+        success: false,
+        errMsg: 'Word 文档中未提取到文字内容，请检查文件是否包含文字（非图片扫描件）',
+      };
     }
 
     // 用规则引擎结构化（复用 OCR 的解析逻辑）
+    console.log('[parseWordDocument] Calling parseOcrText, rawText first 100 chars:', rawText.substring(0, 100));
     const questions = parseOcrText(rawText);
+    console.log('[parseWordDocument] parseOcrText returned', questions.length, 'questions');
 
     if (questions.length === 0) {
       return {
         success: false,
         errMsg: '未能从文档中识别到题目。请确保文档格式为：题号. 题干 + 选项(A/B/C/D) + 答案',
-        rawText: rawText.substring(0, 200),
+        rawTextPreview: rawText.substring(0, 200),
+        rawTextLength: rawText.length,
+        lineCount: rawText.split(/\n/).length,
       };
     }
+
+    // 统计题型分布
+    const typeCounts = {};
+    questions.forEach((q) => {
+      typeCounts[q.type] = (typeCounts[q.type] || 0) + 1;
+    });
+    console.log('[parseWordDocument] Question type distribution:', typeCounts);
 
     // 截断过长文本
     const warnings = [];
@@ -403,13 +426,16 @@ const parseWordDocument = async (event) => {
 
     return {
       success: true,
-      rawText: rawText.substring(0, 500),
+      rawTextPreview: rawText.substring(0, 500),
+      rawTextLength: rawText.length,
       questions,
       questionCount: questions.length,
+      typeDistribution: typeCounts,
       warnings,
     };
   } catch (err) {
-    console.error('Word解析失败:', err);
+    console.error('[parseWordDocument] Exception:', err.message);
+    console.error('[parseWordDocument] Stack:', err.stack);
     return {
       success: false,
       errMsg: 'Word 文档解析失败: ' + (err.message || '未知错误'),
@@ -528,21 +554,39 @@ const parseOCR = async (event) => {
 function parseOcrText(rawText) {
   if (!rawText || !rawText.trim()) return [];
 
-  // 按题号切分
+  // 按行拆分
   const lines = rawText.split(/\n|\r\n/);
   const questions = [];
   let current = null;
+  let inExplanation = false;  // 是否处于解析区域
 
   const OPT_RE = /^([A-Fa-f])[\.\、\)）．\s]+(.+)/;
-  const ANSWER_RE = /^(?:答案|参考答案|正确答案)\s*[：:：]\s*(.+)/i;
+  const ANSWER_RE = /^(?:【?答案】?|【?参考答案】?|【?正确答案】?)\s*[：:：]?\s*(.+)/i;
+  // 解析行正则 — 支持 解析： / 【解析】 / [解析] / 答案解析： / 详解： 等写法
+  const EXPLANATION_RE = /^(?:【?解析】?|【?答案解析】?|【?详解】?|【?试题解析】?|解析|答案解析|详解|试题解析)\s*[：:：]?\s*(.+)/i;
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed) continue;
+    if (!trimmed) {
+      // 空行重置解析状态
+      inExplanation = false;
+      continue;
+    }
 
-    // 检测新题开始
+    // 检查是否是解析行（在判断题号之前，防止解析行被误判为新题）
+    if (current) {
+      const explMatch = trimmed.match(EXPLANATION_RE);
+      if (explMatch) {
+        inExplanation = true;
+        current.explanation = (current.explanation ? current.explanation + '\n' : '') + explMatch[1].trim();
+        continue;
+      }
+    }
+
+    // 检测新题开始（题号 + . / 、 / ））
     const qStartMatch = trimmed.match(/^(\d{1,4})[\.\、\)）]/);
     if (qStartMatch) {
+      inExplanation = false;
       if (current && current.stem) {
         questions.push(current);
       }
@@ -557,6 +601,7 @@ function parseOcrText(rawText) {
     }
 
     if (!current) {
+      inExplanation = false;
       current = {
         type: 'single_choice',
         stem: trimmed,
@@ -564,6 +609,12 @@ function parseOcrText(rawText) {
         answer: '',
         explanation: '',
       };
+      continue;
+    }
+
+    // 如果在解析区域，追加到解析字段
+    if (inExplanation) {
+      current.explanation = (current.explanation ? current.explanation + '\n' : '') + trimmed;
       continue;
     }
 
@@ -581,10 +632,11 @@ function parseOcrText(rawText) {
     const answerMatch = trimmed.match(ANSWER_RE);
     if (answerMatch) {
       current.answer = answerMatch[1].trim();
+      inExplanation = false;  // 答案行结束解析状态
       continue;
     }
 
-    // 如果 stem 已有内容且非选项/答案，追加到 stem
+    // 非选项非答案行 → 追加到题干（去重）
     if (!current.stem.includes(trimmed)) {
       current.stem += '\n' + trimmed;
     }
@@ -595,17 +647,23 @@ function parseOcrText(rawText) {
     questions.push(current);
   }
 
-  // 推断题型
+  // 推断题型 + 规范化字段
   return questions.map((q) => {
     let type = 'single_choice';
     if (q.options.length === 0) type = 'short_answer';
     else if (
       q.options.length === 2 &&
-      q.options.every((o) => /^(对|错|正确|错误|√|×)/.test(o.text))
+      q.options.every((o) => /^(对|错|正确|错误|√|×|T|F|true|false)$/i.test(o.text))
     ) {
       type = 'true_false';
     }
-    return { ...q, type };
+    return {
+      type: type,
+      stem: q.stem || '',
+      options: q.options || [],
+      answer: (q.answer || '').trim(),
+      explanation: (q.explanation || '').trim(),
+    };
   });
 }
 

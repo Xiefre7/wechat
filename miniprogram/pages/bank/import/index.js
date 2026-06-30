@@ -216,6 +216,8 @@ Page({
     const { uploadWordFile } = this.data;
     if (!uploadWordFile) return;
 
+    console.log('[processWordDocument] Starting, file:', uploadWordFile.name, 'size:', uploadWordFile.size);
+
     wx.showLoading({ title: '解析Word文档中...', mask: true });
 
     const cloudPath = `word/${Date.now()}_${Math.random().toString(36).slice(2)}.docx`;
@@ -232,34 +234,68 @@ Page({
       })
       .then((res) => {
         wx.hideLoading();
-        if (res.result && res.result.success) {
-          const questions = (res.result.questions || []).map((q) => ({
-            type: q.type || 'single_choice',
-            stem: q.stem || '',
-            options: q.options || [],
-            answer: q.answer || '',
-            explanation: q.explanation || '',
-          }));
 
-          this.setData({
-            parsedQuestions: questions,
-            parseStatsText: `Word文档识别到 ${questions.length} 题`,
+        console.log('[processWordDocument] Cloud function result:', {
+          hasResult: !!res,
+          success: res && res.result ? res.result.success : undefined,
+          questionCount: res && res.result && res.result.questions ? res.result.questions.length : 0,
+          fullResultKeys: res && res.result ? Object.keys(res.result) : [],
+        });
+
+        if (res.result && res.result.success) {
+          const rawQuestions = res.result.questions || [];
+          console.log('[processWordDocument] Raw questions received:', rawQuestions.length);
+
+          const questions = rawQuestions.map(function (q, idx) {
+            // 记录异常题目
+            if (!q.stem || q.stem.trim() === '') {
+              console.warn('[processWordDocument] Question at index', idx, 'has empty stem:', q);
+            }
+            return {
+              type: q.type || 'single_choice',
+              stem: q.stem || '',
+              options: q.options || [],
+              answer: q.answer || '',
+              explanation: q.explanation || '',
+            };
           });
 
-          // 自动跳转到预览页
-          this.goPreviewWithData(questions, 'word');
+          // 过滤完全空题干的题目
+          const validQuestions = questions.filter(function (q) {
+            return q.stem.trim() !== '';
+          });
+          if (validQuestions.length < questions.length) {
+            console.warn('[processWordDocument] Filtered out', questions.length - validQuestions.length, 'empty-stem questions');
+          }
+
+          console.log('[processWordDocument] Mapped valid questions:', validQuestions.length);
+
+          this.setData({
+            parsedQuestions: validQuestions,
+            parseStatsText: 'Word文档识别到 ' + validQuestions.length + ' 题',
+          });
+
+          console.log('[processWordDocument] Calling goPreviewWithData with', validQuestions.length, 'questions');
+          this.goPreviewWithData(validQuestions, 'word');
         } else {
+          const errMsg = (res.result && res.result.errMsg) ? res.result.errMsg : '解析失败';
+          console.warn('[processWordDocument] Cloud function returned failure:', errMsg);
           wx.showToast({
-            title: res.result ? res.result.errMsg : '解析失败',
+            title: errMsg,
             icon: 'none',
-            duration: 2000,
+            duration: 3000,
           });
         }
       })
       .catch((err) => {
         wx.hideLoading();
-        console.error('Word解析失败:', err);
-        wx.showToast({ title: 'Word文档解析失败，请检查网络后重试', icon: 'none' });
+        console.error('[processWordDocument] Promise chain caught error:', err);
+        console.error('[processWordDocument] Error details:', JSON.stringify(err));
+        wx.showToast({
+          title: 'Word文档解析失败，请检查网络后重试',
+          icon: 'none',
+          duration: 3000,
+        });
       });
   },
 
@@ -395,7 +431,7 @@ Page({
 
   /* ─── 预览跳转 ─── */
   goPreview() {
-    const { currentMethod, parsedQuestions, manualQuestions, bankName, uploadFile } = this.data;
+    const { currentMethod, parsedQuestions, manualQuestions, bankName, uploadFile, uploadWordFile } = this.data;
 
     if (!bankName.trim()) {
       wx.showToast({ title: '请先输入题库名称', icon: 'none' });
@@ -448,14 +484,58 @@ Page({
   },
 
   goPreviewWithData(questions, source) {
-    wx.setStorageSync('importPreviewData', {
-      bankName: this.data.bankName,
-      questions,
-      source: source || 'ocr',
+    var bankName = this.data.bankName;
+    var finalSource = source || 'ocr';
+
+    console.log('[goPreviewWithData] Called, questionCount:', questions ? questions.length : 0, 'source:', finalSource);
+
+    // 空题目数组保护
+    if (!questions || questions.length === 0) {
+      console.error('[goPreviewWithData] Empty questions array, aborting navigation');
+      wx.showToast({
+        title: '未解析到有效题目，请检查文档格式后重试',
+        icon: 'none',
+        duration: 3000,
+      });
+      return;
+    }
+
+    var importData = {
+      bankName: bankName,
+      questions: questions,
+      source: finalSource,
       filePath: null,
-    });
+    };
+
+    try {
+      wx.setStorageSync('importPreviewData', importData);
+      console.log('[goPreviewWithData] Storage written successfully');
+    } catch (storageErr) {
+      console.error('[goPreviewWithData] Storage write failed:', storageErr);
+      wx.showToast({
+        title: '数据暂存失败，请重试',
+        icon: 'none',
+        duration: 2000,
+      });
+      return;
+    }
+
     wx.navigateTo({
       url: '/pages/bank/import-preview/index',
+      success: function (navRes) {
+        console.log('[goPreviewWithData] Navigation succeeded', navRes);
+      },
+      fail: function (navErr) {
+        console.error('[goPreviewWithData] Navigation FAILED:', navErr);
+        wx.showToast({
+          title: '页面跳转失败，请重试。' + (navErr.errMsg || ''),
+          icon: 'none',
+          duration: 3000,
+        });
+      },
+      complete: function () {
+        console.log('[goPreviewWithData] Navigation complete');
+      },
     });
   },
 

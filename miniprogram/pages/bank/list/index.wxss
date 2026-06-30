@@ -179,7 +179,7 @@ button::after { border: 0; }
 .bank-right {
   display: flex;
   align-items: center;
-  gap: 2rpx;
+  gap: 0;
   flex-shrink: 0;
 }
 
@@ -236,20 +236,21 @@ button::after { border: 0; }
 .share-btn {
   display: flex;
   align-items: center;
-  gap: 4rpx;
+  gap: 6rpx;
   padding: 0;
+  padding-left: 190rpx !important;
   border-radius: 0;
   background: transparent;
   opacity: 0.5;
 }
 
 .share-icon {
-  width: 24rpx;
-  height: 24rpx;
+  width: 32rpx;
+  height: 32rpx;
 }
 
 .share-text {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: #5E718D;
   font-weight: 500;
 }

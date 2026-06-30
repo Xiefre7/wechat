@@ -64,89 +64,6 @@ const ANSWER_EXPL_RE = /^(?:【?答案】?|【?参考答案】?|【?正确答案
 /** 解析行正则 */
 const EXPLANATION_RE = /^(?:【?解析】?|【?答案解析】?|【?详解】?|【?试题解析】?|解析|答案解析|详解|试题解析)\s*[：:：]?\s*(.+)/i;
 
-// ============ 选项布局标准化（新增） ============
-
-/**
- * 从一行中提取多个选项（A.xx B.xx C.xx D.xx）
- * 只返回2个以上连续字母序列的选项，防止正文中孤立字母误判
- */
-function extractOptionsFromLine(line) {
-  var options = [];
-  var remaining = line.trim();
-  while (remaining) {
-    var match = remaining.match(/^\s*([A-Za-z])[\.\、\)）．]\s*/);
-    if (!match) break;
-    var key = match[1].toUpperCase();
-    var rest = remaining.slice(match[0].length);
-    // 找下一个连续字母选项
-    var nextIdx = -1;
-    var re = /\s+[A-Za-z][\.\、\)）．]\s*/g;
-    var nm;
-    while ((nm = re.exec(rest)) !== null) {
-      var nextKey = nm[0].replace(/\s+/g, '').charAt(0).toUpperCase();
-      if (nextKey === String.fromCharCode(key.charCodeAt(0) + 1)) {
-        nextIdx = nm.index;
-        break;
-      }
-    }
-    var text;
-    if (nextIdx > 0) {
-      text = rest.slice(0, nextIdx).trim();
-      remaining = rest.slice(nextIdx);
-    } else {
-      text = rest.trim();
-      remaining = '';
-    }
-    options.push({ key: key, text: text });
-  }
-  return options.length > 1 ? options : null;
-}
-
-/**
- * 选项布局标准化 — 将单行/两行/Tab分隔的选项展开为每行一个
- */
-function normalizeOptionLayouts(rawText) {
-  if (!rawText) return rawText;
-  var lines = rawText.split(/\n|\r\n/);
-  var output = [];
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i];
-    var trimmed = line.trim();
-    // 空行/题号行/答案行/解析行/标签行 → 原样
-    if (!trimmed ||
-        ANSWER_RE.test(trimmed) ||
-        EXPLANATION_RE.test(trimmed) ||
-        /^\s*\d{1,4}[\.\、\)）]/.test(trimmed) ||
-        /^\s*[【\[]\s*(?:单选|多选|判断|填空|简答)/.test(trimmed)) {
-      output.push(line);
-      continue;
-    }
-    // Tab 分隔（Word 表格产物）
-    if (trimmed.indexOf('\t') >= 0) {
-      var parts = trimmed.split(/\t+/).filter(function(p){return p.trim();});
-      if (parts.length >= 2) {
-        for (var ti = 0; ti < parts.length; ti++) {
-          var tm = parts[ti].trim().match(/^\s*([A-Za-z])\s*[\.\、\)）．:：]?\s*(.*)/);
-          if (tm) output.push(tm[1].toUpperCase() + '. ' + (tm[2]||'').trim());
-        }
-        continue;
-      }
-    }
-    // 多选项行 → 拆分为每行一个
-    var opts = extractOptionsFromLine(trimmed);
-    if (opts) {
-      for (var oi = 0; oi < opts.length; oi++) {
-        output.push(opts[oi].key + '. ' + opts[oi].text);
-      }
-    } else {
-      output.push(line);
-    }
-  }
-  return output.join('\n');
-}
-
-// ============ 选项布局标准化 END ============
-
 /**
  * 解析文本块为单道题目
  * @param {string} blockText - 一道题的完整文本
@@ -318,10 +235,7 @@ function parseQuestions(rawText) {
     return { questions: [], stats: { total: 0, parsed: 0, failed: 0 } };
   }
 
-  // 选项布局标准化：单行/两行/Tab分隔 → 每行一个选项
-  var normalizedText = normalizeOptionLayouts(rawText);
-
-  const blocks = splitIntoBlocks(normalizedText);
+  const blocks = splitIntoBlocks(rawText);
   const questions = [];
 
   for (const block of blocks) {
@@ -337,12 +251,6 @@ function parseQuestions(rawText) {
     }
   }
 
-  var typeCounts = {};
-  for (var qi = 0; qi < questions.length; qi++) {
-    var t = questions[qi].type;
-    typeCounts[t] = (typeCounts[t] || 0) + 1;
-  }
-
   return {
     questions,
     stats: {
@@ -350,7 +258,6 @@ function parseQuestions(rawText) {
       parsed: questions.length,
       failed: blocks.length - questions.length,
     },
-    typeDistribution: typeCounts,
   };
 }
 
@@ -360,8 +267,6 @@ module.exports = {
   splitIntoBlocks,
   detectType,
   cleanStem,
-  normalizeOptionLayouts,
-  extractOptionsFromLine,
   TYPE_KEYWORDS,
   OPT_LETTER_RE,
   ANSWER_RE,

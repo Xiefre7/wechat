@@ -35,23 +35,38 @@
     <view class="question-list">
       <view
         wx:for="{{questions}}"
-        wx:key="index"
+        wx:for-index="qi"
+        wx:key="_idx"
         class="question-card glass-card {{item._editing ? 'editing' : ''}}"
       >
         <view class="q-header">
-          <view class="q-num">{{index + 1}}</view>
+          <view class="q-num">{{qi + 1}}</view>
           <view class="q-type">{{item._typeLabel}}</view>
+          <!-- 置信度指示器 -->
+          <view
+            wx:if="{{item._detectionConfidence === 'low' || item._detectionConfidence === 'medium'}}"
+            class="confidence-badge {{item._detectionConfidence}}"
+            data-index="{{qi}}"
+            bindtap="toggleEdit"
+          >
+            <text wx:if="{{item._detectionConfidence === 'low'}}" class="confidence-icon">!</text>
+            <text wx:if="{{item._detectionConfidence === 'medium'}}" class="confidence-icon">i</text>
+          </view>
           <view class="q-actions">
-            <view class="q-action-btn" data-index="{{index}}" bindtap="toggleEdit">
+            <view class="q-action-btn" data-index="{{qi}}" bindtap="toggleEdit">
               {{item._editing ? '完成' : '编辑'}}
             </view>
-            <view class="q-action-btn danger" data-index="{{index}}" bindtap="removeQuestion">删除</view>
+            <view class="q-action-btn danger" data-index="{{qi}}" bindtap="removeQuestion">删除</view>
           </view>
         </view>
 
         <!-- 预览模式 -->
         <view class="q-body" wx:if="{{!item._editing}}">
           <view class="q-stem">{{item.stem}}</view>
+          <!-- 检测提示：低/中置信度时显示 -->
+          <view wx:if="{{item._detectionNote}}" class="detection-note {{item._detectionConfidence}}">
+            {{item._detectionNote}}
+          </view>
           <view class="q-opts" wx:if="{{item.options.length > 0}}">
             <view wx:for="{{item.options}}" wx:key="key" wx:for-item="opt" class="q-opt">
               <text class="q-opt-key">{{opt.key}}.</text>
@@ -79,7 +94,7 @@
                 wx:for-item="qt"
                 wx:for-index="qti"
                 class="type-chip {{item.type === qt.value ? 'active' : ''}}"
-                data-index="{{index}}"
+                data-index="{{qi}}"
                 data-value="{{qt.value}}"
                 bindtap="onItemTypeChange"
               >{{qt.label}}</view>
@@ -90,7 +105,7 @@
             <textarea
               class="edit-textarea glass-input"
               value="{{item.stem}}"
-              data-index="{{index}}"
+              data-index="{{qi}}"
               data-field="stem"
               bindinput="onItemFieldChange"
               auto-height
@@ -104,29 +119,71 @@
                 <input
                   class="edit-opt-input glass-input"
                   value="{{opt.text}}"
-                  data-index="{{index}}"
+                  data-index="{{qi}}"
                   data-opt-index="{{optIndex}}"
                   bindinput="onItemOptionChange"
                 />
+                <view
+                  class="opt-del-btn"
+                  data-index="{{qi}}"
+                  data-opt-index="{{optIndex}}"
+                  bindtap="deleteOption"
+                  wx:if="{{item.options.length > 2}}"
+                >×</view>
               </view>
             </view>
+            <view
+              class="add-opt-btn glass-button"
+              data-index="{{qi}}"
+              bindtap="addOption"
+              wx:if="{{item.options.length < 10 && (item.type === 'single_choice' || item.type === 'multi_choice')}}"
+            >＋ 添加选项</view>
           </view>
-          <view class="edit-group">
-            <view class="edit-label">答案</view>
+          <!-- 答案：单选/多选用选项按钮 -->
+          <view class="edit-group" wx:if="{{item.type === 'single_choice' || item.type === 'multi_choice'}}">
+            <view class="edit-label">答案 <text class="opt-required">*</text></view>
+            <view class="answer-opts">
+              <view
+                wx:for="{{item.options}}"
+                wx:key="key"
+                wx:for-item="opt"
+                class="answer-opt {{opt._sel ? 'selected' : ''}}"
+                data-q-idx="{{qi}}"
+                data-opt-key="{{opt.key}}"
+                catchtap="toggleOptionAnswer"
+              >{{opt.key}}</view>
+            </view>
+            <view class="answer-hint" wx:if="{{item.type === 'multi_choice'}}">多选题请点击所有正确选项</view>
+          </view>
+          <!-- 答案：判断题用对/错按钮 -->
+          <view class="edit-group" wx:elif="{{item.type === 'true_false'}}">
+            <view class="edit-label">答案 <text class="opt-required">*</text></view>
+            <view class="answer-opts">
+              <view class="answer-opt{{item.answer === 'A' ? ' selected' : ''}}"
+                data-q-idx="{{qi}}" data-opt-key="A" catchtap="toggleOptionAnswer">对</view>
+              <view class="answer-opt{{item.answer === 'B' ? ' selected' : ''}}"
+                data-q-idx="{{qi}}" data-opt-key="B" catchtap="toggleOptionAnswer">错</view>
+            </view>
+          </view>
+          <!-- 答案：填空题用文本框 -->
+          <view class="edit-group" wx:elif="{{item.type === 'fill_blank'}}">
+            <view class="edit-label">答案 <text class="opt-required">*</text></view>
             <input
               class="edit-input glass-input"
               value="{{item.answer}}"
-              data-index="{{index}}"
+              placeholder="多个填空用 | 分隔"
+              data-index="{{qi}}"
               data-field="answer"
               bindinput="onItemFieldChange"
             />
           </view>
+          <!-- 简答题：不显示答案区 -->
           <view class="edit-group">
             <view class="edit-label">解析</view>
             <textarea
               class="edit-textarea glass-input"
               value="{{item.explanation}}"
-              data-index="{{index}}"
+              data-index="{{qi}}"
               data-field="explanation"
               bindinput="onItemFieldChange"
               auto-height

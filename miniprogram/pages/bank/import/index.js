@@ -44,6 +44,7 @@ Page({
     var effectiveTheme = app.globalData.effectiveTheme || 'light';
     this.setData({ isDark: effectiveTheme === 'dark' });
     this.loadOcrRemaining();
+    this.updateCanProceed();
   },
 
   onShow() {
@@ -89,9 +90,22 @@ Page({
     // 实时解析预览
     if (textContent.trim().length > 10) {
       const result = parseQuestions(textContent);
+      // 构建带题型分布的统计文本
+      let statsText = `识别到 ${result.stats.parsed} 题`;
+      if (result.typeDistribution) {
+        const typeLabels = { single_choice: '单选', multi_choice: '多选', true_false: '判断', fill_blank: '填空', short_answer: '简答' };
+        const parts = [];
+        Object.keys(result.typeDistribution).forEach(function (t) {
+          const label = typeLabels[t] || t;
+          parts.push(label + result.typeDistribution[t] + '题');
+        });
+        if (parts.length > 0) {
+          statsText += '（' + parts.join(' ') + '）';
+        }
+      }
       this.setData({
         parsedQuestions: result.questions,
-        parseStatsText: `识别到 ${result.stats.parsed} 题（共 ${result.stats.total} 个文本块）`,
+        parseStatsText: statsText,
       });
     } else {
       this.setData({ parsedQuestions: [], parseStatsText: '' });
@@ -216,13 +230,36 @@ Page({
     const { uploadWordFile } = this.data;
     if (!uploadWordFile) return;
 
-    console.log('[processWordDocument] Starting, file:', uploadWordFile.name, 'size:', uploadWordFile.size);
+    console.log('[processWordDocument] Starting, file:', uploadWordFile.name, 'size:', uploadWordFile.size, 'path type:', typeof uploadWordFile.path);
 
     wx.showLoading({ title: '解析Word文档中...', mask: true });
 
+    // 微信 Windows 开发者工具中 wx.chooseMessageFile 返回的临时路径无法被 cloud.uploadFile 直接访问。
+    // 解决方案：用 FileSystemManager 先读后写，将文件持久化到用户目录
+    const fs = wx.getFileSystemManager();
+    let filePath = uploadWordFile.path;
+    try {
+      const fileData = fs.readFileSync(uploadWordFile.path);
+      const persistentPath = `${wx.env.USER_DATA_PATH}/word_import_${Date.now()}.docx`;
+      fs.writeFileSync(persistentPath, fileData);
+      filePath = persistentPath;
+      console.log('[processWordDocument] File persisted:', persistentPath, 'size:', fileData.length);
+    } catch (e) {
+      console.warn('[processWordDocument] readFile/writeFile failed:', e.message);
+      // 尝试 saveFileSync 作为备选
+      try {
+        filePath = fs.saveFileSync(uploadWordFile.path);
+        console.log('[processWordDocument] saveFileSync succeeded:', filePath);
+      } catch (e2) {
+        console.warn('[processWordDocument] saveFileSync also failed:', e2.message);
+      }
+    }
+
+    console.log('[processWordDocument] Uploading with filePath:', filePath);
+
     const cloudPath = `word/${Date.now()}_${Math.random().toString(36).slice(2)}.docx`;
     wx.cloud
-      .uploadFile({ cloudPath, filePath: uploadWordFile.path })
+      .uploadFile({ cloudPath, filePath: filePath })
       .then((uploadRes) => {
         return wx.cloud.callFunction({
           name: 'quickstartFunctions',
@@ -270,9 +307,24 @@ Page({
 
           console.log('[processWordDocument] Mapped valid questions:', validQuestions.length);
 
+          // 构建题型分布统计
+          const typeLabels = { single_choice: '单选', multi_choice: '多选', true_false: '判断', fill_blank: '填空', short_answer: '简答' };
+          const typeCount = {};
+          validQuestions.forEach(function (q) {
+            typeCount[q.type] = (typeCount[q.type] || 0) + 1;
+          });
+          let statsText = 'Word文档识别到 ' + validQuestions.length + ' 题';
+          const typeParts = [];
+          Object.keys(typeCount).forEach(function (t) {
+            typeParts.push((typeLabels[t] || t) + typeCount[t] + '题');
+          });
+          if (typeParts.length > 0) {
+            statsText += '（' + typeParts.join(' ') + '）';
+          }
+
           this.setData({
             parsedQuestions: validQuestions,
-            parseStatsText: 'Word文档识别到 ' + validQuestions.length + ' 题',
+            parseStatsText: statsText,
           });
 
           console.log('[processWordDocument] Calling goPreviewWithData with', validQuestions.length, 'questions');
@@ -332,10 +384,20 @@ Page({
 
   processOcrImage(filePath) {
     wx.showLoading({ title: 'OCR识别中...' });
+
+    // 持久化临时文件（防止 Windows 开发者工具上临时路径失效）
+    const fs = wx.getFileSystemManager();
+    let uploadPath = filePath;
+    try {
+      uploadPath = fs.saveFileSync(filePath);
+    } catch (e) {
+      // 回退到原始路径
+    }
+
     // 先上传到云存储
     const cloudPath = `ocr/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
     wx.cloud
-      .uploadFile({ cloudPath, filePath })
+      .uploadFile({ cloudPath, filePath: uploadPath })
       .then((uploadRes) => {
         // 调用云函数进行OCR
         return wx.cloud.callFunction({
@@ -349,9 +411,23 @@ Page({
       .then((res) => {
         wx.hideLoading();
         if (res.result && res.result.questions) {
+          const questions = res.result.questions;
+          // 构建题型分布统计
+          const typeLabels = { single_choice: '单选', multi_choice: '多选', true_false: '判断', fill_blank: '填空', short_answer: '简答' };
+          const typeCount = {};
+          questions.forEach(function (q) { typeCount[q.type] = (typeCount[q.type] || 0) + 1; });
+          let statsText = 'OCR识别到 ' + questions.length + ' 题';
+          const typeParts = [];
+          Object.keys(typeCount).forEach(function (t) {
+            typeParts.push((typeLabels[t] || t) + typeCount[t] + '题');
+          });
+          if (typeParts.length > 0) {
+            statsText += '（' + typeParts.join(' ') + '）';
+          }
+
           this.setData({
-            parsedQuestions: this.mapOcrResult(res.result.questions),
-            parseStatsText: `OCR识别到 ${res.result.questions.length} 题`,
+            parsedQuestions: this.mapOcrResult(questions),
+            parseStatsText: statsText,
             ocrRemaining: Math.max(0, this.data.ocrRemaining - 1),
           });
           this.saveOcrRemaining();

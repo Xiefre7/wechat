@@ -6,6 +6,9 @@ const TYPE_LABELS = {
   short_answer: '简答',
 };
 
+const MAX_OPTIONS = 10; // 选项上限 A-J
+const MIN_OPTIONS = 2;  // 最少保留 2 个选项
+
 const QUESTION_TYPES = [
   { value: 'single_choice', label: '单选' },
   { value: 'multi_choice', label: '多选' },
@@ -85,13 +88,19 @@ Page({
           return null;
         }
         return {
+          _idx: idx,
           type: q.type || 'single_choice',
           stem: q.stem || '',
-          options: q.options || [],
+          options: (q.options || []).map(function(opt) {
+            var ans = q.answer || '';
+            return { key: opt.key, text: opt.text || '', _sel: ans.indexOf(opt.key) > -1 };
+          }),
           answer: q.answer || '',
           explanation: q.explanation || '',
           _editing: false,
           _typeLabel: TYPE_LABELS[q.type] || '未知',
+          _detectionConfidence: q._detectionConfidence || 'high',
+          _detectionNote: q._detectionNote || '',
         };
       }).filter(Boolean); // 移除 null 条目
 
@@ -141,8 +150,15 @@ Page({
   /* ─── 题目编辑 ─── */
   toggleEdit(e) {
     const { index } = e.currentTarget.dataset;
+    console.log('[toggleEdit] index:', index, 'dataset:', JSON.stringify(e.currentTarget.dataset));
     const questions = [...this.data.questions];
-    questions[index] = { ...questions[index], _editing: !questions[index]._editing };
+    if (!questions[index]) {
+      console.warn('[toggleEdit] Question not found at index:', index);
+      return;
+    }
+    var q = questions[index];
+    console.log('[toggleEdit] q.type:', q.type, 'q._editing:', q._editing, 'q.options.length:', (q.options || []).length, 'q.answer:', q.answer);
+    questions[index] = { ...q, _editing: !q._editing };
     this.setData({ questions });
   },
 
@@ -165,27 +181,34 @@ Page({
   onItemTypeChange(e) {
     const { index, value } = e.currentTarget.dataset;
     const questions = [...this.data.questions];
+    const currentQ = questions[index];
+    let newOptions;
+
+    if (value === 'true_false') {
+      newOptions = [
+        { key: 'A', text: '对', _sel: false },
+        { key: 'B', text: '错', _sel: false },
+      ];
+    } else if (value === 'short_answer' || value === 'fill_blank') {
+      newOptions = [];
+    } else if (currentQ.options && currentQ.options.length >= MIN_OPTIONS) {
+      newOptions = currentQ.options.map(function(o) { return { key: o.key, text: o.text, _sel: false }; });
+    } else {
+      newOptions = [
+        { key: 'A', text: '', _sel: false },
+        { key: 'B', text: '', _sel: false },
+        { key: 'C', text: '', _sel: false },
+        { key: 'D', text: '', _sel: false },
+      ];
+    }
+
     questions[index] = {
-      ...questions[index],
+      ...currentQ,
       type: value,
       _typeLabel: TYPE_LABELS[value] || '未知',
-      // 判断题重置选项
-      options:
-        value === 'true_false'
-          ? [
-              { key: 'A', text: '对' },
-              { key: 'B', text: '错' },
-            ]
-          : value === 'short_answer' || value === 'fill_blank'
-          ? []
-          : questions[index].options.length > 0
-          ? questions[index].options
-          : [
-              { key: 'A', text: '' },
-              { key: 'B', text: '' },
-              { key: 'C', text: '' },
-              { key: 'D', text: '' },
-            ],
+      options: newOptions,
+      // 切换题型时清除答案（选项结构可能变化）
+      answer: '',
     };
     this.setData({ questions });
   },
@@ -205,6 +228,92 @@ Page({
         }
       },
     });
+  },
+
+  /* ─── 选项增删 ─── */
+  addOption(e) {
+    const { index } = e.currentTarget.dataset;
+    const questions = [...this.data.questions];
+    const q = questions[index];
+    const options = [...q.options];
+    if (options.length >= MAX_OPTIONS) return;
+    const nextKey = String.fromCharCode(65 + options.length);
+    options.push({ key: nextKey, text: '', _sel: false });
+    questions[index] = { ...q, options: options };
+    this.setData({ questions });
+  },
+
+  deleteOption(e) {
+    const { index, optIndex } = e.currentTarget.dataset;
+    const questions = [...this.data.questions];
+    const options = questions[index].options.filter((_, i) => i !== optIndex);
+    // 重新编号 key
+    const rekeyed = options.map((opt, i) => ({
+      ...opt,
+      key: String.fromCharCode(65 + i),
+      _sel: false,
+    }));
+    // 删除选项后自动清除答案，避免答案与选项不匹配
+    questions[index] = { ...questions[index], options: rekeyed, answer: '' };
+    this.setData({ questions });
+  },
+
+  /* ─── 答案选择 ─── */
+  toggleOptionAnswer(e) {
+    try {
+      var idx = Number(e.currentTarget.dataset.qIdx);
+      var key = e.currentTarget.dataset.optKey;
+
+      console.log('[toggleOptionAnswer] idx:', idx, 'key:', key);
+
+      if (isNaN(idx) || typeof key === 'undefined') return;
+
+      var questions = this.data.questions.slice(); // 浅拷贝数组
+      var q = questions[idx];
+      if (!q) return;
+
+      // 计算新答案
+      var newAnswer;
+      if (q.type === 'single_choice' || q.type === 'true_false') {
+        newAnswer = key;
+      } else if (q.type === 'multi_choice') {
+        var parts = (q.answer || '').split(/[,，]/).map(function(s){return s.trim();}).filter(Boolean);
+        var pos = parts.indexOf(key);
+        if (pos > -1) parts.splice(pos, 1);
+        else parts.push(key);
+        newAnswer = parts.sort().join(',');
+      } else {
+        return;
+      }
+
+      // 创建全新 options 数组（每个 option 是新对象，让框架检测到变化）
+      var newOpts = q.options.map(function(opt) {
+        return {
+          key: opt.key,
+          text: opt.text || '',
+          _sel: newAnswer.indexOf(opt.key) > -1
+        };
+      });
+
+      // 创建全新 question 对象替换旧引用
+      questions[idx] = {
+        _idx: q._idx,
+        type: q.type,
+        stem: q.stem,
+        options: newOpts,
+        answer: newAnswer,
+        explanation: q.explanation,
+        _editing: q._editing,
+        _typeLabel: q._typeLabel,
+        _detectionConfidence: q._detectionConfidence,
+        _detectionNote: q._detectionNote
+      };
+
+      this.setData({ questions: questions });
+
+    } catch (err) {
+      console.error('[toggleOptionAnswer] ERROR:', err);
+    }
   },
 
   /* ─── 确认导入 ─── */
@@ -240,14 +349,16 @@ Page({
 
     const { bankName, questions, source, filePath } = this.data;
 
-    // 清理内部字段
-    const cleanQuestions = questions.map(({ _editing, _typeLabel, ...q }) => ({
-      type: q.type,
-      stem: q.stem.trim(),
-      options: q.options || [],
-      answer: q.answer ? q.answer.trim() : '',
-      explanation: q.explanation ? q.explanation.trim() : '',
-    }));
+    // 清理内部字段（移除前端专用前缀 _ 字段）
+    const cleanQuestions = questions.map(function (q) {
+      return {
+        type: q.type,
+        stem: (q.stem || '').trim(),
+        options: q.options || [],
+        answer: q.answer ? q.answer.trim() : '',
+        explanation: q.explanation ? q.explanation.trim() : '',
+      };
+    });
 
     const importData = {
       type: 'importBank',

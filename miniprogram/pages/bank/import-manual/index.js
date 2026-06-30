@@ -119,7 +119,7 @@ Page({
 
   addOption() {
     const options = [...this.data.form.options];
-    if (options.length >= 6) return;
+    if (options.length >= 10) return;
     const nextKey = String.fromCharCode(65 + options.length);
     options.push({ key: nextKey, text: '' });
     this.setData({ 'form.options': options });

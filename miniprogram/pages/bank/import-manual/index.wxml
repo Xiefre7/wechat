@@ -67,7 +67,7 @@
           <view
             class="add-option glass-button"
             bindtap="addOption"
-            wx:if="{{form.options.length < 6}}"
+            wx:if="{{form.options.length < 10}}"
           >
             ＋ 添加选项
           </view>

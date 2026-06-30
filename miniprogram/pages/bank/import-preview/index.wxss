@@ -193,6 +193,62 @@ button[disabled] {
   flex: 1;
 }
 
+/* ─── 置信度指示器 ─── */
+.confidence-badge {
+  flex-shrink: 0;
+  width: 36rpx;
+  height: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18rpx;
+}
+
+.confidence-badge.low {
+  background: #FFF7ED;
+  border: 2rpx solid #FED7AA;
+}
+
+.confidence-badge.medium {
+  background: #EFF6FF;
+  border: 2rpx solid #BFDBFE;
+}
+
+.confidence-icon {
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.confidence-badge.low .confidence-icon {
+  color: #EA580C;
+}
+
+.confidence-badge.medium .confidence-icon {
+  color: #2563EB;
+}
+
+/* ─── 检测提示 ─── */
+.detection-note {
+  margin-top: 10rpx;
+  padding: 10rpx 14rpx;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+.detection-note.low {
+  background: #FFF7ED;
+  color: #C2410C;
+  border: 1rpx solid #FED7AA;
+}
+
+.detection-note.medium {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1rpx solid #BFDBFE;
+}
+
 .q-actions {
   display: flex;
   gap: 8rpx;
@@ -363,6 +419,73 @@ button[disabled] {
   color: #1E2A3A;
 }
 
+/* ─── 选项增删按钮 ─── */
+.opt-del-btn {
+  flex-shrink: 0;
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22rpx;
+  background: #FEF2F2;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #EF4444;
+}
+
+.add-opt-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56rpx;
+  margin-top: 8rpx;
+  border-radius: 16rpx;
+  border: 2rpx dashed #D5DDE8;
+  font-size: 24rpx;
+  color: #4A8FEA;
+  font-weight: 700;
+}
+
+/* ─── 答案选择按钮 ─── */
+.answer-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.answer-opt {
+  width: 68rpx;
+  height: 68rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18rpx;
+  font-size: 26rpx;
+  font-weight: 800;
+  color: #5E718D;
+  background: #F0F4FA;
+  border: 2rpx solid #E6EAF2;
+  transition: all 180ms ease;
+}
+
+.answer-opt.selected {
+  color: #ffffff;
+  background: #4A8FEA;
+  border-color: #4A8FEA;
+  box-shadow: 0 8rpx 20rpx rgba(74, 143, 234, 0.22);
+}
+
+.answer-hint {
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #95A6BD;
+}
+
+.opt-required {
+  color: #EF4444;
+}
+
 /* ─── 空状态 ─── */
 .empty-state {
   display: flex;
@@ -522,4 +645,34 @@ button[disabled] {
 
   .theme-dark .cancel-btn {
     border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .theme-dark .opt-del-btn {
+    background: rgba(239, 68, 68, 0.12);
+    color: #F87171;
+  }
+
+  .theme-dark .add-opt-btn {
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #60A5FA;
+  }
+
+  .theme-dark .answer-opt {
+    color: #94A3B8;
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .theme-dark .answer-opt.selected {
+    color: #ffffff;
+    background: #2563EB;
+    border-color: #2563EB;
+  }
+
+  .theme-dark .answer-hint {
+    color: #64748B;
+  }
+
+  .theme-dark .opt-required {
+    color: #F87171;
   }

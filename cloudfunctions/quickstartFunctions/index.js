@@ -4,6 +4,33 @@ cloud.init({
 });
 
 const db = cloud.database();
+
+// 导入选项布局标准化 & 增强题型判别模块（防御式加载：若模块不存在则回退到简单模式）
+let normalizeOptionLayouts, extractOptionsFromLine, extractBracketOptionsFromLine,
+    extractCircleOptionsFromLine, detectType, cleanStem,
+    OPT_CHINBRACKET_RE, OPT_ENBRACKET_RE,
+    ANSWER_RE_SHARED, ANSWER_EXPL_SHARED, EXPLANATION_RE_SHARED,
+    TF_TRUE, TF_FALSE;
+
+try {
+  const optNorm = require('./lib/optionNormalizer');
+  normalizeOptionLayouts = optNorm.normalizeOptionLayouts;
+  extractOptionsFromLine = optNorm.extractOptionsFromLine;
+  extractBracketOptionsFromLine = optNorm.extractBracketOptionsFromLine;
+  extractCircleOptionsFromLine = optNorm.extractCircleOptionsFromLine;
+  detectType = optNorm.detectType;
+  cleanStem = optNorm.cleanStem;
+  OPT_CHINBRACKET_RE = optNorm.OPT_CHINBRACKET_RE;
+  OPT_ENBRACKET_RE = optNorm.OPT_ENBRACKET_RE;
+  ANSWER_RE_SHARED = optNorm.ANSWER_RE;
+  ANSWER_EXPL_SHARED = optNorm.ANSWER_EXPL_RE;
+  EXPLANATION_RE_SHARED = optNorm.EXPLANATION_RE;
+  TF_TRUE = optNorm.TF_TRUE;
+  TF_FALSE = optNorm.TF_FALSE;
+} catch (e) {
+  console.warn('[quickstartFunctions] optionNormalizer module not available, enhanced parsing disabled:', e.message);
+  // 占位：parseOcrText 内部会检测并退回 fallback
+}
 // 获取openid
 const getOpenId = async () => {
   // 获取基础信息
@@ -396,10 +423,65 @@ const parseWordDocument = async (event) => {
       };
     }
 
-    // 用规则引擎结构化（复用 OCR 的解析逻辑）
+    // 用规则引擎结构化（增强版：多选项布局 + 题型打分引擎）
     console.log('[parseWordDocument] Calling parseOcrText, rawText first 100 chars:', rawText.substring(0, 100));
-    const questions = parseOcrText(rawText);
-    console.log('[parseWordDocument] parseOcrText returned', questions.length, 'questions');
+    let questions;
+    let parseUsedFallback = false;
+    try {
+      questions = parseOcrText(rawText);
+      console.log('[parseWordDocument] parseOcrText returned', questions.length, 'questions');
+    } catch (parseErr) {
+      console.error('[parseWordDocument] Enhanced parser failed:', parseErr.message);
+      console.error('[parseWordDocument] Stack:', parseErr.stack);
+      // 回退到简单解析（仅按行分割，不做标准化）
+      questions = parseOcrTextFallback(rawText);
+      parseUsedFallback = true;
+      console.log('[parseWordDocument] Fallback parser returned', questions.length, 'questions');
+    }
+
+    // 为每道题添加识别置信度标记，方便前端提示用户核对
+    questions.forEach((q) => {
+      q._detectionConfidence = 'high';
+      q._detectionNote = '';
+
+      // 有2-4个选项但被判为简答题 → 可疑
+      if (q.options.length >= 2 && q.options.length <= 4 && q.type === 'short_answer') {
+        q._detectionConfidence = 'low';
+        q._detectionNote = '疑似选择题（有选项但未识别为选择题），请确认题型';
+      }
+
+      // 2个对/错选项但被判为单选题 → 可能是判断题
+      if (
+        q.options.length === 2 &&
+        q.type === 'single_choice' &&
+        q.options.every((o) => /^(对|错|正确|错误|√|×|T|F|true|false)$/i.test(o.text))
+      ) {
+        q._detectionConfidence = 'medium';
+        q._detectionNote = '选项为对/错文本，可能为判断题，请确认';
+      }
+
+      // 无题干但有选项 → 可疑
+      if ((!q.stem || q.stem.trim().length < 3) && q.options.length >= 2) {
+        q._detectionConfidence = 'low';
+        q._detectionNote = '题干过短，可能解析有误，请核对';
+      }
+
+      // 有3+选项但答案是单个字母且题干含"多选/哪些"关键词 → 答案可能不完整
+      if (
+        q.options.length >= 3 &&
+        q.type === 'single_choice' &&
+        /(?:多选|多项|不定项|下列哪些|以下哪些)/.test(q.stem)
+      ) {
+        q._detectionConfidence = 'medium';
+        q._detectionNote = '题干含多选关键词但被判为单选，请确认题型';
+      }
+
+      // 选项中有下划线或填空题特征 → 可能是填空题
+      if (q.options.length === 0 && /_{2,}|____|__+|（\s*[^。？！，；]*\s*）/.test(q.stem) && q.type !== 'fill_blank') {
+        q._detectionConfidence = 'medium';
+        q._detectionNote = '题干含填空标记但未识别为填空题，请确认';
+      }
+    });
 
     if (questions.length === 0) {
       return {
@@ -551,31 +633,116 @@ const parseOCR = async (event) => {
  * OCR 文本解析（简化版规则引擎）
  * 在云函数端执行，避免前端依赖问题
  */
-function parseOcrText(rawText) {
+/**
+ * 回退解析器 — 当增强版解析异常时使用，保证至少能返回基本结构化结果
+ * 不做选项布局标准化，直接按行解析（兼容原有逻辑）
+ */
+function parseOcrTextFallback(rawText) {
   if (!rawText || !rawText.trim()) return [];
 
-  // 按行拆分
   const lines = rawText.split(/\n|\r\n/);
   const questions = [];
   let current = null;
-  let inExplanation = false;  // 是否处于解析区域
+  let inExplanation = false;
 
   const OPT_RE = /^([A-Fa-f])[\.\、\)）．\s]+(.+)/;
   const ANSWER_RE = /^(?:【?答案】?|【?参考答案】?|【?正确答案】?)\s*[：:：]?\s*(.+)/i;
-  // 解析行正则 — 支持 解析： / 【解析】 / [解析] / 答案解析： / 详解： 等写法
   const EXPLANATION_RE = /^(?:【?解析】?|【?答案解析】?|【?详解】?|【?试题解析】?|解析|答案解析|详解|试题解析)\s*[：:：]?\s*(.+)/i;
 
   for (const line of lines) {
     const trimmed = line.trim();
+    if (!trimmed) { inExplanation = false; continue; }
+
+    if (current) {
+      const explMatch = trimmed.match(EXPLANATION_RE);
+      if (explMatch) {
+        inExplanation = true;
+        current.explanation = (current.explanation ? current.explanation + '\n' : '') + explMatch[1].trim();
+        continue;
+      }
+    }
+
+    const qStartMatch = trimmed.match(/^(\d{1,4})[\.\、\)）]/);
+    if (qStartMatch) {
+      inExplanation = false;
+      if (current && current.stem) questions.push(current);
+      current = { stem: trimmed.replace(/^\d+[\.\、\)）]\s*/, ''), options: [], answer: '', explanation: '' };
+      continue;
+    }
+
+    if (!current) {
+      current = { stem: trimmed, options: [], answer: '', explanation: '' };
+      continue;
+    }
+
+    if (inExplanation) {
+      current.explanation = (current.explanation ? current.explanation + '\n' : '') + trimmed;
+      continue;
+    }
+
+    const optMatch = trimmed.match(OPT_RE);
+    if (optMatch) {
+      current.options.push({ key: optMatch[1].toUpperCase(), text: optMatch[2].trim() });
+      continue;
+    }
+
+    const answerMatch = trimmed.match(ANSWER_RE);
+    if (answerMatch) { current.answer = answerMatch[1].trim(); inExplanation = false; continue; }
+
+    if (!current.stem.includes(trimmed)) current.stem += '\n' + trimmed;
+  }
+
+  if (current && current.stem) questions.push(current);
+
+  return questions.map(function (q) {
+    let type = 'single_choice';
+    if (q.options.length === 0) type = 'short_answer';
+    else if (q.options.length === 2 && q.options.every(function (o) { return /^(对|错|正确|错误|√|×|T|F|true|false)$/i.test(o.text); })) {
+      type = 'true_false';
+    }
+    return { type: type, stem: q.stem || '', options: q.options || [], answer: (q.answer || '').trim(), explanation: (q.explanation || '').trim() };
+  });
+}
+
+/**
+ * OCR/Word 文本结构化解析（增强版 v2）
+ *
+ * 相比 v1 的改进：
+ *   1. 引入 normalizeOptionLayouts() 预处理，支持单行/两行/四行/Tab分隔等任意选项布局
+ *   2. 使用 extractOptionsFromLine() 替代简单正则，支持单行多选项拆分
+ *   3. 使用 detectType() 多因子打分引擎替代选项数量判题型
+ *   4. 支持全部五种题型：单选/多选/判断/填空/简答
+ *   5. 判断题答案自动规范化 (对/√ → A, 错/× → B)
+ */
+function parseOcrText(rawText) {
+  if (!rawText || !rawText.trim()) return [];
+
+  // 增强模块不可用时退回简单解析
+  if (!normalizeOptionLayouts) {
+    console.warn('[parseOcrText] Enhanced module not loaded, delegating to fallback');
+    return parseOcrTextFallback(rawText);
+  }
+
+  // ── Step 1: 选项布局标准化 ──
+  // 将单行多选项(A. xx B. xx)、两行两列、Tab分隔等布局统一转为每行单选项
+  const normalizedText = normalizeOptionLayouts(rawText);
+
+  // ── Step 2: 按行拆分 ──
+  const lines = normalizedText.split(/\n|\r\n/);
+  const questions = [];
+  let current = null;
+  let inExplanation = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
     if (!trimmed) {
-      // 空行重置解析状态
       inExplanation = false;
       continue;
     }
 
     // 检查是否是解析行（在判断题号之前，防止解析行被误判为新题）
     if (current) {
-      const explMatch = trimmed.match(EXPLANATION_RE);
+      const explMatch = trimmed.match(EXPLANATION_RE_SHARED);
       if (explMatch) {
         inExplanation = true;
         current.explanation = (current.explanation ? current.explanation + '\n' : '') + explMatch[1].trim();
@@ -591,7 +758,6 @@ function parseOcrText(rawText) {
         questions.push(current);
       }
       current = {
-        type: 'single_choice',
         stem: trimmed.replace(/^\d+[\.\、\)）]\s*/, ''),
         options: [],
         answer: '',
@@ -603,7 +769,6 @@ function parseOcrText(rawText) {
     if (!current) {
       inExplanation = false;
       current = {
-        type: 'single_choice',
         stem: trimmed,
         options: [],
         answer: '',
@@ -618,21 +783,36 @@ function parseOcrText(rawText) {
       continue;
     }
 
-    // 选项行
-    const optMatch = trimmed.match(OPT_RE);
-    if (optMatch) {
-      current.options.push({
-        key: optMatch[1].toUpperCase(),
-        text: optMatch[2].trim(),
-      });
+    // ── Step 3: 选项行 — 使用多选项提取器（支持单行多选项）──
+    const multiOpts = extractOptionsFromLine(trimmed)
+      || extractBracketOptionsFromLine(trimmed, OPT_CHINBRACKET_RE)
+      || extractBracketOptionsFromLine(trimmed, OPT_ENBRACKET_RE)
+      || extractCircleOptionsFromLine(trimmed);
+
+    if (multiOpts && multiOpts.length > 0) {
+      for (const opt of multiOpts) {
+        current.options.push({
+          key: opt.key.toUpperCase(),
+          text: opt.text,
+        });
+      }
       continue;
     }
 
     // 答案行
-    const answerMatch = trimmed.match(ANSWER_RE);
+    const answerMatch = trimmed.match(ANSWER_RE_SHARED);
     if (answerMatch) {
       current.answer = answerMatch[1].trim();
-      inExplanation = false;  // 答案行结束解析状态
+      inExplanation = false;
+      continue;
+    }
+
+    // 答案+解析合并行
+    const answerExplMatch = trimmed.match(ANSWER_EXPL_SHARED);
+    if (answerExplMatch) {
+      current.answer = answerExplMatch[1].trim();
+      current.explanation = (current.explanation ? current.explanation + '\n' : '') + answerExplMatch[2].trim();
+      inExplanation = false;
       continue;
     }
 
@@ -647,21 +827,28 @@ function parseOcrText(rawText) {
     questions.push(current);
   }
 
-  // 推断题型 + 规范化字段
+  // ── Step 4: 题型判别 + 规范化 ──
   return questions.map((q) => {
-    let type = 'single_choice';
-    if (q.options.length === 0) type = 'short_answer';
-    else if (
-      q.options.length === 2 &&
-      q.options.every((o) => /^(对|错|正确|错误|√|×|T|F|true|false)$/i.test(o.text))
-    ) {
-      type = 'true_false';
+    // 使用增强型多因子打分引擎判断题型
+    const type = detectType(q.stem, q.options.length, q.answer, q.options);
+
+    // 判断题答案规范化：对/√ → A, 错/× → B
+    let answer = (q.answer || '').trim();
+    if (type === 'true_false') {
+      if (TF_TRUE.test(answer)) answer = 'A';
+      else if (TF_FALSE.test(answer)) answer = 'B';
     }
+
+    // 多选题答案规范化：确保是大写且无多余分隔符
+    if (type === 'multi_choice') {
+      answer = answer.replace(/[^A-Ea-e]/g, '').toUpperCase();
+    }
+
     return {
       type: type,
-      stem: q.stem || '',
+      stem: cleanStem(q.stem || ''),
       options: q.options || [],
-      answer: (q.answer || '').trim(),
+      answer: answer,
       explanation: (q.explanation || '').trim(),
     };
   });

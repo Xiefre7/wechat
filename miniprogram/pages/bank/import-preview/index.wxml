@@ -63,6 +63,11 @@
         <!-- 预览模式 -->
         <view class="q-body" wx:if="{{!item._editing}}">
           <view class="q-stem">{{item.stem}}</view>
+          <view class="q-images" wx:if="{{item._stemImages.length > 0}}">
+            <image wx:for="{{item._stemImages}}" wx:key="*this" wx:for-item="imgUrl"
+              src="{{imgUrl}}" mode="widthFix" class="stem-image-preview"
+              bindtap="onPreviewImage" data-url="{{imgUrl}}" />
+          </view>
           <!-- 检测提示：低/中置信度时显示 -->
           <view wx:if="{{item._detectionNote}}" class="detection-note {{item._detectionConfidence}}">
             {{item._detectionNote}}
@@ -71,6 +76,8 @@
             <view wx:for="{{item.options}}" wx:key="key" wx:for-item="opt" class="q-opt">
               <text class="q-opt-key">{{opt.key}}.</text>
               <text class="q-opt-text">{{opt.text}}</text>
+              <image wx:if="{{opt._image}}" src="{{opt._image}}" mode="widthFix"
+                class="opt-image-preview" bindtap="onPreviewImage" data-url="{{opt._image}}" />
             </view>
           </view>
           <view class="q-meta">
@@ -79,6 +86,11 @@
             </view>
             <view class="q-expl" wx:if="{{item.explanation}}">
               解析：<text class="expl-val">{{item.explanation}}</text>
+            </view>
+            <view class="q-images" wx:if="{{item._explanationImages.length > 0}}">
+              <image wx:for="{{item._explanationImages}}" wx:key="*this" wx:for-item="imgUrl"
+                src="{{imgUrl}}" mode="widthFix" class="expl-image-preview"
+                bindtap="onPreviewImage" data-url="{{imgUrl}}" />
             </view>
           </view>
         </view>
@@ -110,27 +122,46 @@
               bindinput="onItemFieldChange"
               auto-height
             ></textarea>
+            <view class="q-images" wx:if="{{item._stemImages.length > 0}}">
+              <view wx:for="{{item._stemImages}}" wx:key="*this" wx:for-item="imgUrl" class="q-image-thumb">
+                <image src="{{imgUrl}}" mode="aspectFill" class="thumb-img" />
+                <view class="q-image-delete" data-index="{{qi}}" data-img-url="{{imgUrl}}" catchtap="onRemoveStemImage">×</view>
+              </view>
+            </view>
+            <view class="q-image-add glass-button" data-index="{{qi}}" bindtap="onChooseStemImage">
+              <image src="/images/kzg/camera-alt.svg" class="add-image-icon" mode="aspectFit"></image>添加题干图片（最多3张）
+            </view>
           </view>
           <view class="edit-group" wx:if="{{item.options.length > 0}}">
             <view class="edit-label">选项</view>
             <view class="edit-opts">
-              <view wx:for="{{item.options}}" wx:key="key" wx:for-item="opt" wx:for-index="optIndex" class="edit-opt-row">
-                <view class="edit-opt-key">{{opt.key}}</view>
-                <input
-                  class="edit-opt-input glass-input"
-                  value="{{opt.text}}"
-                  data-index="{{qi}}"
-                  data-opt-index="{{optIndex}}"
-                  bindinput="onItemOptionChange"
-                />
-                <view
-                  class="opt-del-btn"
-                  data-index="{{qi}}"
-                  data-opt-index="{{optIndex}}"
-                  bindtap="deleteOption"
-                  wx:if="{{item.options.length > 2}}"
-                >×</view>
-              </view>
+              <block wx:for="{{item.options}}" wx:key="key" wx:for-item="opt" wx:for-index="optIndex">
+                <view class="edit-opt-row">
+                  <view class="edit-opt-key">{{opt.key}}</view>
+                  <input
+                    class="edit-opt-input glass-input"
+                    value="{{opt.text}}"
+                    data-index="{{qi}}"
+                    data-opt-index="{{optIndex}}"
+                    bindinput="onItemOptionChange"
+                  />
+                  <view
+                    class="opt-del-btn"
+                    data-index="{{qi}}"
+                    data-opt-index="{{optIndex}}"
+                    bindtap="deleteOption"
+                    wx:if="{{item.options.length > 2}}"
+                  >×</view>
+                </view>
+                <view class="opt-image-row" wx:if="{{item.type === 'single_choice' || item.type === 'multi_choice' || item.type === 'true_false'}}">
+                  <view class="opt-image-add-btn glass-button" data-index="{{qi}}" data-opt-index="{{optIndex}}" catchtap="onChooseOptionImage">
+                    <image src="/images/kzg/camera-alt.svg" class="add-image-icon" mode="aspectFit"></image>{{opt._image ? '更换图片' : '添加图片'}}
+                  </view>
+                  <image wx:if="{{opt._image}}" src="{{opt._image}}" mode="aspectFill"
+                    class="opt-image-thumb" bindtap="onPreviewImage" data-url="{{opt._image}}" />
+                  <view wx:if="{{opt._image}}" class="opt-image-remove" data-index="{{qi}}" data-opt-index="{{optIndex}}" catchtap="onRemoveOptionImage">× 删除</view>
+                </view>
+              </block>
             </view>
             <view
               class="add-opt-btn glass-button"
@@ -188,6 +219,15 @@
               bindinput="onItemFieldChange"
               auto-height
             ></textarea>
+            <view class="q-images" wx:if="{{item._explanationImages.length > 0}}">
+              <view wx:for="{{item._explanationImages}}" wx:key="*this" wx:for-item="imgUrl" class="q-image-thumb">
+                <image src="{{imgUrl}}" mode="aspectFill" class="thumb-img" />
+                <view class="q-image-delete" data-index="{{qi}}" data-img-url="{{imgUrl}}" catchtap="onRemoveExplanationImage">×</view>
+              </view>
+            </view>
+            <view class="q-image-add glass-button" data-index="{{qi}}" bindtap="onChooseExplanationImage">
+              <image src="/images/kzg/camera-alt.svg" class="add-image-icon" mode="aspectFit"></image>添加解析图片（最多3张）
+            </view>
           </view>
         </view>
       </view>

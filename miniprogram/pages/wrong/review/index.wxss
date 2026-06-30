@@ -687,3 +687,26 @@ button::after { border: 0; }
 
   .theme-dark .finish-title { color: #FFFFFF; font-weight: 900; }
   .theme-dark .ring-bg { background: rgba(255,255,255,0.05); }
+
+/* ─── 题目图片展示 ─── */
+.stem-images,
+.expl-images {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.stem-image,
+.expl-image {
+  width: 100%;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.opt-image {
+  width: 160rpx;
+  border-radius: 14rpx;
+  margin-top: 10rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}

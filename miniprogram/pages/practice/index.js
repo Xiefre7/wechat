@@ -1,6 +1,7 @@
 const mockData = require('../../data/mockData');
 const wrongBook = require('../../utils/wrongBook');
 const slashManager = require('../../utils/slashManager');
+const imageUploader = require('../../utils/imageUploader');
 
 /** 斩题阈值：近10题正确率达到此值触发 */
 const SLASH_THRESHOLD = 0.8;
@@ -146,11 +147,20 @@ Page({
       options: q.options || [],
       answer: q.answer || '',
       explanation: q.explanation || '',
+      stemImages: q.stemImages || [],
+      explanationImages: q.explanationImages || [],
     };
+    const hasStemImages = (content.stemImages && content.stemImages.length > 0);
+    const hasExplanationImages = (content.explanationImages && content.explanationImages.length > 0);
 
     return {
       ...q,
-      content,
+      content: {
+        ...content,
+        options: (content.options || []).map(function(opt) {
+          return { key: opt.key, text: opt.text || '', image: opt.image || '' };
+        }),
+      },
       // 自导入题目可能没有 _id，生成临时 ID 用于错题本等场景
       _id: q._id || ('tmp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8)),
       displayType: TYPE_LABELS[q.type] || '未知',
@@ -162,6 +172,8 @@ Page({
       isFillBlank: q.type === 'fill_blank',
       isShortAnswer: q.type === 'short_answer',
       isTrueFalse: q.type === 'true_false',
+      hasStemImages: hasStemImages,
+      hasExplanationImages: hasExplanationImages,
     };
   },
 
@@ -184,7 +196,7 @@ Page({
       if (isCorrectOpt) cls += ' correct';
       if (isWrongOpt) cls += ' wrong';
 
-      return { ...opt, _cls: cls.trim() };
+      return { key: opt.key, text: opt.text || '', image: opt.image || '', _cls: cls.trim() };
     });
   },
 
@@ -700,6 +712,26 @@ Page({
   /* ─── 展开/收起解析 ─── */
   toggleExplanation() {
     this.setData({ showExplanation: !this.data.showExplanation });
+  },
+
+  /* ─── 图片预览 ─── */
+  onPreviewStemImage(e) {
+    const { url } = e.currentTarget.dataset;
+    if (!url) return;
+    const urls = this.data.currentQuestion.content.stemImages || [];
+    imageUploader.previewImage(url, urls);
+  },
+
+  onPreviewOptionImage(e) {
+    const { url } = e.currentTarget.dataset;
+    if (url) imageUploader.previewImage(url);
+  },
+
+  onPreviewExplanationImage(e) {
+    const { url } = e.currentTarget.dataset;
+    if (!url) return;
+    const urls = this.data.currentQuestion.content.explanationImages || [];
+    imageUploader.previewImage(url, urls);
   },
 
   /* ========== 背题模式 ========== */

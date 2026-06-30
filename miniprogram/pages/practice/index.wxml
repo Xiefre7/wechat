@@ -31,6 +31,11 @@
     <!-- 题干 -->
     <view class="stem-card glass-card">
       <view class="stem-text">{{currentQuestion.content.stem}}</view>
+      <view class="stem-images" wx:if="{{currentQuestion.hasStemImages}}">
+        <image wx:for="{{currentQuestion.content.stemImages}}" wx:key="*this"
+          src="{{item}}" mode="widthFix" class="stem-image"
+          bindtap="onPreviewStemImage" data-url="{{item}}" />
+      </view>
     </view>
 
     <!-- 选择题（单选/多选/判断） -->
@@ -48,6 +53,8 @@
           <text wx:else>{{selectedAnswers[item.key] ? '✓' : ''}}</text>
         </view>
         <view class="option-text">{{item.text}}</view>
+        <image wx:if="{{item.image}}" src="{{item.image}}" mode="widthFix"
+          class="opt-image" bindtap="onPreviewOptionImage" data-url="{{item.image}}" />
         <view class="option-icon" wx:if="{{submitted || isMemorizeMode}}">
           <text wx:if="{{item.key === currentQuestion.content.answer}}">✓</text>
         </view>
@@ -166,6 +173,11 @@
         <view class="expl-content" wx:if="{{showExplanation}}">
           {{currentQuestion.content.explanation}}
         </view>
+        <view class="expl-images" wx:if="{{currentQuestion.hasExplanationImages}}">
+          <image wx:for="{{currentQuestion.content.explanationImages}}" wx:key="*this"
+            src="{{item}}" mode="widthFix" class="expl-image"
+            bindtap="onPreviewExplanationImage" data-url="{{item}}" />
+        </view>
       </view>
 
       <!-- 答案解析（无解析时显示正确答案） -->
@@ -176,6 +188,11 @@
           <text wx:if="{{currentQuestion.hasOptions && currentQuestion.content.answer.length === 1}}">
             ({{currentQuestion.content.answer}})
           </text>
+        </view>
+        <view class="expl-images" wx:if="{{currentQuestion.hasExplanationImages}}">
+          <image wx:for="{{currentQuestion.content.explanationImages}}" wx:key="*this"
+            src="{{item}}" mode="widthFix" class="expl-image"
+            bindtap="onPreviewExplanationImage" data-url="{{item}}" />
         </view>
       </view>
     </view>

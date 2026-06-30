@@ -37,33 +37,47 @@
           maxlength="2000"
           auto-height
         ></textarea>
+        <view class="q-images" wx:if="{{form._stemImages.length > 0}}">
+          <view wx:for="{{form._stemImages}}" wx:key="*this" wx:for-item="imgUrl" class="q-image-thumb">
+            <image src="{{imgUrl}}" mode="aspectFill" class="thumb-img" bindtap="onPreviewImage" data-url="{{imgUrl}}" />
+            <view class="q-image-delete" data-img-url="{{imgUrl}}" catchtap="onRemoveStemImage">×</view>
+          </view>
+        </view>
+        <view class="q-image-add glass-button" bindtap="onChooseStemImage">
+          <image src="/images/kzg/camera-alt.svg" class="add-image-icon" mode="aspectFit"></image>添加题干图片（最多3张）
+        </view>
       </view>
 
       <!-- 选项（非简答题显示） -->
       <view class="form-group" wx:if="{{showOptions}}">
         <view class="form-label">选项 <text class="required">*</text></view>
         <view class="options-area">
-          <view
-            wx:for="{{form.options}}"
-            wx:key="key"
-            class="option-row"
-          >
-            <view class="option-key">{{item.key}}</view>
-            <input
-              class="option-input glass-input"
-              placeholder="选项{{item.key}}内容"
-              value="{{item.text}}"
-              bindinput="onOptionChange"
-              data-index="{{index}}"
-              maxlength="500"
-            />
-            <view
-              class="option-delete"
-              data-index="{{index}}"
-              bindtap="deleteOption"
-              wx:if="{{form.options.length > 2}}"
-            >×</view>
-          </view>
+          <block wx:for="{{form.options}}" wx:key="key">
+            <view class="option-row">
+              <view class="option-key">{{item.key}}</view>
+              <input
+                class="option-input glass-input"
+                placeholder="选项{{item.key}}内容"
+                value="{{item.text}}"
+                bindinput="onOptionChange"
+                data-index="{{index}}"
+                maxlength="500"
+              />
+              <view
+                class="option-delete"
+                data-index="{{index}}"
+                bindtap="deleteOption"
+                wx:if="{{form.options.length > 2}}"
+              >×</view>
+            </view>
+            <view class="opt-image-row" wx:if="{{form.type === 'single_choice' || form.type === 'multi_choice' || form.type === 'true_false'}}">
+              <view class="opt-image-add-btn glass-button" data-opt-index="{{index}}" catchtap="onChooseOptionImage">
+                <image src="/images/kzg/camera-alt.svg" class="add-image-icon" mode="aspectFit"></image>{{item._image ? '更换图片' : '添加图片'}}
+              </view>
+              <image wx:if="{{item._image}}" src="{{item._image}}" mode="aspectFill" class="opt-image-thumb" bindtap="onPreviewImage" data-url="{{item._image}}" />
+              <view wx:if="{{item._image}}" class="opt-image-remove" data-opt-index="{{index}}" catchtap="onRemoveOptionImage">× 删除</view>
+            </view>
+          </block>
           <view
             class="add-option glass-button"
             bindtap="addOption"
@@ -157,6 +171,15 @@
           maxlength="2000"
           auto-height
         ></textarea>
+        <view class="q-images" wx:if="{{form._explanationImages.length > 0}}">
+          <view wx:for="{{form._explanationImages}}" wx:key="*this" wx:for-item="imgUrl" class="q-image-thumb">
+            <image src="{{imgUrl}}" mode="aspectFill" class="thumb-img" bindtap="onPreviewImage" data-url="{{imgUrl}}" />
+            <view class="q-image-delete" data-img-url="{{imgUrl}}" catchtap="onRemoveExplanationImage">×</view>
+          </view>
+        </view>
+        <view class="q-image-add glass-button" bindtap="onChooseExplanationImage">
+          <image src="/images/kzg/camera-alt.svg" class="add-image-icon" mode="aspectFit"></image>添加解析图片（最多3张）
+        </view>
       </view>
     </view>
 

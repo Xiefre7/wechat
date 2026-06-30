@@ -1,3 +1,5 @@
+const imageUploader = require('../../../utils/imageUploader');
+
 const TYPE_LABELS = {
   single_choice: '单选',
   multi_choice: '多选',
@@ -91,9 +93,11 @@ Page({
           _idx: idx,
           type: q.type || 'single_choice',
           stem: q.stem || '',
+          _stemImages: (q.stemImages || []).slice(),
+          _explanationImages: (q.explanationImages || []).slice(),
           options: (q.options || []).map(function(opt) {
             var ans = q.answer || '';
-            return { key: opt.key, text: opt.text || '', _sel: ans.indexOf(opt.key) > -1 };
+            return { key: opt.key, text: opt.text || '', _image: opt.image || '', _sel: ans.indexOf(opt.key) > -1 };
           }),
           answer: q.answer || '',
           explanation: q.explanation || '',
@@ -186,19 +190,19 @@ Page({
 
     if (value === 'true_false') {
       newOptions = [
-        { key: 'A', text: '对', _sel: false },
-        { key: 'B', text: '错', _sel: false },
+        { key: 'A', text: '对', _image: '', _sel: false },
+        { key: 'B', text: '错', _image: '', _sel: false },
       ];
     } else if (value === 'short_answer' || value === 'fill_blank') {
       newOptions = [];
     } else if (currentQ.options && currentQ.options.length >= MIN_OPTIONS) {
-      newOptions = currentQ.options.map(function(o) { return { key: o.key, text: o.text, _sel: false }; });
+      newOptions = currentQ.options.map(function(o) { return { key: o.key, text: o.text, _image: o._image || '', _sel: false }; });
     } else {
       newOptions = [
-        { key: 'A', text: '', _sel: false },
-        { key: 'B', text: '', _sel: false },
-        { key: 'C', text: '', _sel: false },
-        { key: 'D', text: '', _sel: false },
+        { key: 'A', text: '', _image: '', _sel: false },
+        { key: 'B', text: '', _image: '', _sel: false },
+        { key: 'C', text: '', _image: '', _sel: false },
+        { key: 'D', text: '', _image: '', _sel: false },
       ];
     }
 
@@ -230,6 +234,84 @@ Page({
     });
   },
 
+  /* ─── 图片操作（预览&编辑模式共用）─── */
+
+  onChooseStemImage(e) {
+    const { index } = e.currentTarget.dataset;
+    const questions = [...this.data.questions];
+    const q = questions[index];
+    const currentCount = (q._stemImages || []).length;
+    if (currentCount >= 3) {
+      wx.showToast({ title: '题干最多添加3张图片', icon: 'none' });
+      return;
+    }
+    imageUploader.chooseImages(3 - currentCount, 3 - currentCount).then((paths) => {
+      if (paths.length === 0) return;
+      questions[index] = { ...q, _stemImages: [...(q._stemImages || []), ...paths] };
+      this.setData({ questions });
+    });
+  },
+
+  onRemoveStemImage(e) {
+    const { index, imgUrl } = e.currentTarget.dataset;
+    const questions = [...this.data.questions];
+    const q = questions[index];
+    questions[index] = { ...q, _stemImages: (q._stemImages || []).filter(function(p) { return p !== imgUrl; }) };
+    this.setData({ questions });
+  },
+
+  onChooseOptionImage(e) {
+    const { index, optIndex } = e.currentTarget.dataset;
+    imageUploader.chooseImages(1, 1).then((paths) => {
+      if (paths.length === 0) return;
+      const questions = [...this.data.questions];
+      const q = questions[index];
+      const options = [...q.options];
+      options[optIndex] = { ...options[optIndex], _image: paths[0] };
+      questions[index] = { ...q, options };
+      this.setData({ questions });
+    });
+  },
+
+  onRemoveOptionImage(e) {
+    const { index, optIndex } = e.currentTarget.dataset;
+    const questions = [...this.data.questions];
+    const q = questions[index];
+    const options = [...q.options];
+    options[optIndex] = { ...options[optIndex], _image: '' };
+    questions[index] = { ...q, options };
+    this.setData({ questions });
+  },
+
+  onChooseExplanationImage(e) {
+    const { index } = e.currentTarget.dataset;
+    const questions = [...this.data.questions];
+    const q = questions[index];
+    const currentCount = (q._explanationImages || []).length;
+    if (currentCount >= 3) {
+      wx.showToast({ title: '解析最多添加3张图片', icon: 'none' });
+      return;
+    }
+    imageUploader.chooseImages(3 - currentCount, 3 - currentCount).then((paths) => {
+      if (paths.length === 0) return;
+      questions[index] = { ...q, _explanationImages: [...(q._explanationImages || []), ...paths] };
+      this.setData({ questions });
+    });
+  },
+
+  onRemoveExplanationImage(e) {
+    const { index, imgUrl } = e.currentTarget.dataset;
+    const questions = [...this.data.questions];
+    const q = questions[index];
+    questions[index] = { ...q, _explanationImages: (q._explanationImages || []).filter(function(p) { return p !== imgUrl; }) };
+    this.setData({ questions });
+  },
+
+  onPreviewImage(e) {
+    const { url } = e.currentTarget.dataset;
+    if (url) imageUploader.previewImage(url);
+  },
+
   /* ─── 选项增删 ─── */
   addOption(e) {
     const { index } = e.currentTarget.dataset;
@@ -238,7 +320,7 @@ Page({
     const options = [...q.options];
     if (options.length >= MAX_OPTIONS) return;
     const nextKey = String.fromCharCode(65 + options.length);
-    options.push({ key: nextKey, text: '', _sel: false });
+    options.push({ key: nextKey, text: '', _image: '', _sel: false });
     questions[index] = { ...q, options: options };
     this.setData({ questions });
   },
@@ -291,6 +373,7 @@ Page({
         return {
           key: opt.key,
           text: opt.text || '',
+          _image: opt._image || '',
           _sel: newAnswer.indexOf(opt.key) > -1
         };
       });
@@ -300,6 +383,8 @@ Page({
         _idx: q._idx,
         type: q.type,
         stem: q.stem,
+        _stemImages: q._stemImages,
+        _explanationImages: q._explanationImages,
         options: newOpts,
         answer: newAnswer,
         explanation: q.explanation,
@@ -349,18 +434,83 @@ Page({
 
     const { bankName, questions, source, filePath } = this.data;
 
-    // 清理内部字段（移除前端专用前缀 _ 字段）
-    const cleanQuestions = questions.map(function (q) {
+    // 收集所有待上传的图片临时路径
+    const allTempPaths = [];
+    questions.forEach(function (q) {
+      (q._stemImages || []).forEach(function (p) { allTempPaths.push(p); });
+      (q._explanationImages || []).forEach(function (p) { allTempPaths.push(p); });
+      (q.options || []).forEach(function (opt) {
+        if (opt._image) allTempPaths.push(opt._image);
+      });
+    });
+
+    // 如果没有任何图片需要上传，直接导入
+    if (allTempPaths.length === 0) {
+      this._doSendImport(bankName, questions, source, filePath);
+      return;
+    }
+
+    wx.showLoading({ title: '上传图片中...', mask: true });
+
+    var that = this;
+    imageUploader.uploadImages(allTempPaths, 'q').then(function (result) {
+      wx.hideLoading();
+
+      // 将临时路径替换为 cloudFileID
+      var updatedQuestions = questions.map(function (q) {
+        return {
+          ...q,
+          _stemImages: (q._stemImages || []).map(function (p) { return result.pathMap[p] || p; }),
+          _explanationImages: (q._explanationImages || []).map(function (p) { return result.pathMap[p] || p; }),
+          options: (q.options || []).map(function (opt) {
+            return { ...opt, _image: result.pathMap[opt._image] || opt._image || '' };
+          }),
+        };
+      });
+
+      that._doSendImport(bankName, updatedQuestions, source, filePath);
+    }).catch(function (err) {
+      wx.hideLoading();
+      console.error('图片上传失败:', err);
+      wx.showModal({
+        title: '上传失败',
+        content: '图片上传失败: ' + (err.errMsg || '网络异常') + '。是否跳过图片直接导入？',
+        confirmText: '跳过图片导入',
+        cancelText: '返回修改',
+        success: function (res) {
+          if (res.confirm) {
+            // 清除图片，直接导入
+            var noImgQuestions = questions.map(function (q) {
+              return { ...q, _stemImages: [], _explanationImages: [], options: (q.options || []).map(function(opt) { return { ...opt, _image: '' }; }) };
+            });
+            that._doSendImport(bankName, noImgQuestions, source, filePath);
+          } else {
+            that.setData({ importing: false });
+          }
+        },
+      });
+    });
+  },
+
+  _doSendImport(bankName, questions, source, filePath) {
+    var that = this;
+
+    // 清理内部字段
+    var cleanQuestions = questions.map(function (q) {
       return {
         type: q.type,
         stem: (q.stem || '').trim(),
-        options: q.options || [],
+        options: (q.options || []).map(function(opt) {
+          return { key: opt.key, text: (opt.text || '').trim(), image: opt._image || '' };
+        }),
         answer: q.answer ? q.answer.trim() : '',
         explanation: q.explanation ? q.explanation.trim() : '',
+        stemImages: (q._stemImages || []).filter(function(p) { return p && p.indexOf('cloud://') === 0; }),
+        explanationImages: (q._explanationImages || []).filter(function(p) { return p && p.indexOf('cloud://') === 0; }),
       };
     });
 
-    const importData = {
+    var importData = {
       type: 'importBank',
       bankName: bankName.trim(),
       bankType: 'custom',
@@ -368,63 +518,43 @@ Page({
       source: source || 'manual',
     };
 
-    // Excel 文件需要先上传
     if (source === 'excel' && filePath) {
-      this.uploadAndImport(filePath, bankName.trim());
+      // Excel 文件上传路径保持原逻辑
+      wx.showLoading({ title: '上传文件中...', mask: true });
+      const cloudPath = 'imports/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.xlsx';
+      wx.cloud.uploadFile({ cloudPath, filePath }).then(function (uploadRes) {
+        wx.showLoading({ title: '解析导入中...', mask: true });
+        return wx.cloud.callFunction({ name: 'quickstartFunctions', data: { type: 'importBankByExcel', fileID: uploadRes.fileID, bankName: bankName.trim() } });
+      }).then(function (res) {
+        wx.hideLoading();
+        if (res.result && res.result.success) {
+          that.onImportSuccess(res.result);
+        } else {
+          that.onImportFail(res.result ? res.result.errMsg : '解析失败');
+        }
+      }).catch(function (err) {
+        wx.hideLoading();
+        console.error('导入失败:', err);
+        that.onImportFail(err.errMsg || '文件上传失败，请重试');
+      });
       return;
     }
 
     wx.showLoading({ title: '导入中...', mask: true });
 
-    wx.cloud
-      .callFunction({
-        name: 'quickstartFunctions',
-        data: importData,
-      })
-      .then((res) => {
+    wx.cloud.callFunction({ name: 'quickstartFunctions', data: importData })
+      .then(function (res) {
         wx.hideLoading();
         if (res.result && res.result.success) {
-          this.onImportSuccess(res.result);
+          that.onImportSuccess(res.result);
         } else {
-          this.onImportFail(res.result ? res.result.errMsg : '未知错误');
+          that.onImportFail(res.result ? res.result.errMsg : '未知错误');
         }
       })
-      .catch((err) => {
+      .catch(function (err) {
         wx.hideLoading();
         console.error('导入失败:', err);
-        this.onImportFail(err.errMsg || '网络异常，请重试');
-      });
-  },
-
-  uploadAndImport(filePath, bankName) {
-    wx.showLoading({ title: '上传文件中...', mask: true });
-
-    const cloudPath = `imports/${Date.now()}_${Math.random().toString(36).slice(2)}.xlsx`;
-    wx.cloud
-      .uploadFile({ cloudPath, filePath })
-      .then((uploadRes) => {
-        wx.showLoading({ title: '解析导入中...', mask: true });
-        return wx.cloud.callFunction({
-          name: 'quickstartFunctions',
-          data: {
-            type: 'importBankByExcel',
-            fileID: uploadRes.fileID,
-            bankName,
-          },
-        });
-      })
-      .then((res) => {
-        wx.hideLoading();
-        if (res.result && res.result.success) {
-          this.onImportSuccess(res.result);
-        } else {
-          this.onImportFail(res.result ? res.result.errMsg : '解析失败');
-        }
-      })
-      .catch((err) => {
-        wx.hideLoading();
-        console.error('导入失败:', err);
-        this.onImportFail(err.errMsg || '文件上传失败，请重试');
+        that.onImportFail(err.errMsg || '网络异常，请重试');
       });
   },
 

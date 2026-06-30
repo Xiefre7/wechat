@@ -1,6 +1,7 @@
 const wrongBook = require('../../../utils/wrongBook');
 const mockData = require('../../../data/mockData');
 var questionData = require('../../../utils/questionData');
+const imageUploader = require('../../../utils/imageUploader');
 
 /** 题型中文名 */
 const TYPE_LABELS = {
@@ -126,26 +127,31 @@ Page({
   /* ─── 格式化题目 ─── */
   formatQuestion(record) {
     const q = record.question || {};
-    // 归一化为 content.* 格式（兼容 mockData 嵌套格式和云DB扁平格式）
     const content = q.content || {
       stem: q.stem || '',
       options: q.options || [],
       answer: q.answer || '',
       explanation: q.explanation || '',
+      stemImages: q.stemImages || [],
+      explanationImages: q.explanationImages || [],
     };
     return {
       ...q,
-      content: content,
+      content: {
+        ...content,
+        options: (content.options || []).map(function(opt) {
+          return { key: opt.key, text: opt.text || '', image: opt.image || '' };
+        }),
+      },
       _id: q._id || record.questionId,
       displayType: TYPE_LABELS[q.type] || '未知',
-      hasOptions:
-        q.type === 'single_choice' ||
-        q.type === 'multi_choice' ||
-        q.type === 'true_false',
+      hasOptions: q.type === 'single_choice' || q.type === 'multi_choice' || q.type === 'true_false',
       isMulti: q.type === 'multi_choice',
       isFillBlank: q.type === 'fill_blank',
       isShortAnswer: q.type === 'short_answer',
       isTrueFalse: q.type === 'true_false',
+      hasStemImages: !!(content.stemImages && content.stemImages.length > 0),
+      hasExplanationImages: !!(content.explanationImages && content.explanationImages.length > 0),
     };
   },
 
@@ -168,7 +174,7 @@ Page({
       if (isCorrectOpt) cls += ' correct';
       if (isWrongOpt) cls += ' wrong';
 
-      return { ...opt, _cls: cls.trim() };
+      return { key: opt.key, text: opt.text || '', image: opt.image || '', _cls: cls.trim() };
     });
   },
 
@@ -435,5 +441,25 @@ Page({
   /* ─── 展开/收起解析 ─── */
   toggleExplanation() {
     this.setData({ showExplanation: !this.data.showExplanation });
+  },
+
+  /* ─── 图片预览 ─── */
+  onPreviewStemImage(e) {
+    const { url } = e.currentTarget.dataset;
+    if (!url) return;
+    const urls = this.data.currentQuestion.content.stemImages || [];
+    imageUploader.previewImage(url, urls);
+  },
+
+  onPreviewOptionImage(e) {
+    const { url } = e.currentTarget.dataset;
+    if (url) imageUploader.previewImage(url);
+  },
+
+  onPreviewExplanationImage(e) {
+    const { url } = e.currentTarget.dataset;
+    if (!url) return;
+    const urls = this.data.currentQuestion.content.explanationImages || [];
+    imageUploader.previewImage(url, urls);
   },
 });

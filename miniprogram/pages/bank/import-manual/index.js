@@ -1,14 +1,18 @@
+const imageUploader = require('../../../utils/imageUploader');
+
 const EMPTY_FORM = {
   type: 'single_choice',
   stem: '',
+  _stemImages: [],
   options: [
-    { key: 'A', text: '' },
-    { key: 'B', text: '' },
-    { key: 'C', text: '' },
-    { key: 'D', text: '' },
+    { key: 'A', text: '', _image: '' },
+    { key: 'B', text: '', _image: '' },
+    { key: 'C', text: '', _image: '' },
+    { key: 'D', text: '', _image: '' },
   ],
   answer: '',
   explanation: '',
+  _explanationImages: [],
 };
 
 const QUESTION_TYPES = [
@@ -47,15 +51,20 @@ Page({
             selectedAnswers[a.trim()] = true;
           });
         }
+        var editOptions = q.options && q.options.length > 0
+          ? q.options.map(function(opt) { return { key: opt.key, text: opt.text || '', _image: opt.image || '' }; })
+          : [...EMPTY_FORM.options];
         this.setData({
           isEditing: true,
           editIndex: index,
           form: {
             type: q.type,
             stem: q.stem,
-            options: q.options && q.options.length > 0 ? [...q.options] : [...EMPTY_FORM.options],
+            _stemImages: (q.stemImages || []).slice(),
+            options: editOptions,
             answer: q.answer,
             explanation: q.explanation || '',
+            _explanationImages: (q.explanationImages || []).slice(),
           },
           selectedAnswers,
           showOptions: !['short_answer'].includes(q.type),
@@ -78,8 +87,8 @@ Page({
     // 切换题型时重置选项
     if (type === 'true_false') {
       form.options = [
-        { key: 'A', text: '对' },
-        { key: 'B', text: '错' },
+        { key: 'A', text: '对', _image: '' },
+        { key: 'B', text: '错', _image: '' },
       ];
       form.answer = '';
     } else if (type === 'short_answer' || type === 'fill_blank') {
@@ -121,7 +130,7 @@ Page({
     const options = [...this.data.form.options];
     if (options.length >= 10) return;
     const nextKey = String.fromCharCode(65 + options.length);
-    options.push({ key: nextKey, text: '' });
+    options.push({ key: nextKey, text: '', _image: '' });
     this.setData({ 'form.options': options });
   },
 
@@ -173,6 +182,76 @@ Page({
     this.setData({ 'form.answer': value });
   },
 
+  /* ─── 图片操作 ─── */
+  onChooseStemImage() {
+    var that = this;
+    var form = this.data.form;
+    var currentCount = (form._stemImages || []).length;
+    if (currentCount >= 3) {
+      wx.showToast({ title: '题干最多添加3张图片', icon: 'none' });
+      return;
+    }
+    imageUploader.chooseImages(3 - currentCount, 3 - currentCount).then(function(paths) {
+      if (paths.length === 0) return;
+      that.setData({ 'form._stemImages': [...(form._stemImages || []), ...paths] });
+    });
+  },
+
+  onRemoveStemImage(e) {
+    var imgUrl = e.currentTarget.dataset.imgUrl;
+    var form = this.data.form;
+    this.setData({
+      'form._stemImages': (form._stemImages || []).filter(function(p) { return p !== imgUrl; })
+    });
+  },
+
+  onChooseOptionImage(e) {
+    var that = this;
+    var optIndex = Number(e.currentTarget.dataset.optIndex);
+    imageUploader.chooseImages(1, 1).then(function(paths) {
+      if (paths.length === 0) return;
+      var form = that.data.form;
+      var options = [...form.options];
+      options[optIndex] = { ...options[optIndex], _image: paths[0] };
+      that.setData({ 'form.options': options });
+    });
+  },
+
+  onRemoveOptionImage(e) {
+    var optIndex = Number(e.currentTarget.dataset.optIndex);
+    var form = this.data.form;
+    var options = [...form.options];
+    options[optIndex] = { ...options[optIndex], _image: '' };
+    this.setData({ 'form.options': options });
+  },
+
+  onChooseExplanationImage() {
+    var that = this;
+    var form = this.data.form;
+    var currentCount = (form._explanationImages || []).length;
+    if (currentCount >= 3) {
+      wx.showToast({ title: '解析最多添加3张图片', icon: 'none' });
+      return;
+    }
+    imageUploader.chooseImages(3 - currentCount, 3 - currentCount).then(function(paths) {
+      if (paths.length === 0) return;
+      that.setData({ 'form._explanationImages': [...(form._explanationImages || []), ...paths] });
+    });
+  },
+
+  onRemoveExplanationImage(e) {
+    var imgUrl = e.currentTarget.dataset.imgUrl;
+    var form = this.data.form;
+    this.setData({
+      'form._explanationImages': (form._explanationImages || []).filter(function(p) { return p !== imgUrl; })
+    });
+  },
+
+  onPreviewImage(e) {
+    var url = e.currentTarget.dataset.url;
+    if (url) imageUploader.previewImage(url);
+  },
+
   /* ─── 保存 ─── */
   validateForm() {
     const { form } = this.data;
@@ -187,77 +266,167 @@ Page({
     return errors;
   },
 
-  saveForm() {
-    const errors = this.validateForm();
-    if (errors.length > 0) {
-      wx.showToast({ title: errors[0], icon: 'none' });
-      return false;
-    }
+  /* 收集表单中所有待上传的图片临时路径 */
+  _collectTempPaths() {
+    const { form } = this.data;
+    var allTempPaths = [];
+    (form._stemImages || []).forEach(function(p) { allTempPaths.push(p); });
+    (form._explanationImages || []).forEach(function(p) { allTempPaths.push(p); });
+    (form.options || []).forEach(function(opt) {
+      if (opt._image) allTempPaths.push(opt._image);
+    });
+    return allTempPaths;
+  },
 
-    const { form, isEditing, editIndex } = this.data;
-    const drafts = wx.getStorageSync('manualDraft') || [];
+  /* 用 pathMap 替换表单中的临时路径 → cloudFileID */
+  _applyPathMap(pathMap) {
+    const { form } = this.data;
+    return {
+      type: form.type,
+      stem: form.stem.trim(),
+      _stemImages: (form._stemImages || []).map(function(p) { return pathMap[p] || p; }),
+      options: form.options.map(function(opt) {
+        return { key: opt.key, text: opt.text.trim(), _image: pathMap[opt._image] || opt._image || '' };
+      }),
+      answer: form.answer.trim(),
+      explanation: form.explanation.trim(),
+      _explanationImages: (form._explanationImages || []).map(function(p) { return pathMap[p] || p; }),
+    };
+  },
 
-    // 判断题答案规范化：统一转为 A（对）或 B（错）
-    let answer = form.answer.trim();
-    if (form.type === 'true_false') {
+  /* 构建最终保存的题目对象 */
+  _buildQuestion(formAfterUpload) {
+    var answer = formAfterUpload.answer;
+    if (formAfterUpload.type === 'true_false') {
       if (/^(对|正确|√|✓|T|t|true|True)$/.test(answer)) answer = 'A';
       else if (/^(错|错误|×|✗|F|f|false|False)$/.test(answer)) answer = 'B';
     }
 
-    const question = {
-      type: form.type,
-      stem: form.stem.trim(),
-      options: form.options.filter((o) => o.text.trim()).map((o) => ({ key: o.key, text: o.text.trim() })),
-      answer,
-      explanation: form.explanation.trim(),
+    return {
+      type: formAfterUpload.type,
+      stem: formAfterUpload.stem,
+      stemImages: (formAfterUpload._stemImages || []).filter(function(p) { return p && p.indexOf('cloud://') === 0; }),
+      options: formAfterUpload.options.filter(function(o) { return o.text; }).map(function(o) {
+        return { key: o.key, text: o.text, image: o._image || '' };
+      }),
+      answer: answer,
+      explanation: formAfterUpload.explanation,
+      explanationImages: (formAfterUpload._explanationImages || []).filter(function(p) { return p && p.indexOf('cloud://') === 0; }),
     };
+  },
 
+  /* 写入 storage */
+  _writeDraft(question) {
+    const { isEditing, editIndex } = this.data;
+    var drafts = wx.getStorageSync('manualDraft') || [];
     if (isEditing) {
       drafts[editIndex] = question;
     } else {
       drafts.push(question);
     }
-
     wx.setStorageSync('manualDraft', drafts);
-    return true;
+  },
+
+  /* 重置表单 */
+  _resetForm() {
+    this.setData({
+      isEditing: false,
+      editIndex: -1,
+      form: {
+        ...EMPTY_FORM,
+        options: [...EMPTY_FORM.options],
+      },
+      selectedAnswers: {},
+    });
+  },
+
+  /* 异步保存：先上传图片再写入 storage */
+  _doSave() {
+    var that = this;
+    var errors = this.validateForm();
+    if (errors.length > 0) {
+      wx.showToast({ title: errors[0], icon: 'none' });
+      return Promise.resolve(false);
+    }
+
+    var allTempPaths = this._collectTempPaths();
+
+    if (allTempPaths.length === 0) {
+      var form = this.data.form;
+      var formAfter = {
+        type: form.type,
+        stem: form.stem.trim(),
+        _stemImages: (form._stemImages || []).slice(),
+        options: form.options.map(function(opt) { return { key: opt.key, text: opt.text.trim(), _image: opt._image || '' }; }),
+        answer: form.answer.trim(),
+        explanation: form.explanation.trim(),
+        _explanationImages: (form._explanationImages || []).slice(),
+      };
+      var question = this._buildQuestion(formAfter);
+      this._writeDraft(question);
+      return Promise.resolve(true);
+    }
+
+    wx.showLoading({ title: '上传图片中...', mask: true });
+
+    return imageUploader.uploadImages(allTempPaths, 'q').then(function(result) {
+      wx.hideLoading();
+      var formAfter = that._applyPathMap(result.pathMap);
+      var question = that._buildQuestion(formAfter);
+      that._writeDraft(question);
+      return true;
+    }).catch(function(err) {
+      wx.hideLoading();
+      console.error('[import-manual] 图片上传失败:', err);
+      return new Promise(function(resolve) {
+        wx.showModal({
+          title: '上传失败',
+          content: '图片上传失败: ' + (err.errMsg || '网络异常') + '。是否跳过图片直接保存？',
+          confirmText: '跳过图片保存',
+          cancelText: '返回修改',
+          success: function(res) {
+            if (res.confirm) {
+              var form = that.data.form;
+              var formNoImg = {
+                type: form.type,
+                stem: form.stem.trim(),
+                _stemImages: [],
+                options: form.options.map(function(opt) { return { key: opt.key, text: opt.text.trim(), _image: '' }; }),
+                answer: form.answer.trim(),
+                explanation: form.explanation.trim(),
+                _explanationImages: [],
+              };
+              var question = that._buildQuestion(formNoImg);
+              that._writeDraft(question);
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          },
+        });
+      });
+    });
   },
 
   saveAndContinue() {
-    if (!this.saveForm()) return;
-
-    // 重置表单
-    this.setData({
-      isEditing: false,
-      editIndex: -1,
-      form: {
-        ...EMPTY_FORM,
-        options: [...EMPTY_FORM.options],
-      },
-      selectedAnswers: {},
+    var that = this;
+    this._doSave().then(function(success) {
+      if (!success) return;
+      that._resetForm();
+      wx.showToast({ title: '已保存，继续添加', icon: 'success' });
+      that.setData({ scrollTop: 0 });
     });
-
-    wx.showToast({ title: '已保存，继续添加', icon: 'success' });
-    // 滚动到顶部
-    this.setData({ scrollTop: 0 });
   },
 
   saveAndFinish() {
-    if (!this.saveForm()) return;
-
-    // 清除编辑状态
-    this.setData({
-      isEditing: false,
-      editIndex: -1,
-      form: {
-        ...EMPTY_FORM,
-        options: [...EMPTY_FORM.options],
-      },
-      selectedAnswers: {},
+    var that = this;
+    this._doSave().then(function(success) {
+      if (!success) return;
+      that._resetForm();
+      wx.showToast({ title: '题目已保存', icon: 'success' });
+      setTimeout(function() {
+        wx.navigateBack();
+      }, 800);
     });
-
-    wx.showToast({ title: '题目已保存', icon: 'success' });
-    setTimeout(() => {
-      wx.navigateBack();
-    }, 800);
   },
 });

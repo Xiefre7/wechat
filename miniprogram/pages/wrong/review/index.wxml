@@ -75,6 +75,11 @@
       <!-- 题干 -->
       <view class="stem-card glass-card">
         <view class="stem-text">{{currentQuestion.content.stem}}</view>
+        <view class="stem-images" wx:if="{{currentQuestion.hasStemImages}}">
+          <image wx:for="{{currentQuestion.content.stemImages}}" wx:key="*this"
+            src="{{item}}" mode="widthFix" class="stem-image"
+            bindtap="onPreviewStemImage" data-url="{{item}}" />
+        </view>
       </view>
 
       <!-- 选择题（单选/多选/判断） -->
@@ -92,6 +97,8 @@
             <text wx:else>{{selectedAnswers[item.key] ? '✓' : ''}}</text>
           </view>
           <view class="option-text">{{item.text}}</view>
+          <image wx:if="{{item.image}}" src="{{item.image}}" mode="widthFix"
+            class="opt-image" bindtap="onPreviewOptionImage" data-url="{{item.image}}" />
           <view class="option-icon" wx:if="{{submitted}}">
             <text wx:if="{{item.key === currentQuestion.content.answer}}">✓</text>
             <text wx:elif="{{isCorrect === false && (isMultiChoice ? selectedAnswers[item.key] : selectedAnswer === item.key)}}">✗</text>
@@ -174,12 +181,22 @@
           <view class="expl-content" wx:if="{{showExplanation}}">
             {{currentQuestion.content.explanation}}
           </view>
+          <view class="expl-images" wx:if="{{currentQuestion.hasExplanationImages}}">
+            <image wx:for="{{currentQuestion.content.explanationImages}}" wx:key="*this"
+              src="{{item}}" mode="widthFix" class="expl-image"
+              bindtap="onPreviewExplanationImage" data-url="{{item}}" />
+          </view>
         </view>
 
         <!-- 正确答案展示 -->
         <view class="correct-answer-card glass-card" wx:if="{{isCorrect === false && !currentQuestion.content.explanation}}">
           <view class="ca-label">正确答案：</view>
           <view class="ca-value">{{currentQuestion.content.answer}}</view>
+          <view class="expl-images" wx:if="{{currentQuestion.hasExplanationImages}}">
+            <image wx:for="{{currentQuestion.content.explanationImages}}" wx:key="*this"
+              src="{{item}}" mode="widthFix" class="expl-image"
+              bindtap="onPreviewExplanationImage" data-url="{{item}}" />
+          </view>
         </view>
       </view>
 

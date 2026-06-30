@@ -237,9 +237,13 @@ const importBank = async (event) => {
         difficulty: 2,
         content: {
           stem: q.stem || '',
-          options: q.options || [],
+          options: (q.options || []).map(function(o) {
+            return { key: o.key, text: (o.text || '').trim(), image: o.image || '' };
+          }),
           answer: q.answer || '',
           explanation: q.explanation || '',
+          stemImages: q.stemImages || [],
+          explanationImages: q.explanationImages || [],
         },
         tags: ['自导入'],
         status: 'active',

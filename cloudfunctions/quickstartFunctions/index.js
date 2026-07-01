@@ -283,6 +283,65 @@ const importBank = async (event) => {
 };
 
 /**
+ * 删除自导入题库
+ * 级联删除：banks → questions → wrong_questions
+ */
+const deleteBank = async (event) => {
+  const { bankId } = event;
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+
+  if (!bankId) {
+    return { success: false, errMsg: '缺少题库ID' };
+  }
+
+  try {
+    // 1. 验证题库存在且属于当前用户
+    const bankRes = await db.collection('banks').doc(bankId).get();
+    if (!bankRes.data) {
+      return { success: false, errMsg: '题库不存在' };
+    }
+    if (bankRes.data.ownerId && bankRes.data.ownerId !== openid) {
+      return { success: false, errMsg: '无权删除此题库' };
+    }
+
+    // 2. 删除题库
+    await db.collection('banks').doc(bankId).remove();
+
+    // 3. 删除该题库下所有题目（分批）
+    await batchDelete(db.collection('questions'), 'bankId', bankId);
+
+    // 4. 删除该题库下所有错题记录
+    await batchDelete(db.collection('wrong_questions'), 'bankId', bankId);
+
+    return { success: true, message: '题库已删除' };
+  } catch (err) {
+    console.error('deleteBank error:', err);
+    return { success: false, errMsg: err.message || '删除失败' };
+  }
+};
+
+/**
+ * 分批删除辅助函数
+ * 微信云数据库 remove where 无单次限制，但逐条 doc().remove() 保险
+ */
+async function batchDelete(collection, fieldName, fieldValue) {
+  const BATCH_SIZE = 100;
+  while (true) {
+    const res = await collection
+      .where({ [fieldName]: fieldValue })
+      .limit(BATCH_SIZE)
+      .get();
+    if (!res.data || res.data.length === 0) break;
+    const ids = res.data.map(function (item) { return item._id; });
+    for (var i = 0; i < ids.length; i++) {
+      try { await collection.doc(ids[i]).remove(); } catch (e) { /* skip */ }
+    }
+    if (res.data.length < BATCH_SIZE) break;
+  }
+}
+
+/**
  * Excel 文件导入
  * 云函数端使用 SheetJS 解析 xlsx 后调用 importBank
  */
@@ -1253,6 +1312,8 @@ exports.main = async (event, context) => {
     // 题库导入
     case 'importBank':
       return await importBank(event);
+    case 'deleteBank':
+      return await deleteBank(event);
     case 'importBankByExcel':
       return await importBankByExcel(event);
     case 'downloadImportTemplate':

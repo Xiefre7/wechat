@@ -1,5 +1,6 @@
 const mockData = require('../../../data/mockData');
 const slashManager = require('../../../utils/slashManager');
+const wrongBook = require('../../../utils/wrongBook');
 
 const CATEGORY_COLORS = {
   '数学': { bg: 'rgba(0,122,255,0.08)', text: '#007AFF' },
@@ -348,6 +349,83 @@ Page({
 
     wx.navigateTo({
       url: '/pages/practice/index',
+    });
+  },
+
+  /* ─── 删除自导入题库 ─── */
+  deleteBank(e) {
+    const { bankId, bankName } = e.currentTarget.dataset;
+    const that = this;
+
+    wx.showModal({
+      title: '删除题库',
+      content: '确定要删除「' + bankName + '」吗？\n\n删除后题库和错题本中该题库的记录将一并清除，此操作不可撤销。',
+      confirmText: '删除',
+      confirmColor: '#FF3B30',
+      cancelText: '取消',
+      success(res) {
+        if (!res.confirm) return;
+
+        wx.showLoading({ title: '删除中...' });
+
+        // 判断是否为本地 mock 数据（非云端题库）
+        var isMockBank = mockData.banks.some(function (b) { return b._id === bankId; });
+
+        if (isMockBank) {
+          // 本地 mock 数据：直接清理本地，无需调云函数
+          that.performLocalCleanup(bankId);
+          wx.hideLoading();
+          wx.showToast({ title: '已删除', icon: 'success' });
+        } else {
+          // 云端题库：调云函数删除云端数据，成功后清理本地
+          that.deleteFromCloud(bankId).then(function () {
+            that.performLocalCleanup(bankId);
+            wx.hideLoading();
+            wx.showToast({ title: '已删除', icon: 'success' });
+          }).catch(function (err) {
+            wx.hideLoading();
+            console.error('删除题库失败:', err);
+            // 云函数失败也清理本地数据
+            that.performLocalCleanup(bankId);
+            wx.showToast({ title: '已从本地移除（云端同步失败）', icon: 'none', duration: 2500 });
+          });
+        }
+      },
+    });
+  },
+
+  /* ─── 本地清理：移除列表 + 错题本 + 收起展开 ─── */
+  performLocalCleanup(bankId) {
+    this._allBanks = this._allBanks.filter(function (b) { return b._id !== bankId; });
+    wrongBook.removeByBankId(bankId);
+    if (this.data.expandedBankId === bankId) {
+      this.setData({ expandedBankId: '' });
+    }
+    this.filterBanks(this.data.currentTab);
+  },
+
+  /* ─── 调用云函数删除题库 ─── */
+  deleteFromCloud(bankId) {
+    return new Promise(function (resolve, reject) {
+      try {
+        wx.cloud.callFunction({
+          name: 'quickstartFunctions',
+          data: {
+            type: 'deleteBank',
+            bankId: bankId,
+          },
+        }).then(function (res) {
+          if (res.result && res.result.success) {
+            resolve(res.result);
+          } else {
+            reject(new Error(res.result && res.result.errMsg ? res.result.errMsg : '云函数返回失败'));
+          }
+        }).catch(function (err) {
+          reject(err);
+        });
+      } catch (e) {
+        reject(e);
+      }
     });
   },
 

@@ -63,6 +63,15 @@
               <image class="share-icon" src="/images/icons/share.svg" mode="aspectFit"></image>
               <text class="share-text">分享</text>
             </button>
+            <view
+              wx:if="{{item.type === 'custom'}}"
+              class="bank-delete"
+              data-bank-id="{{item._id}}"
+              data-bank-name="{{item.name}}"
+              catchtap="deleteBank"
+            >
+              <image class="delete-icon" src="/images/kzg/delete-x-red.svg" mode="aspectFit"></image>
+            </view>
             <view class="bank-arrow {{expandedBankId === item._id ? 'rotated' : ''}}">
               <image class="arrow-icon" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
             </view>

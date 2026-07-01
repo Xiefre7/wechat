@@ -179,7 +179,7 @@ button::after { border: 0; }
 .bank-right {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 12rpx;
   flex-shrink: 0;
 }
 
@@ -230,6 +230,28 @@ button::after { border: 0; }
 .arrow-icon {
   width: 24rpx;
   height: 24rpx;
+}
+
+/* ─── 删除按钮 ─── */
+.bank-delete {
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22rpx;
+  background: #FEF2F2;
+  flex-shrink: 0;
+  transition: opacity 180ms ease;
+}
+
+.bank-delete:active {
+  opacity: 0.7;
+}
+
+.delete-icon {
+  width: 26rpx;
+  height: 26rpx;
 }
 
 /* ─── 分享按钮 ─── */
@@ -425,4 +447,5 @@ button::after { border: 0; }
 
   .theme-dark .kp-divider { background: rgba(255,255,255,0.06); }
   .theme-dark .bank-arrow { background: rgba(255,255,255,0.06); }
+  .theme-dark .bank-delete { background: rgba(255, 59, 48, 0.12); }
   .theme-dark .progress-bar { background: rgba(255,255,255,0.1); }

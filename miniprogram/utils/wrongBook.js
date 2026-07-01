@@ -442,6 +442,18 @@ function removeWrong(wrongId) {
   saveWrongBook(book);
 }
 
+/**
+ * 按题库ID批量移除错题
+ * @param {string} bankId
+ * @returns {number} 移除的记录数
+ */
+function removeByBankId(bankId) {
+  const beforeCount = getWrongBook().length;
+  const book = getWrongBook().filter((w) => w.bankId !== bankId);
+  saveWrongBook(book);
+  return beforeCount - book.length;
+}
+
 module.exports = {
   getWrongBook,
   saveWrongBook,
@@ -455,5 +467,6 @@ module.exports = {
   reviewAnswer,
   cleanMastered,
   removeWrong,
+  removeByBankId,
   INTERVALS,
 };

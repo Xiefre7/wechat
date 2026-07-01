@@ -75,14 +75,25 @@ Page({
     // 异步查找题目（支持云DB + mockData）
     var lookups = (result.answers || []).map(function (a, i) {
       return questionData.findQuestionById(a.questionId).then(function (question) {
+        var correctAnswer = question ? (question.content ? question.content.answer : (question.answer || '')) : '';
+        var correctKeys = correctAnswer
+          ? correctAnswer.split(/[,，]/).map(function (s) { return s.trim(); })
+          : [];
+        var rawOptions = question ? (question.content ? question.content.options : (question.options || [])) : [];
+        var enrichedOptions = rawOptions.map(function (opt) {
+          return {
+            key: opt.key, text: opt.text || '', image: opt.image || '',
+            _isCorrect: correctKeys.indexOf(opt.key) !== -1,
+          };
+        });
         return {
           index: i + 1,
           questionId: a.questionId,
           type: question ? question.type : 'single_choice',
           typeLabel: question ? (TYPE_LABELS[question.type] || '未知') : '未知',
           stem: question ? (question.content ? question.content.stem : question.stem) : '（题目已移除）',
-          options: question ? (question.content ? question.content.options : (question.options || [])) : [],
-          correctAnswer: question ? (question.content ? question.content.answer : (question.answer || '')) : '',
+          options: enrichedOptions,
+          correctAnswer: correctAnswer,
           userAnswer: a.userAnswer,
           isCorrect: a.isCorrect,
           timeSpent: a.timeSpent,
@@ -116,14 +127,25 @@ Page({
     // 异步查找题目（支持云DB + mockData）
     var lookups = (result.marks || []).map(function (m, i) {
       return questionData.findQuestionById(m.questionId).then(function (question) {
+        var correctAnswer = question ? (question.content ? question.content.answer : (question.answer || '')) : '';
+        var correctKeys = correctAnswer
+          ? correctAnswer.split(/[,，]/).map(function (s) { return s.trim(); })
+          : [];
+        var rawOptions = question ? (question.content ? question.content.options : (question.options || [])) : [];
+        var enrichedOptions = rawOptions.map(function (opt) {
+          return {
+            key: opt.key, text: opt.text || '', image: opt.image || '',
+            _isCorrect: correctKeys.indexOf(opt.key) !== -1,
+          };
+        });
         return {
           index: i + 1,
           questionId: m.questionId,
           type: question ? question.type : 'single_choice',
           typeLabel: question ? (TYPE_LABELS[question.type] || '未知') : '未知',
           stem: question ? (question.content ? question.content.stem : question.stem) : '（题目已移除）',
-          options: question ? (question.content ? question.content.options : (question.options || [])) : [],
-          correctAnswer: question ? (question.content ? question.content.answer : (question.answer || '')) : '',
+          options: enrichedOptions,
+          correctAnswer: correctAnswer,
           remembered: m.remembered,
           explanation: question ? (question.content ? question.content.explanation : (question.explanation || '')) : '',
         };

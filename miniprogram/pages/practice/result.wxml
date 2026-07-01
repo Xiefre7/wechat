@@ -146,8 +146,8 @@
             <view class="detail-q-stem">{{item.stem}}</view>
             <view class="detail-q-info" wx:if="{{item.options.length > 0}}">
               <view wx:for="{{item.options}}" wx:key="key" wx:for-item="opt" class="detail-opt">
-                <text class="detail-opt-key {{opt.key === item.correctAnswer ? 'opt-correct' : ''}}">{{opt.key}}.</text>
-                <text class="detail-opt-text {{opt.key === item.correctAnswer ? 'opt-correct' : ''}}">{{opt.text}}</text>
+                <text class="detail-opt-key {{opt._isCorrect ? 'opt-correct' : ''}}">{{opt.key}}.</text>
+                <text class="detail-opt-text {{opt._isCorrect ? 'opt-correct' : ''}}">{{opt.text}}</text>
               </view>
             </view>
             <view class="detail-q-answers">

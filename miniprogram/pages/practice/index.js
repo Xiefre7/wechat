@@ -184,10 +184,15 @@ Page({
     const { submitted, isMemorizeMode, isMultiChoice, selectedAnswers, selectedAnswer, isCorrect, isShortAnswer } = state;
     if (!q || !q.content || !q.content.options) return [];
 
+    // 将答案按逗号拆成数组，兼容多选（"A,C" → ["A","C"]，"A" → ["A"]）
+    var correctKeys = q.content.answer
+      ? q.content.answer.split(/[,，]/).map(function (s) { return s.trim(); })
+      : [];
+
     return q.content.options.map((opt) => {
       const isSelected = !submitted && !isMemorizeMode &&
         (isMultiChoice ? selectedAnswers[opt.key] : selectedAnswer === opt.key);
-      const isCorrectOpt = (submitted || isMemorizeMode) && opt.key === q.content.answer;
+      const isCorrectOpt = (submitted || isMemorizeMode) && correctKeys.indexOf(opt.key) !== -1;
       const isWrongOpt = submitted && !isShortAnswer && isCorrect === false &&
         (isMultiChoice ? selectedAnswers[opt.key] : selectedAnswer === opt.key);
 
@@ -196,7 +201,11 @@ Page({
       if (isCorrectOpt) cls += ' correct';
       if (isWrongOpt) cls += ' wrong';
 
-      return { key: opt.key, text: opt.text || '', image: opt.image || '', _cls: cls.trim() };
+      return {
+        key: opt.key, text: opt.text || '', image: opt.image || '',
+        _cls: cls.trim(),
+        _isCorrect: isCorrectOpt,
+      };
     });
   },
 

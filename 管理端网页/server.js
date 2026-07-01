@@ -1,5 +1,5 @@
 /**
- * 考斩过管理端 - 本地开发服务器
+ * 导题斩题小工具管理端 - 本地开发服务器
  * 同时提供静态文件服务和 Mock API
  *
  * 用法: node server.js
@@ -585,7 +585,7 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log('')
   console.log('  ╔══════════════════════════════════════════╗')
-  console.log('  ║   🎓 考斩过 管理端 - 本地开发服务器     ║')
+  console.log('  ║   🎓 导题斩题小工具 管理端 - 本地开发服务器     ║')
   console.log('  ╠══════════════════════════════════════════╣')
   console.log(`  ║  地址: http://localhost:${PORT}              ║`)
   console.log('  ║  账号: admin                            ║')

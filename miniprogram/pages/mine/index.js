@@ -23,7 +23,7 @@ Page({
     var userInfo = app.getUserInfo();
     this.setData({
       avatarUrl: userInfo.avatarUrl || '',
-      nickname: userInfo.nickname || '考斩过用户',
+      nickname: userInfo.nickname || '导题斩题小工具用户',
     });
   },
 

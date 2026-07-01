@@ -108,7 +108,7 @@ Page({
       totalQuestions,
       currentIndex: 0,
       currentQuestion: firstQuestion,
-      processedOptions: this.buildOptionClasses(firstQuestion),
+      processedOptions: this.buildOptionClasses(firstQuestion, { isMemorizeMode }),
       questionTypeLabel: TYPE_LABELS[firstQuestion.type] || '未知题型',
       questionNumber: 1,
       sessionStartTime: Date.now(),
@@ -790,11 +790,41 @@ Page({
     });
   },
 
+  /* ─── 返回上一题（背题模式） ─── */
+  goToPreviousQuestion() {
+    const { currentIndex } = this.data;
+    if (currentIndex <= 0) return;
+
+    if (this.data.vibration) {
+      wx.vibrateShort({ type: 'light' });
+    }
+
+    const prevIndex = currentIndex - 1;
+    const prevQuestion = this.formatQuestion(this.data.questions[prevIndex]);
+
+    this.setData({
+      currentIndex: prevIndex,
+      currentQuestion: prevQuestion,
+      questionTypeLabel: TYPE_LABELS[prevQuestion.type] || '未知题型',
+      questionNumber: prevIndex + 1,
+      scrollTop: 0,
+      showExplanation: true,
+      showAnswer: true,
+      processedOptions: this.buildOptionClasses(prevQuestion),
+    });
+  },
+
   /* ─── 完成背题 ─── */
   finishMemorizeSession() {
     const marks = this._memorizeMarks;
-    const rememberedCount = marks.filter((m) => m.remembered).length;
-    const notRememberedCount = marks.filter((m) => !m.remembered).length;
+    // 按 questionId 去重，保留最后一次标记
+    const seen = new Map();
+    for (const m of marks) {
+      seen.set(m.questionId, m);
+    }
+    const uniqueMarks = Array.from(seen.values());
+    const rememberedCount = uniqueMarks.filter((m) => m.remembered).length;
+    const notRememberedCount = uniqueMarks.filter((m) => !m.remembered).length;
 
     const result = {
       bankName: this.data.bankName,
@@ -802,7 +832,7 @@ Page({
       mode: 'memorize',
       rememberedCount,
       notRememberedCount,
-      marks,
+      marks: uniqueMarks,
       finishedAt: new Date().toISOString(),
     };
 

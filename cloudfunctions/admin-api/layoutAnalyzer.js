@@ -1,5 +1,5 @@
 /**
- * 考斩过 - 结构化 HTML 布局分析引擎 (Layout Analyzer)
+ * 导题斩题小工具 - 结构化 HTML 布局分析引擎 (Layout Analyzer)
  * 参考 docling (IBM) 版面分析思想，纯 JS 实现
  */
 'use strict';

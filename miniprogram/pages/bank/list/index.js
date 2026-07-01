@@ -363,12 +363,12 @@ Page({
     // 仅从 share 按钮触发（options.from === 'button'）
     const bankId = options.target && options.target.dataset && options.target.dataset.bankId;
     if (!bankId) {
-      return { title: '考斩过 - 职教高考刷题', path: '/pages/index/index' };
+      return { title: '导题斩题小工具 - 职教高考刷题', path: '/pages/index/index' };
     }
 
     const bank = this._allBanks.find((b) => b._id === bankId);
     if (!bank || bank.type !== 'custom') {
-      return { title: '考斩过 - 职教高考刷题', path: '/pages/index/index' };
+      return { title: '导题斩题小工具 - 职教高考刷题', path: '/pages/index/index' };
     }
 
     // 异步调用云函数存储题库并获取分享码

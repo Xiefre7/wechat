@@ -45,7 +45,7 @@
     "disableSWC": true
   },
   "appid": "wx16fe10b89c4b8ef8",
-  "projectname": "考斩过",
+  "projectname": "导题斩题小工具",
   "libVersion": "2.20.1",
   "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
   "condition": {

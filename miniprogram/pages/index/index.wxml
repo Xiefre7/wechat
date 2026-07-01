@@ -154,7 +154,7 @@
   <view class="user-card-overlay {{showUserCard ? 'visible' : ''}}" bindtap="hideUserCard">
     <view class="user-card glass-card" catchtap="noop">
       <image class="user-card-avatar" src="{{userAvatar || ''}}" mode="aspectFill"></image>
-      <view class="user-card-nickname">{{nickname || '考斩过用户'}}</view>
+      <view class="user-card-nickname">{{nickname || '导题斩题小工具用户'}}</view>
       <view class="user-card-stats">
         <view class="user-card-stat">
           <view class="user-card-stat-num">{{summary.totalSolved}}</view>

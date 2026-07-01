@@ -134,7 +134,7 @@ App({
    */
   loadUserProfile: function () {
     var that = this;
-    var defaultUser = { nickname: '考斩过用户', avatarUrl: '' };
+    var defaultUser = { nickname: '导题斩题小工具用户', avatarUrl: '' };
 
     // 1. 先从本地缓存读取（立即可用）
     try {
@@ -223,6 +223,6 @@ App({
    * 获取当前用户信息
    */
   getUserInfo: function () {
-    return this.globalData.userInfo || { nickname: '考斩过用户', avatarUrl: '' };
+    return this.globalData.userInfo || { nickname: '导题斩题小工具用户', avatarUrl: '' };
   },
 });

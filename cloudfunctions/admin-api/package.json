@@ -1,7 +1,7 @@
 {
   "name": "admin-api",
   "version": "1.0.0",
-  "description": "考斩过管理端API",
+  "description": "导题斩题小工具管理端API",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "latest",

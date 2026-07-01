@@ -55,7 +55,7 @@
         <view class="option-text">{{item.text}}</view>
         <image wx:if="{{item.image}}" src="{{item.image}}" mode="widthFix"
           class="opt-image" bindtap="onPreviewOptionImage" data-url="{{item.image}}" />
-        <view class="option-icon" wx:if="{{submitted || isMemorizeMode}}">
+        <view class="option-icon" wx:if="{{submitted}}">
           <text wx:if="{{item.key === currentQuestion.content.answer}}">✓</text>
         </view>
       </view>
@@ -106,7 +106,7 @@
           hover-class="pressing"
           disabled="{{wrongBookAdding}}"
         >
-          <view class="add-wrong-icon">📝</view>
+          <image class="add-wrong-icon" src="/images/kzg/book-pen.svg" mode="aspectFit"></image>
           <view class="add-wrong-label">{{wrongBookAdding ? '添加中...' : '加入错题本'}}</view>
         </button>
       </view>
@@ -120,14 +120,16 @@
 
     <!-- 背题模式操作区 -->
     <view class="memorize-actions" wx:if="{{isMemorizeMode}}">
-      <button class="memorize-btn forget-btn glass-card" bindtap="markNotMemorized" hover-class="pressing">
-        <view class="memorize-btn-icon">✗</view>
-        <view class="memorize-btn-label">没记住</view>
-      </button>
-      <button class="memorize-btn remember-btn" bindtap="markMemorized" hover-class="pressing">
+      <button class="remember-btn-large" bindtap="markMemorized" hover-class="pressing">
         <view class="memorize-btn-icon">✓</view>
         <view class="memorize-btn-label">记住了</view>
       </button>
+    </view>
+
+    <!-- 背题模式 — 底部上一题胶囊 -->
+    <view class="prev-question-capsule" wx:if="{{isMemorizeMode && currentIndex > 0}}" bindtap="goToPreviousQuestion" hover-class="pressing">
+      <image class="prev-capsule-arrow" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
+      <text class="prev-capsule-text">上一题</text>
     </view>
 
     <!-- 答题反馈（仅刷题模式） -->

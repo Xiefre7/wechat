@@ -22,7 +22,7 @@
     "backgroundColor": "#F3F8FF",
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#F3F8FF",
-    "navigationBarTitleText": "考斩过",
+    "navigationBarTitleText": "导题斩题小工具",
     "navigationBarTextStyle": "black"
   },
   "sitemapLocation": "sitemap.json",

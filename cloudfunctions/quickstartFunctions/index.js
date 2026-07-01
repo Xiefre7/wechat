@@ -929,7 +929,7 @@ const sendFeedback = async (event) => {
     const transporter = nodemailer.createTransport(EMAIL_CONFIG);
 
     const mailBody = `
-      <h3>考斩过 - 用户反馈</h3>
+      <h3>导题斩题小工具 - 用户反馈</h3>
       <table style="border-collapse:collapse;width:100%;max-width:600px;">
         <tr><td style="padding:8px;border:1px solid #e0e0e0;background:#f5f5f5;width:80px;">反馈类型</td><td style="padding:8px;border:1px solid #e0e0e0;">${typeLabel}</td></tr>
         <tr><td style="padding:8px;border:1px solid #e0e0e0;background:#f5f5f5;">用户OpenID</td><td style="padding:8px;border:1px solid #e0e0e0;">${openid}</td></tr>
@@ -941,9 +941,9 @@ const sendFeedback = async (event) => {
     `;
 
     await transporter.sendMail({
-      from: `考斩过反馈 <${EMAIL_CONFIG.auth.user}>`,
+      from: `导题斩题小工具反馈 <${EMAIL_CONFIG.auth.user}>`,
       to: EMAIL_CONFIG.to,
-      subject: `[考斩过反馈] ${typeLabel} - ${createdAt.slice(0, 10)}`,
+      subject: `[导题斩题小工具反馈] ${typeLabel} - ${createdAt.slice(0, 10)}`,
       html: mailBody,
     });
 
@@ -1178,7 +1178,7 @@ const getUserProfile = async () => {
     // 用户不存在，创建默认记录
     const defaultUser = {
       openid,
-      nickname: '考斩过用户',
+      nickname: '导题斩题小工具用户',
       avatarUrl: '',
       checkinStreak: 0,
       checkinHistory: [],

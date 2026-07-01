@@ -54,8 +54,8 @@
         <view class="option-text">{{item.text}}</view>
         <image wx:if="{{item.image}}" src="{{item.image}}" mode="widthFix"
           class="opt-image" bindtap="onPreviewOptionImage" data-url="{{item.image}}" />
-        <view class="option-icon" wx:if="{{submitted}}">
-          <text wx:if="{{item.key === currentQuestion.content.answer}}">✓</text>
+        <view class="option-icon" wx:if="{{submitted || isMemorizeMode}}">
+          <text wx:if="{{item._isCorrect}}">✓</text>
         </view>
       </view>
     </view>
@@ -113,6 +113,43 @@
         <view class="in-wrong-book glass-button">
           <view class="in-wrong-icon">✓</view>
           <view class="in-wrong-label">已在错题本</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 背题模式答案与解析展示区 -->
+    <view class="memorize-answer-area" wx:if="{{isMemorizeMode}}">
+      <!-- 选择题/判断题：显示正确答案字母 -->
+      <view class="memorize-answer-card glass-card" wx:if="{{currentQuestion.hasOptions}}">
+        <view class="memorize-answer-label">正确答案：</view>
+        <view class="memorize-answer-value">{{currentQuestion.content.answer}}</view>
+      </view>
+
+      <!-- 填空题：显示正确答案 -->
+      <view class="memorize-answer-card glass-card" wx:if="{{currentQuestion.isFillBlank}}">
+        <view class="memorize-answer-label">正确答案：</view>
+        <view class="memorize-answer-value">{{currentQuestion.content.answer}}</view>
+      </view>
+
+      <!-- 简答题：显示参考要点 -->
+      <view class="memorize-answer-card glass-card" wx:if="{{currentQuestion.isShortAnswer}}">
+        <view class="memorize-answer-label">参考要点：</view>
+        <view class="memorize-answer-value memorize-ref-text">{{currentQuestion.content.answer}}</view>
+      </view>
+
+      <!-- 解析区域（背题模式） -->
+      <view class="explanation-card glass-card" wx:if="{{currentQuestion.content.explanation}}">
+        <view class="expl-header" bindtap="toggleExplanation">
+          <view class="expl-title">📖 题目解析</view>
+          <view class="expl-toggle">{{showExplanation ? '收起' : '展开'}}</view>
+        </view>
+        <view class="expl-content" wx:if="{{showExplanation}}">
+          {{currentQuestion.content.explanation}}
+        </view>
+        <view class="expl-images" wx:if="{{currentQuestion.hasExplanationImages}}">
+          <image wx:for="{{currentQuestion.content.explanationImages}}" wx:key="*this"
+            src="{{item}}" mode="widthFix" class="expl-image"
+            bindtap="onPreviewExplanationImage" data-url="{{item}}" />
         </view>
       </view>
     </view>

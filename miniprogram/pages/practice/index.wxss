@@ -925,3 +925,53 @@ button::after { border: 0; }
   margin-top: 10rpx;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
+
+/* ─── 背题模式答案展示区 ─── */
+.memorize-answer-area {
+  margin-top: 24rpx;
+}
+
+.memorize-answer-card {
+  padding: 22rpx 24rpx;
+  border-radius: 20rpx;
+  margin-bottom: 16rpx;
+  display: flex;
+  align-items: flex-start;
+  gap: 10rpx;
+  border-color: rgba(52, 199, 89, 0.2);
+  background: rgba(52, 199, 89, 0.04);
+}
+
+.memorize-answer-label {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #34C759;
+  flex-shrink: 0;
+}
+
+.memorize-answer-value {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #1E2A3A;
+  flex: 1;
+}
+
+.memorize-ref-text {
+  font-weight: 500;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+/* 深色模式 - 背题答案区 */
+.theme-dark .memorize-answer-card {
+  background: rgba(52, 199, 89, 0.08);
+  border-color: rgba(52, 199, 89, 0.15);
+}
+
+.theme-dark .memorize-answer-label {
+  color: #34C759;
+}
+
+.theme-dark .memorize-answer-value {
+  color: #FFFFFF;
+}

@@ -795,6 +795,12 @@ Page({
       scrollTop: 0,
       showExplanation: true,
       showAnswer: true,
+      // 同步题型标记
+      isShortAnswer: nextQuestion.isShortAnswer || false,
+      isMultiChoice: nextQuestion.isMulti || false,
+      selectedAnswer: '',
+      selectedAnswers: {},
+      userInput: '',
       processedOptions: this.buildOptionClasses(nextQuestion),
     });
   },
@@ -819,6 +825,12 @@ Page({
       scrollTop: 0,
       showExplanation: true,
       showAnswer: true,
+      // 同步题型标记
+      isShortAnswer: prevQuestion.isShortAnswer || false,
+      isMultiChoice: prevQuestion.isMulti || false,
+      selectedAnswer: '',
+      selectedAnswers: {},
+      userInput: '',
       processedOptions: this.buildOptionClasses(prevQuestion),
     });
   },

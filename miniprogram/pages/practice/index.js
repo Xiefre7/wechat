@@ -98,7 +98,6 @@ Page({
 
     const totalQuestions = session.questions.length;
     const firstQuestion = this.formatQuestion(session.questions[0]);
-    const isMemorizeMode = session.mode === 'memorize';
 
     this.setData({
       bankName: session.bankName,
@@ -108,29 +107,23 @@ Page({
       totalQuestions,
       currentIndex: 0,
       currentQuestion: firstQuestion,
-      processedOptions: this.buildOptionClasses(firstQuestion, { isMemorizeMode }),
+      processedOptions: this.buildOptionClasses(firstQuestion, {
+        isMemorizeMode: false,
+        isMultiChoice: firstQuestion.isMulti || false,
+        isShortAnswer: firstQuestion.isShortAnswer || false,
+      }),
       questionTypeLabel: TYPE_LABELS[firstQuestion.type] || '未知题型',
       questionNumber: 1,
       sessionStartTime: Date.now(),
       questionStartTime: Date.now(),
-      mode: session.mode || 'practice',
-      isMemorizeMode,
       questionClassId: session.questionClassId || '',
       questionClassName: session.questionClassName || '',
       allClassIds: session.allClassIds || [],
-      // 背题模式：解析和答案直接可见
-      showExplanation: isMemorizeMode,
-      showAnswer: isMemorizeMode,
     });
 
     this._sessionAnswers = [];
-    // TODO: 背题进度暂存内存，后续接入本地 Storage 或云数据库持久化
-    this._memorizeMarks = [];
 
-    // 背题模式下不检查错题本
-    if (!isMemorizeMode) {
-      this.updateWrongBookStatus();
-    }
+    this.updateWrongBookStatus();
   },
 
   onShow() {
@@ -177,6 +170,28 @@ Page({
     };
   },
 
+  /* ─── 解析正确答案的选项key列表 ─── */
+  parseCorrectKeys(answerStr, options) {
+    if (!answerStr) return [];
+    var trimmed = answerStr.trim();
+
+    // 1. 标准逗号分隔: "A,C" → ["A","C"]
+    var keys = trimmed.split(/[,，]/).map(function (s) { return s.trim(); }).filter(Boolean);
+
+    // 2. 如果只有一个结果且长度>1(如"AC"、"ABC")，尝试按单字符拆分
+    if (keys.length === 1 && keys[0].length > 1) {
+      var singleChars = keys[0].split('').filter(function (c) { return /[A-Za-z]/.test(c); });
+      // 验证拆分后的字符是否都是有效选项key
+      var validKeys = (options || []).map(function (o) { return o.key; });
+      var allValid = singleChars.every(function (c) { return validKeys.indexOf(c) !== -1; });
+      if (allValid && singleChars.length > 1) {
+        return singleChars;
+      }
+    }
+
+    return keys;
+  },
+
   /* ─── 预处理选项 class ─── */
   buildOptionClasses(question, overrides) {
     const q = question || this.data.currentQuestion;
@@ -185,9 +200,8 @@ Page({
     if (!q || !q.content || !q.content.options) return [];
 
     // 将答案按逗号拆成数组，兼容多选（"A,C" → ["A","C"]，"A" → ["A"]）
-    var correctKeys = q.content.answer
-      ? q.content.answer.split(/[,，]/).map(function (s) { return s.trim(); })
-      : [];
+    // 也兼容无分隔符的答案（"AC" → ["A","C"]）
+    var correctKeys = this.parseCorrectKeys(q.content.answer, q.content.options);
 
     return q.content.options.map((opt) => {
       const isSelected = !submitted && !isMemorizeMode &&
@@ -695,18 +709,14 @@ Page({
 
   /* ─── 返回（二次确认） ─── */
   goBack() {
-    const hasProgress = this.data.isMemorizeMode
-      ? this._memorizeMarks.length > 0
-      : this._sessionAnswers.length > 0;
+    const hasProgress = this._sessionAnswers.length > 0;
 
     if (hasProgress) {
       wx.showModal({
         title: '确认退出',
-        content: this.data.isMemorizeMode
-          ? `已浏览 ${this._memorizeMarks.length}/${this.data.totalQuestions} 题，退出后本次进度不保存。确定退出吗？`
-          : `已完成 ${this._sessionAnswers.length}/${this.data.totalQuestions} 题，退出后本次进度不保存。确定退出吗？`,
+        content: '已完成 ' + this._sessionAnswers.length + '/' + this.data.totalQuestions + ' 题，退出后本次进度不保存。确定退出吗？',
         confirmText: '退出',
-        cancelText: this.data.isMemorizeMode ? '继续背题' : '继续刷题',
+        cancelText: '继续刷题',
         success: (res) => {
           if (res.confirm) {
             wx.navigateBack();
@@ -741,128 +751,5 @@ Page({
     if (!url) return;
     const urls = this.data.currentQuestion.content.explanationImages || [];
     imageUploader.previewImage(url, urls);
-  },
-
-  /* ========== 背题模式 ========== */
-
-  /* ─── 标记"记住了" ─── */
-  markMemorized() {
-    const { currentQuestion, currentIndex } = this.data;
-
-    this._memorizeMarks.push({
-      questionId: currentQuestion._id,
-      index: currentIndex,
-      remembered: true,
-    });
-
-    this.goNextAfterMark();
-  },
-
-  /* ─── 标记"没记住" ─── */
-  markNotMemorized() {
-    const { currentQuestion, currentIndex } = this.data;
-
-    this._memorizeMarks.push({
-      questionId: currentQuestion._id,
-      index: currentIndex,
-      remembered: false,
-    });
-
-    this.goNextAfterMark();
-  },
-
-  /* ─── 标记后跳转下一题 ─── */
-  goNextAfterMark() {
-    const { currentIndex, totalQuestions } = this.data;
-
-    if (this.data.vibration) {
-      wx.vibrateShort({ type: 'light' });
-    }
-
-    if (currentIndex + 1 >= totalQuestions) {
-      this.finishMemorizeSession();
-      return;
-    }
-
-    const nextIndex = currentIndex + 1;
-    const nextQuestion = this.formatQuestion(this.data.questions[nextIndex]);
-
-    this.setData({
-      currentIndex: nextIndex,
-      currentQuestion: nextQuestion,
-      questionTypeLabel: TYPE_LABELS[nextQuestion.type] || '未知题型',
-      questionNumber: nextIndex + 1,
-      scrollTop: 0,
-      showExplanation: true,
-      showAnswer: true,
-      // 同步题型标记
-      isShortAnswer: nextQuestion.isShortAnswer || false,
-      isMultiChoice: nextQuestion.isMulti || false,
-      selectedAnswer: '',
-      selectedAnswers: {},
-      userInput: '',
-      processedOptions: this.buildOptionClasses(nextQuestion),
-    });
-  },
-
-  /* ─── 返回上一题（背题模式） ─── */
-  goToPreviousQuestion() {
-    const { currentIndex } = this.data;
-    if (currentIndex <= 0) return;
-
-    if (this.data.vibration) {
-      wx.vibrateShort({ type: 'light' });
-    }
-
-    const prevIndex = currentIndex - 1;
-    const prevQuestion = this.formatQuestion(this.data.questions[prevIndex]);
-
-    this.setData({
-      currentIndex: prevIndex,
-      currentQuestion: prevQuestion,
-      questionTypeLabel: TYPE_LABELS[prevQuestion.type] || '未知题型',
-      questionNumber: prevIndex + 1,
-      scrollTop: 0,
-      showExplanation: true,
-      showAnswer: true,
-      // 同步题型标记
-      isShortAnswer: prevQuestion.isShortAnswer || false,
-      isMultiChoice: prevQuestion.isMulti || false,
-      selectedAnswer: '',
-      selectedAnswers: {},
-      userInput: '',
-      processedOptions: this.buildOptionClasses(prevQuestion),
-    });
-  },
-
-  /* ─── 完成背题 ─── */
-  finishMemorizeSession() {
-    const marks = this._memorizeMarks;
-    // 按 questionId 去重，保留最后一次标记
-    const seen = new Map();
-    for (const m of marks) {
-      seen.set(m.questionId, m);
-    }
-    const uniqueMarks = Array.from(seen.values());
-    const rememberedCount = uniqueMarks.filter((m) => m.remembered).length;
-    const notRememberedCount = uniqueMarks.filter((m) => !m.remembered).length;
-
-    const result = {
-      bankName: this.data.bankName,
-      totalQuestions: this.data.totalQuestions,
-      mode: 'memorize',
-      rememberedCount,
-      notRememberedCount,
-      marks: uniqueMarks,
-      finishedAt: new Date().toISOString(),
-    };
-
-    wx.setStorageSync('practiceResult', result);
-
-    this.setData({ finished: true });
-
-    wx.redirectTo({
-      url: '/pages/practice/result',
-    });
   },
 });

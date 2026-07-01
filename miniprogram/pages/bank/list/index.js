@@ -310,8 +310,9 @@ Page({
       mode: this.data.memorizeMode ? 'memorize' : 'practice',
     });
 
+    var url = this.data.memorizeMode ? '/pages/memorize/index' : '/pages/practice/index';
     wx.navigateTo({
-      url: '/pages/practice/index',
+      url: url,
     });
   },
 
@@ -346,8 +347,9 @@ Page({
       mode: this.data.memorizeMode ? 'memorize' : 'practice',
     });
 
+    var url = this.data.memorizeMode ? '/pages/memorize/index' : '/pages/practice/index';
     wx.navigateTo({
-      url: '/pages/practice/index',
+      url: url,
     });
   },
 

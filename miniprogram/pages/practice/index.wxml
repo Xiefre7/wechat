@@ -46,22 +46,22 @@
         class="option-item glass-card {{item._cls}}"
         data-key="{{item.key}}"
         bindtap="selectOption"
-        hover-class="{{isMemorizeMode ? '' : 'option-pressing'}}"
+        hover-class="option-pressing"
       >
-        <view class="option-key">
+        <view class="option-key {{isMultiChoice ? 'checkbox' : ''}}">
           <text>{{item.key}}</text>
         </view>
         <view class="option-text">{{item.text}}</view>
         <image wx:if="{{item.image}}" src="{{item.image}}" mode="widthFix"
           class="opt-image" bindtap="onPreviewOptionImage" data-url="{{item.image}}" />
-        <view class="option-icon" wx:if="{{submitted || isMemorizeMode}}">
+        <view class="option-icon" wx:if="{{submitted}}">
           <text wx:if="{{item._isCorrect}}">✓</text>
         </view>
       </view>
     </view>
 
-    <!-- 填空题 -->
-    <view class="input-area" wx:if="{{currentQuestion.isFillBlank}}">
+    <!-- 填空题（刷题模式） -->
+    <view class="input-area" wx:if="{{currentQuestion.isFillBlank }}">
       <view class="input-label">请输入答案（多个填空用 | 分隔）</view>
       <input
         class="answer-input glass-input"
@@ -73,22 +73,21 @@
       />
     </view>
 
-    <!-- 简答题 -->
-    <view class="input-area" wx:if="{{currentQuestion.isShortAnswer}}">
+    <!-- 简答题（刷题模式） -->
+    <view class="input-area" wx:if="{{currentQuestion.isShortAnswer }}">
       <view class="input-label">请输入你的答案</view>
-      <textarea
-        class="answer-textarea glass-input"
+      <input
+        class="answer-input answer-input-tall glass-input"
         placeholder="输入你的答案..."
         value="{{userInput}}"
         bindinput="onInputChange"
         disabled="{{submitted}}"
         maxlength="2000"
-        auto-height
-      ></textarea>
+      />
     </view>
 
     <!-- 提交按钮（刷题模式） -->
-    <view class="submit-area" wx:if="{{!submitted && !isMemorizeMode}}">
+    <view class="submit-area" wx:if="{{!submitted }}">
       <button
         class="submit-btn glass-card"
         bindtap="submitAnswer"
@@ -117,59 +116,8 @@
       </view>
     </view>
 
-    <!-- 背题模式答案与解析展示区 -->
-    <view class="memorize-answer-area" wx:if="{{isMemorizeMode}}">
-      <!-- 选择题/判断题：显示正确答案字母 -->
-      <view class="memorize-answer-card glass-card" wx:if="{{currentQuestion.hasOptions}}">
-        <view class="memorize-answer-label">正确答案：</view>
-        <view class="memorize-answer-value">{{currentQuestion.content.answer}}</view>
-      </view>
-
-      <!-- 填空题：显示正确答案 -->
-      <view class="memorize-answer-card glass-card" wx:if="{{currentQuestion.isFillBlank}}">
-        <view class="memorize-answer-label">正确答案：</view>
-        <view class="memorize-answer-value">{{currentQuestion.content.answer}}</view>
-      </view>
-
-      <!-- 简答题：显示参考要点 -->
-      <view class="memorize-answer-card glass-card" wx:if="{{currentQuestion.isShortAnswer}}">
-        <view class="memorize-answer-label">参考要点：</view>
-        <view class="memorize-answer-value memorize-ref-text">{{currentQuestion.content.answer}}</view>
-      </view>
-
-      <!-- 解析区域（背题模式） -->
-      <view class="explanation-card glass-card" wx:if="{{currentQuestion.content.explanation}}">
-        <view class="expl-header" bindtap="toggleExplanation">
-          <view class="expl-title">📖 题目解析</view>
-          <view class="expl-toggle">{{showExplanation ? '收起' : '展开'}}</view>
-        </view>
-        <view class="expl-content" wx:if="{{showExplanation}}">
-          {{currentQuestion.content.explanation}}
-        </view>
-        <view class="expl-images" wx:if="{{currentQuestion.hasExplanationImages}}">
-          <image wx:for="{{currentQuestion.content.explanationImages}}" wx:key="*this"
-            src="{{item}}" mode="widthFix" class="expl-image"
-            bindtap="onPreviewExplanationImage" data-url="{{item}}" />
-        </view>
-      </view>
-    </view>
-
-    <!-- 背题模式操作区 -->
-    <view class="memorize-actions" wx:if="{{isMemorizeMode}}">
-      <button class="remember-btn-large" bindtap="markMemorized" hover-class="pressing">
-        <view class="memorize-btn-icon">✓</view>
-        <view class="memorize-btn-label">记住了</view>
-      </button>
-    </view>
-
-    <!-- 背题模式 — 底部上一题胶囊 -->
-    <view class="prev-question-capsule" wx:if="{{isMemorizeMode && currentIndex > 0}}" bindtap="goToPreviousQuestion" hover-class="pressing">
-      <image class="prev-capsule-arrow" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
-      <text class="prev-capsule-text">上一题</text>
-    </view>
-
-    <!-- 答题反馈（仅刷题模式） -->
-    <view class="feedback-area" wx:if="{{submitted && !isMemorizeMode}}">
+    <!-- 答题反馈 -->
+    <view class="feedback-area" wx:if="{{submitted }}">
       <!-- 选择题/判断题/填空题反馈 -->
       <view class="feedback-card glass-card {{isCorrect === true ? 'correct-card' : isCorrect === false ? 'wrong-card' : 'pending-card'}}"
         wx:if="{{!isShortAnswer || shortAnswerJudged}}"
@@ -236,7 +184,7 @@
     </view>
 
     <!-- 下一题按钮（仅刷题模式） -->
-    <view class="next-area" wx:if="{{submitted && !isMemorizeMode && (!isShortAnswer || shortAnswerJudged)}}">
+    <view class="next-area" wx:if="{{submitted  && (!isShortAnswer || shortAnswerJudged)}}">
       <button
         class="next-btn glass-card"
         bindtap="nextQuestion"

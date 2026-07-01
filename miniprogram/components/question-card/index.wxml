@@ -1,0 +1,34 @@
+<!-- 题型标签 -->
+<view class="type-badge">{{typeLabel}}</view>
+
+<!-- 题干 -->
+<view class="stem-card glass-card">
+  <view class="stem-text">{{question.content.stem}}</view>
+  <view class="stem-images" wx:if="{{question.hasStemImages}}">
+    <image wx:for="{{question.content.stemImages}}" wx:key="*this"
+      src="{{item}}" mode="widthFix" class="stem-image"
+      bindtap="onStemImageTap" data-url="{{item}}" />
+  </view>
+</view>
+
+<!-- 选择题（单选/多选/判断） -->
+<view class="options-area" wx:if="{{question.hasOptions}}">
+  <view
+    wx:for="{{options}}"
+    wx:key="key"
+    class="option-item glass-card {{item._cls}}"
+    data-key="{{item.key}}"
+    bindtap="onOptionTap"
+    hover-class="{{disabled ? '' : 'option-pressing'}}"
+  >
+    <view class="option-key {{question.isMulti ? 'checkbox' : ''}}">
+      <text>{{item.key}}</text>
+    </view>
+    <view class="option-text">{{item.text}}</view>
+    <image wx:if="{{item.image}}" src="{{item.image}}" mode="widthFix"
+      class="opt-image" bindtap="onOptionImageTap" data-url="{{item.image}}" />
+    <view class="option-icon" wx:if="{{showIcons}}">
+      <text wx:if="{{item._isCorrect}}">✓</text>
+    </view>
+  </view>
+</view>

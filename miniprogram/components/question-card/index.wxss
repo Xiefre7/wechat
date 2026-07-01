@@ -1,0 +1,168 @@
+/* 题型标签 */
+.type-badge {
+  display: inline-block;
+  padding: 6rpx 20rpx;
+  border-radius: 14rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #4A8FEA;
+  background: #EDF4FE;
+  margin-bottom: 16rpx;
+}
+
+/* 题干 */
+.stem-card {
+  padding: 28rpx 24rpx;
+  border-radius: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.stem-text {
+  font-size: 30rpx;
+  line-height: 1.7;
+  font-weight: 500;
+  color: #1E2A3A;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 选项区 */
+.options-area {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.option-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 22rpx 20rpx;
+  border-radius: 20rpx;
+  border: 1.5rpx solid #E6EAF2;
+  transition: border-color 180ms ease, background-color 180ms ease;
+  min-height: 76rpx;
+}
+
+.option-item.selected {
+  border-color: #4A8FEA;
+  background: rgba(74,143,234,0.06);
+  box-shadow: 0 4rpx 16rpx rgba(74,143,234,0.1);
+}
+
+.option-item.correct {
+  border-color: #34C759;
+  background: rgba(52,199,89,0.08);
+}
+
+.option-item.wrong {
+  border-color: #F2545B;
+  background: rgba(242,84,91,0.06);
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6rpx); }
+  75% { transform: translateX(6rpx); }
+}
+
+.option-key {
+  flex-shrink: 0;
+  width: 52rpx;
+  height: 52rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 26rpx;
+  background: #F0F4FA;
+  font-size: 24rpx;
+  font-weight: 800;
+  color: #5E718D;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.option-key.checkbox {
+  border-radius: 14rpx;
+}
+
+.option-item.selected .option-key {
+  background: #4A8FEA;
+  color: #ffffff;
+  box-shadow: 0 4rpx 14rpx rgba(74,143,234,0.25);
+}
+
+.option-item.correct .option-key {
+  background: #34C759;
+  color: #ffffff;
+}
+
+.option-item.wrong .option-key {
+  background: #F2545B;
+  color: #ffffff;
+}
+
+.option-text {
+  flex: 1;
+  font-size: 28rpx;
+  line-height: 1.55;
+  color: #1E2A3A;
+}
+
+.option-icon {
+  flex-shrink: 0;
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.option-item.correct .option-icon {
+  color: #34C759;
+}
+
+.option-item.wrong .option-icon {
+  color: #F2545B;
+}
+
+.option-pressing {
+  opacity: 0.8;
+  transform: scale(0.985);
+}
+
+/* 玻璃基类 */
+.glass-card {
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1rpx solid #E6EAF2;
+  background: #FFFFFF;
+  -webkit-backdrop-filter: blur(34rpx);
+  backdrop-filter: blur(34rpx);
+  box-shadow: 0 4rpx 16rpx rgba(74, 143, 234, 0.04);
+}
+
+/* 题目图片 */
+.stem-images {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.stem-image {
+  width: 100%;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.opt-image {
+  width: 160rpx;
+  border-radius: 14rpx;
+  margin-top: 10rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}

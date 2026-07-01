@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "background-image": "/components/background-image/index",
+    "question-card": "/components/question-card/index"
+  },
+  "navigationStyle": "custom"
+}

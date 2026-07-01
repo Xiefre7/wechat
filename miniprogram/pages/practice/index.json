@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "刷题",
-  "usingComponents": {}
+  "usingComponents": {
+    "question-card": "/components/question-card/index"
+  }
 }

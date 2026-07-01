@@ -1,0 +1,80 @@
+<view class="memorize-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.12" />
+
+  <!-- Top bar -->
+  <view class="top-bar">
+    <view class="back-btn" bindtap="goBack">
+      <image class="back-icon" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
+    </view>
+    <view class="progress-info">
+      <view class="progress-bar-wrap">
+        <view class="progress-fill" style="width:{{(currentIndex + 1) / totalQuestions * 100}}%"></view>
+      </view>
+      <view class="progress-text">{{currentIndex + 1}}/{{totalQuestions}}</view>
+    </view>
+    <view class="mode-badge">背题</view>
+  </view>
+
+  <scroll-view class="question-scroll" scroll-y enhanced show-scrollbar="{{false}}" scroll-top="{{scrollTop}}">
+
+    <!-- Question card component -->
+    <question-card
+      question="{{currentQuestion}}"
+      options="{{processedOptions}}"
+      showIcons="{{true}}"
+      disabled="{{true}}"
+      typeLabel="{{questionTypeLabel}}"
+      bind:optiontap="onOptionTap"
+      bind:stemimagetap="onPreviewStemImage"
+      bind:optionimagetap="onPreviewOptionImage"
+    />
+
+    <!-- Answer display area -->
+    <view class="memorize-answer-area">
+      <view class="memorize-answer-card glass-card" wx:if="{{currentQuestion.hasOptions}}">
+        <view class="memorize-answer-label">正确答案：</view>
+        <view class="memorize-answer-value">{{currentQuestion.content.answer}}</view>
+      </view>
+      <view class="memorize-answer-card glass-card" wx:if="{{currentQuestion.isFillBlank}}">
+        <view class="memorize-answer-label">正确答案：</view>
+        <view class="memorize-answer-value">{{currentQuestion.content.answer}}</view>
+      </view>
+      <view class="memorize-answer-card glass-card" wx:if="{{currentQuestion.isShortAnswer}}">
+        <view class="memorize-answer-label">参考要点：</view>
+        <view class="memorize-answer-value memorize-ref-text">{{currentQuestion.content.answer}}</view>
+      </view>
+
+      <!-- Explanation -->
+      <view class="explanation-card glass-card" wx:if="{{currentQuestion.content.explanation}}">
+        <view class="expl-header" bindtap="toggleExplanation">
+          <view class="expl-title">题目解析</view>
+          <view class="expl-toggle">{{showExplanation ? '收起' : '展开'}}</view>
+        </view>
+        <view class="expl-content" wx:if="{{showExplanation}}">
+          {{currentQuestion.content.explanation}}
+        </view>
+        <view class="expl-images" wx:if="{{currentQuestion.hasExplanationImages}}">
+          <image wx:for="{{currentQuestion.content.explanationImages}}" wx:key="*this"
+            src="{{item}}" mode="widthFix" class="expl-image"
+            bindtap="onPreviewExplanationImage" data-url="{{item}}" />
+        </view>
+      </view>
+    </view>
+
+    <!-- Action button -->
+    <view class="memorize-actions">
+      <button class="remember-btn-large" bindtap="markMemorized" hover-class="pressing">
+        <view class="memorize-btn-icon">✓</view>
+        <view class="memorize-btn-label">记住了</view>
+      </button>
+    </view>
+
+    <!-- Previous question capsule -->
+    <view class="prev-question-capsule" wx:if="{{currentIndex > 0}}" bindtap="goToPreviousQuestion" hover-class="pressing">
+      <image class="prev-capsule-arrow" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
+      <text class="prev-capsule-text">上一题</text>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </scroll-view>
+</view>

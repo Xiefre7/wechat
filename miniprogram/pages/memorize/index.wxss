@@ -1,0 +1,341 @@
+/* 背题页 — iOS26 液态玻璃风格，全屏沉浸式 */
+page {
+  width: 100%;
+  min-height: 100vh;
+  background: #F4F7FC;
+  color: #1E2A3A;
+  overflow: hidden;
+}
+
+button {
+  padding: 0; margin: 0;
+  text-align: left;
+  line-height: normal;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+}
+
+button::after { border: 0; }
+
+/* ─── 顶部栏 ─── */
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: calc(env(safe-area-inset-top) + 4rpx) 24rpx 10rpx;
+  background: #FFFFFF;
+  -webkit-backdrop-filter: blur(40rpx);
+  backdrop-filter: blur(40rpx);
+  border-bottom: 1rpx solid rgba(74, 143, 234, 0.05);
+  z-index: 10;
+  position: relative;
+}
+
+.back-btn {
+  flex-shrink: 0;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 28rpx;
+  background: #F0F4FA;
+}
+
+.back-icon {
+  width: 24rpx;
+  height: 24rpx;
+  transform: rotate(180deg);
+}
+
+.progress-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  min-width: 0;
+}
+
+.progress-bar-wrap {
+  flex: 1;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background: #E6EAF2;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3rpx;
+  background: linear-gradient(90deg, #4A8FEA, #8FC4FB);
+  transition: width 300ms ease;
+}
+
+.progress-text {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #5E718D;
+  min-width: 72rpx;
+  text-align: right;
+}
+
+/* ─── 模式标签 ─── */
+.mode-badge {
+  flex-shrink: 0;
+  padding: 6rpx 20rpx;
+  border-radius: 14rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #34C759;
+  background: rgba(52, 199, 89, 0.1);
+}
+
+/* ─── 滚动区 ─── */
+.memorize-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.question-scroll {
+  flex: 1;
+  padding: 24rpx 24rpx 0;
+  height: calc(100vh - env(safe-area-inset-top) - 56rpx - 38rpx);
+}
+
+/* ─── 玻璃基类 ─── */
+.glass-card {
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1rpx solid #E6EAF2;
+  background: #FFFFFF;
+  -webkit-backdrop-filter: blur(34rpx);
+  backdrop-filter: blur(34rpx);
+  box-shadow: 0 4rpx 16rpx rgba(74, 143, 234, 0.04);
+}
+
+/* ─── 解析区域 ─── */
+.explanation-card {
+  padding: 22rpx 24rpx;
+  border-radius: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.expl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.expl-title {
+  font-size: 26rpx;
+  font-weight: 800;
+  color: #1E2A3A;
+}
+
+.expl-toggle {
+  font-size: 22rpx;
+  color: #4A8FEA;
+  font-weight: 600;
+}
+
+.expl-content {
+  margin-top: 14rpx;
+  padding-top: 14rpx;
+  border-top: 1rpx solid #E6EAF2;
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: #4A5B72;
+  white-space: pre-wrap;
+}
+
+/* ─── 题目图片展示 ─── */
+.stem-images,
+.expl-images {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.stem-image,
+.expl-image {
+  width: 100%;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.opt-image {
+  width: 160rpx;
+  border-radius: 14rpx;
+  margin-top: 10rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+/* ─── 背题模式答案展示区 ─── */
+.memorize-answer-area {
+  margin-top: 24rpx;
+}
+
+.memorize-answer-card {
+  padding: 22rpx 24rpx;
+  border-radius: 20rpx;
+  margin-bottom: 16rpx;
+  display: flex;
+  align-items: flex-start;
+  gap: 10rpx;
+  border-color: rgba(52, 199, 89, 0.2);
+  background: rgba(52, 199, 89, 0.04);
+}
+
+.memorize-answer-label {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #34C759;
+  flex-shrink: 0;
+}
+
+.memorize-answer-value {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #1E2A3A;
+  flex: 1;
+}
+
+.memorize-ref-text {
+  font-weight: 500;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+/* ─── 背题模式操作区 ─── */
+.memorize-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 48rpx;
+}
+
+.remember-btn-large {
+  width: 420rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+  min-height: 108rpx;
+  border-radius: 28rpx;
+  font-size: 34rpx;
+  font-weight: 800;
+  border: none;
+  background: linear-gradient(135deg, #34C759, #30B350);
+  box-shadow: 0 12rpx 32rpx rgba(52,199,89,0.32);
+  color: #ffffff;
+}
+
+.memorize-btn-icon {
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.memorize-btn-label {
+  font-size: 34rpx;
+  font-weight: 800;
+}
+
+/* ─── 上一题胶囊（背题模式） ─── */
+.prev-question-capsule {
+  position: fixed;
+  left: 28rpx;
+  bottom: calc(env(safe-area-inset-bottom) + 40rpx);
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 14rpx 24rpx;
+  border-radius: 48rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.78),
+    0 8rpx 28rpx rgba(74, 143, 234, 0.1);
+  -webkit-backdrop-filter: blur(28rpx);
+  backdrop-filter: blur(28rpx);
+  z-index: 20;
+}
+
+.prev-capsule-arrow {
+  width: 28rpx;
+  height: 28rpx;
+  transform: rotate(180deg);
+}
+
+.prev-capsule-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #5E718D;
+}
+
+/* ─── 安全区 ─── */
+.safe-bottom {
+  height: calc(env(safe-area-inset-bottom) + 60rpx);
+}
+
+/* ─── 按压态 ─── */
+.pressing {
+  opacity: 0.78;
+  transform: scale(0.985);
+}
+
+/* ─── 深色模式（由 .theme-dark 类驱动） ─── */
+.theme-dark .top-bar {
+  background: rgba(15,23,42,0.9);
+  border-bottom-color: rgba(255,255,255,0.06);
+}
+
+.theme-dark .back-btn { background: rgba(255,255,255,0.06); }
+.theme-dark .progress-bar-wrap { background: rgba(255,255,255,0.08); }
+
+.theme-dark .expl-title { color: #FFFFFF; font-weight: 900; }
+
+.theme-dark .glass-card {
+  background: rgba(30,41,59,0.6);
+  border-color: rgba(255,255,255,0.08);
+}
+
+.theme-dark .expl-content { color: #1A2538; }
+.theme-dark .expl-content { border-top-color: rgba(255,255,255,0.06); }
+
+.theme-dark .progress-text { color: #1A2538; }
+
+.theme-dark .mode-badge {
+  background: rgba(52, 199, 89, 0.15);
+  color: #34C759;
+}
+
+.theme-dark .memorize-answer-card {
+  background: rgba(52, 199, 89, 0.08);
+  border-color: rgba(52, 199, 89, 0.15);
+}
+
+.theme-dark .memorize-answer-label {
+  color: #34C759;
+}
+
+.theme-dark .memorize-answer-value {
+  color: #FFFFFF;
+}
+
+.theme-dark .prev-question-capsule {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.06),
+    0 8rpx 28rpx rgba(0, 0, 0, 0.3);
+}
+
+.theme-dark .prev-capsule-text {
+  color: rgba(255, 255, 255, 0.65);
+}

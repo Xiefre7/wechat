@@ -208,7 +208,20 @@
               bindinput="onItemFieldChange"
             />
           </view>
-          <!-- 简答题：不显示答案区 -->
+          <!-- 答案：简答题用多行文本框 -->
+          <view class="edit-group" wx:elif="{{item.type === 'short_answer'}}">
+            <view class="edit-label">参考答案</view>
+            <textarea
+              class="edit-textarea glass-input"
+              value="{{item.answer}}"
+              placeholder="请输入参考答案..."
+              data-index="{{qi}}"
+              data-field="answer"
+              bindinput="onItemFieldChange"
+              maxlength="2000"
+              auto-height
+            ></textarea>
+          </view>
           <view class="edit-group">
             <view class="edit-label">解析</view>
             <textarea

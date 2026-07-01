@@ -86,12 +86,13 @@ function findQuestionsByBank(bankId, opts) {
     if (opts.knowledgePointId) condition.knowledgePointId = opts.knowledgePointId;
     if (opts.questionClassId) condition.questionClassId = opts.questionClassId;
 
-    return wx.cloud.database().collection('questions')
-      .where(condition)
-      .limit(opts.limit || 500)
-      .get()
-      .then(function (res) { return res.data || []; })
-      .catch(function () { return []; });
+    return wx.cloud.callFunction({
+      name: 'quickstartFunctions',
+      data: { type: 'getBankQuestions', bankId: bankId },
+    }).then(function (res) {
+      if (res.result && res.result.success) return res.result.data || [];
+      return [];
+    }).catch(function () { return []; });
   }
 
   return Promise.resolve([]);

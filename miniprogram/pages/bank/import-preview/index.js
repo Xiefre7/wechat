@@ -408,7 +408,7 @@ Page({
 
     // 最终校验
     const invalidQuestions = questions.filter(
-      (q) => !q.stem || !q.stem.trim() || (q.type !== 'short_answer' && !q.answer)
+      (q) => !q.stem || !q.stem.trim() || !q.answer
     );
     if (invalidQuestions.length > 0) {
       wx.showModal({
@@ -417,7 +417,7 @@ Page({
         success: (res) => {
           if (res.confirm) {
             const valid = questions.filter(
-              (q) => q.stem && q.stem.trim() && (q.type === 'short_answer' || q.answer)
+              (q) => q.stem && q.stem.trim() && q.answer
             );
             this.setData({ questions: valid }, () => this.doImport());
           }

@@ -92,9 +92,8 @@
           bindtap="selectOption"
           hover-class="option-pressing"
         >
-          <view class="option-key {{isMultiChoice ? 'checkbox' : ''}}">
-            <text wx:if="{{!isMultiChoice}}">{{item.key}}</text>
-            <text wx:else>{{selectedAnswers[item.key] ? '✓' : ''}}</text>
+          <view class="option-key">
+            <text>{{item.key}}</text>
           </view>
           <view class="option-text">{{item.text}}</view>
           <image wx:if="{{item.image}}" src="{{item.image}}" mode="widthFix"

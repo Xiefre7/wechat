@@ -212,13 +212,12 @@ Page({
     var that = this;
     wx.showLoading({ title: '加载题目中...' });
 
-    wx.cloud.database().collection('questions')
-      .where({ bankId: bank._id, status: 'active' })
-      .limit(500)
-      .get()
-      .then(function (res) {
+    wx.cloud.callFunction({
+      name: 'quickstartFunctions',
+      data: { type: 'getBankQuestions', bankId: bank._id },
+    }).then(function (res) {
         wx.hideLoading();
-        var questions = res.data || [];
+        var questions = (res.result && res.result.data) || [];
         if (questions.length === 0) {
           wx.showToast({ title: '该题库暂无题目', icon: 'none' });
           return;

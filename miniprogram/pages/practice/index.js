@@ -322,7 +322,7 @@ Page({
       submitted: true,
       isCorrect,
       showExplanation: true,
-      shortAnswerJudged: isShortAnswer ? false : undefined,
+      shortAnswerJudged: isShortAnswer ? false : null,
       questionTimeSpent: timeSpent,
       answeredCount,
       correctCount,

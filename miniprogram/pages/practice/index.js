@@ -572,6 +572,9 @@ Page({
 
   /* ─── 错题自动收录 ─── */
   tryAutoCollect() {
+    // 自导入题库不自动加入错题本
+    if (this.data.bankType === 'custom') return;
+
     const { currentQuestion, bankName } = this.data;
     const bankId = currentQuestion.bankId;
 

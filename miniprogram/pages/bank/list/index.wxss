@@ -166,6 +166,16 @@ button::after { border: 0; }
   color: #95A6BD;
 }
 
+.bank-count {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bank-kp {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .bank-tag {
   margin-left: 8rpx;
   padding: 2rpx 10rpx;
@@ -174,6 +184,8 @@ button::after { border: 0; }
   font-weight: 600;
   color: #FF9500;
   background: rgba(255,149,0,0.08);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .bank-right {

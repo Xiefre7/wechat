@@ -95,15 +95,13 @@ button::after { border: 0; }
 /* ─── 滚动区 ─── */
 .memorize-page {
   position: relative;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .question-scroll {
-  flex: 1;
+  height: calc(100vh - env(safe-area-inset-top) - 72rpx);
   padding: 24rpx 24rpx 0;
-  height: calc(100vh - env(safe-area-inset-top) - 56rpx - 38rpx);
 }
 
 /* ─── 玻璃基类 ─── */
@@ -153,7 +151,7 @@ button::after { border: 0; }
   white-space: pre-wrap;
 }
 
-/* ─── 题目图片展示 ─── */
+/* ─── 题目图片展示（固定高度，完整显示）─── */
 .stem-images,
 .expl-images {
   display: flex;
@@ -162,18 +160,44 @@ button::after { border: 0; }
   margin-top: 16rpx;
 }
 
-.stem-image,
-.expl-image {
+/* 题干/解析大图 — 固定高度展示完整图片 */
+.img-card-stem {
+  position: relative;
   width: 100%;
+  height: 360rpx;
+  overflow: hidden;
   border-radius: 20rpx;
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  background: #1A1A1A;
 }
 
-.opt-image {
-  width: 160rpx;
-  border-radius: 14rpx;
-  margin-top: 10rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+/* 图片填满容器 */
+.img-inner {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 底部"点击预览"渐变提示 */
+.img-tap-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64rpx;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.28), transparent);
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0 12rpx 6rpx;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.img-tap-text {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
 }
 
 /* ─── 背题模式答案展示区 ─── */
@@ -338,4 +362,8 @@ button::after { border: 0; }
 
 .theme-dark .prev-capsule-text {
   color: rgba(255, 255, 255, 0.65);
+}
+
+.theme-dark .img-tap-hint {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.45), transparent);
 }

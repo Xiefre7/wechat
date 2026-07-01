@@ -64,9 +64,13 @@
         <view class="q-body" wx:if="{{!item._editing}}">
           <view class="q-stem">{{item.stem}}</view>
           <view class="q-images" wx:if="{{item._stemImages.length > 0}}">
-            <image wx:for="{{item._stemImages}}" wx:key="*this" wx:for-item="imgUrl"
-              src="{{imgUrl}}" mode="widthFix" class="stem-image-preview"
-              bindtap="onPreviewImage" data-url="{{imgUrl}}" />
+            <view wx:for="{{item._stemImages}}" wx:key="*this" wx:for-item="imgUrl" class="img-card-stem">
+              <image src="{{imgUrl}}" mode="aspectFit" class="img-inner"
+                bindtap="onPreviewImage" data-url="{{imgUrl}}" />
+              <view class="img-tap-hint">
+                <text class="img-tap-text">点击预览</text>
+              </view>
+            </view>
           </view>
           <!-- 检测提示：低/中置信度时显示 -->
           <view wx:if="{{item._detectionNote}}" class="detection-note {{item._detectionConfidence}}">
@@ -76,8 +80,13 @@
             <view wx:for="{{item.options}}" wx:key="key" wx:for-item="opt" class="q-opt">
               <text class="q-opt-key">{{opt.key}}.</text>
               <text class="q-opt-text">{{opt.text}}</text>
-              <image wx:if="{{opt._image}}" src="{{opt._image}}" mode="widthFix"
-                class="opt-image-preview" bindtap="onPreviewImage" data-url="{{opt._image}}" />
+              <view wx:if="{{opt._image}}" class="img-card-opt">
+                <image src="{{opt._image}}" mode="aspectFit" class="img-inner"
+                  bindtap="onPreviewImage" data-url="{{opt._image}}" />
+                <view class="img-tap-hint">
+                  <text class="img-tap-text">预览</text>
+                </view>
+              </view>
             </view>
           </view>
           <view class="q-meta">
@@ -88,9 +97,13 @@
               解析：<text class="expl-val">{{item.explanation}}</text>
             </view>
             <view class="q-images" wx:if="{{item._explanationImages.length > 0}}">
-              <image wx:for="{{item._explanationImages}}" wx:key="*this" wx:for-item="imgUrl"
-                src="{{imgUrl}}" mode="widthFix" class="expl-image-preview"
-                bindtap="onPreviewImage" data-url="{{imgUrl}}" />
+              <view wx:for="{{item._explanationImages}}" wx:key="*this" wx:for-item="imgUrl" class="img-card-stem">
+                <image src="{{imgUrl}}" mode="aspectFit" class="img-inner"
+                  bindtap="onPreviewImage" data-url="{{imgUrl}}" />
+                <view class="img-tap-hint">
+                  <text class="img-tap-text">点击预览</text>
+                </view>
+              </view>
             </view>
           </view>
         </view>
@@ -124,7 +137,7 @@
             ></textarea>
             <view class="q-images" wx:if="{{item._stemImages.length > 0}}">
               <view wx:for="{{item._stemImages}}" wx:key="*this" wx:for-item="imgUrl" class="q-image-thumb">
-                <image src="{{imgUrl}}" mode="aspectFill" class="thumb-img" />
+                <image src="{{imgUrl}}" mode="aspectFit" class="thumb-img" />
                 <view class="q-image-delete" data-index="{{qi}}" data-img-url="{{imgUrl}}" catchtap="onRemoveStemImage">×</view>
               </view>
             </view>
@@ -157,7 +170,7 @@
                   <view class="opt-image-add-btn glass-button" data-index="{{qi}}" data-opt-index="{{optIndex}}" catchtap="onChooseOptionImage">
                     <image src="/images/kzg/camera-alt.svg" class="add-image-icon" mode="aspectFit"></image>{{opt._image ? '更换图片' : '添加图片'}}
                   </view>
-                  <image wx:if="{{opt._image}}" src="{{opt._image}}" mode="aspectFill"
+                  <image wx:if="{{opt._image}}" src="{{opt._image}}" mode="aspectFit"
                     class="opt-image-thumb" bindtap="onPreviewImage" data-url="{{opt._image}}" />
                   <view wx:if="{{opt._image}}" class="opt-image-remove" data-index="{{qi}}" data-opt-index="{{optIndex}}" catchtap="onRemoveOptionImage">× 删除</view>
                 </view>
@@ -234,7 +247,7 @@
             ></textarea>
             <view class="q-images" wx:if="{{item._explanationImages.length > 0}}">
               <view wx:for="{{item._explanationImages}}" wx:key="*this" wx:for-item="imgUrl" class="q-image-thumb">
-                <image src="{{imgUrl}}" mode="aspectFill" class="thumb-img" />
+                <image src="{{imgUrl}}" mode="aspectFit" class="thumb-img" />
                 <view class="q-image-delete" data-index="{{qi}}" data-img-url="{{imgUrl}}" catchtap="onRemoveExplanationImage">×</view>
               </view>
             </view>

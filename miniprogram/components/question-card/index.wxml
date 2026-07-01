@@ -5,9 +5,13 @@
 <view class="stem-card glass-card">
   <view class="stem-text">{{question.content.stem}}</view>
   <view class="stem-images" wx:if="{{question.hasStemImages}}">
-    <image wx:for="{{question.content.stemImages}}" wx:key="*this"
-      src="{{item}}" mode="widthFix" class="stem-image"
-      bindtap="onStemImageTap" data-url="{{item}}" />
+    <view wx:for="{{question.content.stemImages}}" wx:key="*this" class="img-card-stem">
+      <image src="{{item}}" mode="aspectFit" class="img-inner"
+        bindtap="onStemImageTap" data-url="{{item}}" />
+      <view class="img-tap-hint">
+        <text class="img-tap-text">点击预览</text>
+      </view>
+    </view>
   </view>
 </view>
 
@@ -25,8 +29,13 @@
       <text>{{item.key}}</text>
     </view>
     <view class="option-text">{{item.text}}</view>
-    <image wx:if="{{item.image}}" src="{{item.image}}" mode="widthFix"
-      class="opt-image" bindtap="onOptionImageTap" data-url="{{item.image}}" />
+    <view wx:if="{{item.image}}" class="img-card-opt">
+      <image src="{{item.image}}" mode="aspectFit" class="img-inner"
+        bindtap="onOptionImageTap" data-url="{{item.image}}" />
+      <view class="img-tap-hint">
+        <text class="img-tap-text">预览</text>
+      </view>
+    </view>
     <view class="option-icon" wx:if="{{showIcons}}">
       <text wx:if="{{item._isCorrect}}">✓</text>
     </view>

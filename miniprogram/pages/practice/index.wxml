@@ -32,9 +32,13 @@
     <view class="stem-card glass-card">
       <view class="stem-text">{{currentQuestion.content.stem}}</view>
       <view class="stem-images" wx:if="{{currentQuestion.hasStemImages}}">
-        <image wx:for="{{currentQuestion.content.stemImages}}" wx:key="*this"
-          src="{{item}}" mode="widthFix" class="stem-image"
-          bindtap="onPreviewStemImage" data-url="{{item}}" />
+        <view wx:for="{{currentQuestion.content.stemImages}}" wx:key="*this" class="img-card-stem">
+          <image src="{{item}}" mode="aspectFit" class="img-inner"
+            bindtap="onPreviewStemImage" data-url="{{item}}" />
+          <view class="img-tap-hint">
+            <text class="img-tap-text">点击预览</text>
+          </view>
+        </view>
       </view>
     </view>
 
@@ -52,8 +56,13 @@
           <text>{{item.key}}</text>
         </view>
         <view class="option-text">{{item.text}}</view>
-        <image wx:if="{{item.image}}" src="{{item.image}}" mode="widthFix"
-          class="opt-image" bindtap="onPreviewOptionImage" data-url="{{item.image}}" />
+        <view wx:if="{{item.image}}" class="img-card-opt">
+          <image src="{{item.image}}" mode="aspectFit" class="img-inner"
+            bindtap="onPreviewOptionImage" data-url="{{item.image}}" />
+          <view class="img-tap-hint">
+            <text class="img-tap-text">预览</text>
+          </view>
+        </view>
         <view class="option-icon" wx:if="{{submitted}}">
           <text wx:if="{{item._isCorrect}}">✓</text>
         </view>
@@ -160,9 +169,13 @@
           {{currentQuestion.content.explanation}}
         </view>
         <view class="expl-images" wx:if="{{currentQuestion.hasExplanationImages}}">
-          <image wx:for="{{currentQuestion.content.explanationImages}}" wx:key="*this"
-            src="{{item}}" mode="widthFix" class="expl-image"
-            bindtap="onPreviewExplanationImage" data-url="{{item}}" />
+          <view wx:for="{{currentQuestion.content.explanationImages}}" wx:key="*this" class="img-card-stem">
+            <image src="{{item}}" mode="aspectFit" class="img-inner"
+              bindtap="onPreviewExplanationImage" data-url="{{item}}" />
+            <view class="img-tap-hint">
+              <text class="img-tap-text">点击预览</text>
+            </view>
+          </view>
         </view>
       </view>
 
@@ -176,9 +189,13 @@
           </text>
         </view>
         <view class="expl-images" wx:if="{{currentQuestion.hasExplanationImages}}">
-          <image wx:for="{{currentQuestion.content.explanationImages}}" wx:key="*this"
-            src="{{item}}" mode="widthFix" class="expl-image"
-            bindtap="onPreviewExplanationImage" data-url="{{item}}" />
+          <view wx:for="{{currentQuestion.content.explanationImages}}" wx:key="*this" class="img-card-stem">
+            <image src="{{item}}" mode="aspectFit" class="img-inner"
+              bindtap="onPreviewExplanationImage" data-url="{{item}}" />
+            <view class="img-tap-hint">
+              <text class="img-tap-text">点击预览</text>
+            </view>
+          </view>
         </view>
       </view>
     </view>

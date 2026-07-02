@@ -1,4 +1,4 @@
-<view class="manage-page">
+<view class="manage-page {{isDark ? 'theme-dark' : ''}}">
   <view class="ambient-strip"></view>
 
   <scroll-view class="manage-scroll" scroll-y enhanced show-scrollbar="{{false}}">
@@ -70,7 +70,7 @@
 
     <!-- 空状态 -->
     <view class="empty-state" wx:if="{{!hasItems}}">
-      <view class="empty-icon">⚔️</view>
+      <image class="empty-icon" src="/images/kzg/slash-red.svg" mode="aspectFit" style="width:72rpx;height:72rpx;"></image>
       <view class="empty-text">还没有斩掉任何题类</view>
       <view class="empty-desc">刷题时做3道同类题且正确率≥2/3即可触发斩题</view>
     </view>

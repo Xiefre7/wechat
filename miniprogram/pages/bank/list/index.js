@@ -60,47 +60,28 @@ Page({
     this.loadCloudBanks();
   },
 
-  /* ─── 从云数据库加载用户导入的题库 ─── */
+  /* ─── 从云数据库加载用户导入的题库（通过云函数，按 openid 隔离） ─── */
   loadCloudBanks() {
     var that = this;
-    var cloudAvailable = wx.cloud && getApp().globalData.env !== 'your-cloud-env-id';
+    var app = getApp();
+    var cloudAvailable = wx.cloud && app.globalData && app.globalData.env;
 
     if (!cloudAvailable) {
-      // 云开发未配置，尝试直接查询（使用默认环境）
-      try {
-        var db = wx.cloud.database();
-        db.collection('banks')
-          .where({ type: 'custom' })
-          .orderBy('createdAt', 'desc')
-          .limit(50)
-          .get()
-          .then(function (res) {
-            that.mergeCloudBanks(res.data || []);
-          })
-          .catch(function () {
-            // 静默降级，仅使用本地数据
-          });
-      } catch (e) {
-        // 云数据库不可用，仅使用 mockData
-      }
-    } else {
-      try {
-        var db = wx.cloud.database();
-        db.collection('banks')
-          .where({ type: 'custom' })
-          .orderBy('createdAt', 'desc')
-          .limit(50)
-          .get()
-          .then(function (res) {
-            that.mergeCloudBanks(res.data || []);
-          })
-          .catch(function () {
-            // 静默降级
-          });
-      } catch (e) {
-        // 云数据库不可用
-      }
+      // 云开发未配置，仅使用本地 mockData
+      return;
     }
+
+    wx.cloud.callFunction({
+      name: 'quickstartFunctions',
+      data: { type: 'getMyBanks' },
+    }).then(function (res) {
+      if (res.result && res.result.success) {
+        that.mergeCloudBanks(res.result.data || []);
+      }
+    }).catch(function (err) {
+      // 静默降级，仅使用本地数据
+      console.warn('加载云端题库失败:', err);
+    });
   },
 
   /* ─── 合并云端题库到本地列表 ─── */

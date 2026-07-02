@@ -52,14 +52,14 @@
 
     <!-- 空状态 -->
     <view class="empty-state" wx:if="{{exams.length === 0 && loaded}}">
-      <view class="empty-icon">📋</view>
+      <image class="empty-icon" src="/images/kzg/file-blue.svg" mode="aspectFit" style="width:64rpx;height:64rpx;"></image>
       <view class="empty-text">暂无真题试卷</view>
       <view class="empty-desc">管理员正在整理中，敬请期待</view>
     </view>
 
     <!-- 加载中 -->
     <view class="empty-state" wx:if="{{!loaded}}">
-      <view class="empty-icon">⏳</view>
+      <view class="empty-icon"></view>
       <view class="empty-text">加载中...</view>
     </view>
 

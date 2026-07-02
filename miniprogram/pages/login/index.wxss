@@ -1,0 +1,267 @@
+/* pages/login/index.wxss */
+
+page {
+  min-height: 100vh;
+  background: #F4F7FC;
+}
+
+.login-page {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  padding: calc(env(safe-area-inset-top) + 120rpx) 40rpx calc(env(safe-area-inset-bottom) + 40rpx);
+  overflow: hidden;
+  color: #1E2A3A;
+  box-sizing: border-box;
+}
+
+.login-page.dark {
+  background: #0F172A;
+  color: #E2E8F0;
+}
+
+/* 背景图 */
+.bg-image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  opacity: 0.55;
+}
+
+.bg-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(244, 247, 252, 0.1) 0%, rgba(244, 247, 252, 0.25) 100%);
+}
+
+.dark .bg-overlay {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.25) 0%, rgba(15, 23, 42, 0.4) 100%);
+}
+
+/* 登录卡片 —— 毛玻璃质感 */
+.login-card {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0.4) 100%
+  );
+  backdrop-filter: blur(50px) saturate(1.6);
+  -webkit-backdrop-filter: blur(50px) saturate(1.6);
+  border-radius: 32rpx;
+  padding: 56rpx 40rpx 40rpx;
+  box-shadow:
+    0 12rpx 60rpx rgba(30, 42, 58, 0.18),
+    0 4rpx 16rpx rgba(30, 42, 58, 0.08),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1rpx 0 rgba(255, 255, 255, 0.2);
+  border: 2rpx solid rgba(255, 255, 255, 0.75);
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20rpx;
+  right: 20rpx;
+  height: 1rpx;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  border-radius: 1rpx;
+}
+
+.dark .login-card {
+  background: linear-gradient(
+    135deg,
+    rgba(30, 41, 59, 0.4) 0%,
+    rgba(30, 41, 59, 0.22) 50%,
+    rgba(30, 41, 59, 0.35) 100%
+  );
+  backdrop-filter: blur(50px) saturate(1.4);
+  -webkit-backdrop-filter: blur(50px) saturate(1.4);
+  border: 2rpx solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 12rpx 60rpx rgba(0, 0, 0, 0.4),
+    0 4rpx 16rpx rgba(0, 0, 0, 0.2),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1rpx 0 rgba(255, 255, 255, 0.03);
+}
+
+.dark .login-card::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+}
+
+.card-title {
+  font-size: 36rpx;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 40rpx;
+  color: #1E2A3A;
+}
+
+.dark .card-title {
+  color: #E2E8F0;
+}
+
+/* 头像选择 */
+.avatar-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32rpx;
+}
+
+.avatar-btn {
+  width: 140rpx !important;
+  height: 140rpx;
+  padding: 0 !important;
+  margin: 0;
+  border-radius: 50%;
+  background: transparent;
+  line-height: normal;
+}
+
+.avatar-btn::after {
+  border: none;
+}
+
+.avatar-img {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 50%;
+  border: 4rpx solid #007AFF;
+}
+
+.avatar-placeholder {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 50%;
+  background: rgba(0, 122, 255, 0.08);
+  border: 3rpx dashed rgba(0, 122, 255, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.dark .avatar-placeholder {
+  background: rgba(0, 122, 255, 0.15);
+  border-color: rgba(0, 122, 255, 0.5);
+}
+
+.avatar-plus {
+  font-size: 48rpx;
+  color: #007AFF;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.avatar-hint {
+  font-size: 20rpx;
+  color: #007AFF;
+  margin-top: 4rpx;
+}
+
+/* 昵称输入 */
+.nickname-row {
+  margin-bottom: 28rpx;
+}
+
+.nickname-input {
+  width: 100%;
+  height: 88rpx;
+  padding: 0 28rpx;
+  font-size: 30rpx;
+  background: rgba(0, 122, 255, 0.05);
+  border-radius: 20rpx;
+  border: 2rpx solid rgba(0, 122, 255, 0.15);
+  box-sizing: border-box;
+  color: #1E2A3A;
+}
+
+.dark .nickname-input {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #E2E8F0;
+}
+
+.nick-placeholder {
+  color: #B0BFD0;
+  font-size: 28rpx;
+}
+
+/* 隐私协议 */
+.privacy-row {
+  margin-bottom: 32rpx;
+}
+
+.privacy-label {
+  display: flex;
+  align-items: center;
+  font-size: 24rpx;
+  color: #8A9BB0;
+}
+
+.dark .privacy-label {
+  color: #94A3B8;
+}
+
+checkbox {
+  transform: scale(0.8);
+  margin-right: 8rpx;
+}
+
+.privacy-link {
+  color: #007AFF;
+}
+
+/* 登录按钮 */
+.login-btn {
+  width: 100%;
+  height: 96rpx;
+  line-height: 96rpx;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #ffffff;
+  background: #C8D4E0;
+  border-radius: 24rpx;
+  transition: all 0.3s ease;
+  padding: 0;
+  margin: 0;
+  border: none;
+}
+
+.login-btn::after {
+  border: none;
+}
+
+.login-btn.active {
+  background: linear-gradient(135deg, #007AFF, #4A8FEA);
+  box-shadow: 0 8rpx 24rpx rgba(0, 122, 255, 0.35);
+}
+
+.login-btn.active:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+/* 跳过 */
+.skip-btn {
+  text-align: center;
+  font-size: 26rpx;
+  color: #8A9BB0;
+  margin-top: 24rpx;
+  padding: 12rpx;
+}
+
+.dark .skip-btn {
+  color: #64748B;
+}

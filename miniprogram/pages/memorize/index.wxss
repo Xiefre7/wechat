@@ -239,13 +239,40 @@ button::after { border: 0; }
 /* ─── 背题模式操作区 ─── */
 .memorize-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  justify-content: center;
+  gap: 24rpx;
   margin-top: 48rpx;
 }
 
+.not-remember-btn-large {
+  width: 340rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+  min-height: 108rpx;
+  border-radius: 28rpx;
+  font-size: 34rpx;
+  font-weight: 500;
+  color: #FF3B30;
+  background: rgba(255,255,255,0.58);
+  border: 1rpx solid rgba(255,59,48,0.25);
+  backdrop-filter: blur(34rpx) saturate(180%);
+  -webkit-backdrop-filter: blur(34rpx) saturate(180%);
+  box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.78), 0 14rpx 48rpx rgba(74,143,234,0.08);
+}
+
+.theme-dark .not-remember-btn-large {
+  background: rgba(15,32,64,0.52);
+  border: 1rpx solid rgba(255,59,48,0.30);
+  color: rgba(255,59,48,0.85);
+  box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.06), 0 14rpx 48rpx rgba(0,0,0,0.20);
+}
+
 .remember-btn-large {
-  width: 420rpx;
+  width: 340rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -329,10 +356,10 @@ button::after { border: 0; }
   border-color: rgba(255,255,255,0.08);
 }
 
-.theme-dark .expl-content { color: #1A2538; }
+.theme-dark .expl-content { color: rgba(255,255,255,0.6); }
 .theme-dark .expl-content { border-top-color: rgba(255,255,255,0.06); }
 
-.theme-dark .progress-text { color: #1A2538; }
+.theme-dark .progress-text { color: rgba(255,255,255,0.6); }
 
 .theme-dark .mode-badge {
   background: rgba(52, 199, 89, 0.15);

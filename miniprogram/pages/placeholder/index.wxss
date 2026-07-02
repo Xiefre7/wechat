@@ -37,7 +37,7 @@ button::after {
 .eyebrow {
   font-size: 24rpx;
   font-weight: 800;
-  color: #FF6B4A;
+  color: #FF3B30;
 }
 
 .title {
@@ -83,5 +83,5 @@ button::after {
   }
 
   .theme-dark .desc {
-    color: #1A2538;
+    color: rgba(255,255,255,0.6);
   }

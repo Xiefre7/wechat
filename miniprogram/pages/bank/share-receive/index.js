@@ -1,5 +1,3 @@
-const mockData = require('../../../data/mockData');
-
 Page({
   data: {
     isDark: false,
@@ -95,52 +93,43 @@ Page({
     const { bank } = this.data;
     const questions = this._sharedQuestions || [];
 
-    // 检查是否已导入过
-    const existing = mockData.banks.find(
-      (b) => b.name === bank.name && b.type === 'custom'
-    );
-    if (existing) {
+    // 通过云函数持久化导入（写入云数据库）
+    wx.cloud.callFunction({
+      name: 'quickstartFunctions',
+      data: {
+        type: 'importBank',
+        bankName: bank.name,
+        bankType: 'custom',
+        questions: questions.map(function (q) {
+          return {
+            type: q.type || 'single_choice',
+            stem: (q.content ? q.content.stem : q.stem) || '',
+            options: (q.content ? q.content.options : q.options) || [],
+            answer: (q.content ? q.content.answer : q.answer) || '',
+            explanation: (q.content ? q.content.explanation : q.explanation) || '',
+            stemImages: (q.content ? q.content.stemImages : q.stemImages) || [],
+            explanationImages: (q.content ? q.content.explanationImages : q.explanationImages) || [],
+          };
+        }),
+        source: 'share',
+      },
+    }).then((res) => {
+      if (res.result && res.result.success) {
+        this.setData({
+          importing: false,
+          importSuccess: true,
+        });
+      } else {
+        this.setData({
+          importing: false,
+          error: (res.result && res.result.errMsg) || '导入失败，请稍后重试',
+        });
+      }
+    }).catch(() => {
       this.setData({
         importing: false,
-        error: '该题库已存在，请勿重复导入',
+        error: '网络异常，请稍后重试',
       });
-      return;
-    }
-
-    // 生成新题库
-    const newBankId = 'bank_custom_' + Date.now();
-    const newBank = {
-      _id: newBankId,
-      name: bank.name,
-      type: 'custom',
-      category: bank.category || '',
-      subCategory: bank.subCategory || '',
-      description: bank.description || '',
-      coverImage: '',
-      ownerId: 'shared',
-      isPublic: false,
-      questionCount: questions.length,
-      knowledgePointCount: 0,
-      tags: ['分享导入'],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    // 为题目分配新 ID 和 bankId
-    const newQuestions = questions.map((q, i) => ({
-      ...q,
-      _id: `${newBankId}_q${i + 1}`,
-      bankId: newBankId,
-      knowledgePointId: '',
-    }));
-
-    // 写入 mockData
-    mockData.banks.push(newBank);
-    newQuestions.forEach((q) => mockData.questions.push(q));
-
-    this.setData({
-      importing: false,
-      importSuccess: true,
     });
   },
 

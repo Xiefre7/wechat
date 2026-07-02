@@ -176,8 +176,8 @@ button::after { border: 0; }
   border-radius: 8rpx;
   font-size: 20rpx;
   font-weight: 600;
-  color: #FF9500;
-  background: rgba(255,149,0,0.08);
+  color: #5AC8FA;
+  background: rgba(90,200,250,0.08);
 }
 
 .exam-arrow {
@@ -238,7 +238,7 @@ button::after { border: 0; }
 .theme-dark .exam-name { color: #FFFFFF; font-weight: 900; }
 
 .theme-dark .page-desc,
-.theme-dark .exam-meta { color: #1A2538; }
+.theme-dark .exam-meta { color: rgba(255,255,255,0.6); }
 
 .theme-dark .glass-card,
 .theme-dark .tab-item {
@@ -255,6 +255,6 @@ button::after { border: 0; }
 .theme-dark .exam-arrow { background: rgba(255,255,255,0.06); }
 
 .theme-dark .exam-subcategory {
-  color: #F59E0B;
-  background: rgba(245,158,11,0.12);
+  color: #5AC8FA;
+  background: rgba(90,200,250,0.12);
 }

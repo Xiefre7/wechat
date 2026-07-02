@@ -5,7 +5,7 @@
   <scroll-view class="result-scroll" scroll-y enhanced show-scrollbar="{{false}}">
     <!-- 完成标题 -->
     <view class="finish-hero">
-      <view class="finish-icon">{{isMemorize ? '🧠' : '🎉'}}</view>
+      <view class="finish-icon">{{isMemorize ? '记忆' : '完成'}}</view>
       <view class="finish-title">{{isMemorize ? '背题完成！' : '练习完成！'}}</view>
       <view class="finish-bank">{{result.bankName}}</view>
       <view class="finish-kp" wx:if="{{result.knowledgePointName}}">{{result.knowledgePointName}}</view>
@@ -66,11 +66,11 @@
     <!-- 操作按钮 -->
     <view class="action-group">
       <button class="action-btn primary glass-card" bindtap="continuePractice" hover-class="pressing">
-        <view class="action-icon">📝</view>
+        <image class="action-icon" src="/images/kzg/pen-blue.svg" mode="aspectFit" style="width:32rpx;height:32rpx;"></image>
         <view class="action-label">{{isMemorize ? '继续背题' : '继续刷题'}}</view>
       </button>
       <button class="action-btn outline glass-card" bindtap="goHome" hover-class="pressing">
-        <view class="action-icon">🏠</view>
+        <view class="action-icon"></view>
         <view class="action-label">返回首页</view>
       </button>
     </view>

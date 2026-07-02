@@ -301,7 +301,8 @@ const deleteBank = async (event) => {
     if (!bankRes.data) {
       return { success: false, errMsg: '题库不存在' };
     }
-    if (bankRes.data.ownerId && bankRes.data.ownerId !== openid) {
+    // 安全校验：ownerId 为空（官方题库）或不属于当前用户时禁止删除
+    if (!bankRes.data.ownerId || bankRes.data.ownerId !== openid) {
       return { success: false, errMsg: '无权删除此题库' };
     }
 
@@ -944,6 +945,22 @@ const sendFeedback = async (event) => {
   const typeLabel = typeMap[feedbackType] || '其他问题';
   const createdAt = new Date().toISOString();
 
+  // HTML escape 函数，防止邮件正文 XSS 注入
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // 对用户输入进行 HTML 转义
+  var safeTypeLabel = escapeHtml(typeLabel);
+  var safeContact = escapeHtml(contact || '未填写');
+  var safeContent = escapeHtml(content.trim());
+
   // 1. 存入数据库
   try {
     await db.collection('feedback').add({
@@ -979,13 +996,13 @@ const sendFeedback = async (event) => {
     const mailBody = `
       <h3>导题斩题小工具 - 用户反馈</h3>
       <table style="border-collapse:collapse;width:100%;max-width:600px;">
-        <tr><td style="padding:8px;border:1px solid #e0e0e0;background:#f5f5f5;width:80px;">反馈类型</td><td style="padding:8px;border:1px solid #e0e0e0;">${typeLabel}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #e0e0e0;background:#f5f5f5;width:80px;">反馈类型</td><td style="padding:8px;border:1px solid #e0e0e0;">${safeTypeLabel}</td></tr>
         <tr><td style="padding:8px;border:1px solid #e0e0e0;background:#f5f5f5;">用户OpenID</td><td style="padding:8px;border:1px solid #e0e0e0;">${openid}</td></tr>
-        <tr><td style="padding:8px;border:1px solid #e0e0e0;background:#f5f5f5;">联系方式</td><td style="padding:8px;border:1px solid #e0e0e0;">${contact || '未填写'}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #e0e0e0;background:#f5f5f5;">联系方式</td><td style="padding:8px;border:1px solid #e0e0e0;">${safeContact}</td></tr>
         <tr><td style="padding:8px;border:1px solid #e0e0e0;background:#f5f5f5;">反馈时间</td><td style="padding:8px;border:1px solid #e0e0e0;">${createdAt}</td></tr>
       </table>
       <h4>详细描述：</h4>
-      <p style="white-space:pre-wrap;background:#f9f9f9;padding:12px;border-radius:4px;">${content.trim()}</p>
+      <p style="white-space:pre-wrap;background:#f9f9f9;padding:12px;border-radius:4px;">${safeContent}</p>
     `;
 
     await transporter.sendMail({
@@ -1158,6 +1175,15 @@ const getSharedBank = async (event) => {
     }
 
     const shared = res.data[0];
+
+    // 过期校验：expireAt 字段存在且已过期则拒绝
+    if (shared.expireAt) {
+      var expireDate = new Date(shared.expireAt);
+      if (!isNaN(expireDate.getTime()) && Date.now() > expireDate.getTime()) {
+        return { success: false, message: '分享已过期' };
+      }
+    }
+
     return {
       success: true,
       data: {
@@ -1204,11 +1230,17 @@ const getExamBanks = async (event) => {
 
 /** 获取题库下的所有题目 */
 const getBankQuestions = async (event) => {
-  const { bankId } = event || {};
+  const { bankId, condition } = event || {};
   if (!bankId) return { success: false, errMsg: '缺少题库ID' };
   try {
+    var query = { bankId, status: 'active' };
+    // 合并前端传入的筛选条件（knowledgePointId, questionClassId 等）
+    if (condition) {
+      if (condition.knowledgePointId) query.knowledgePointId = condition.knowledgePointId;
+      if (condition.questionClassId) query.questionClassId = condition.questionClassId;
+    }
     const list = (await db.collection('questions')
-      .where({ bankId, status: 'active' })
+      .where(query)
       .limit(500)
       .get()).data;
     return { success: true, data: list };
@@ -1288,6 +1320,277 @@ const updateUserProfile = async (event) => {
   }
 };
 
+// ─── 用户数据同步（跨设备互通） ───
+
+/**
+ * 获取当前用户的所有自导入题库（跨设备同步）
+ * 按 ownerId = openid 过滤，确保数据隔离
+ */
+const getMyBanks = async () => {
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+
+  try {
+    const res = await db.collection('banks')
+      .where({ ownerId: openid, type: 'custom' })
+      .orderBy('createdAt', 'desc')
+      .limit(100)
+      .get();
+    return { success: true, data: res.data || [] };
+  } catch (err) {
+    return { success: false, errMsg: err.message, data: [] };
+  }
+};
+
+/**
+ * 获取用户完整云端数据
+ * 返回 user_data 集合中该用户的文档（不存在返回 null）
+ */
+const getUserData = async () => {
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+
+  try {
+    const res = await db.collection('user_data').where({ openid }).limit(1).get();
+    if (res.data.length > 0) {
+      return { success: true, data: res.data[0] };
+    }
+    return { success: true, data: null };
+  } catch (err) {
+    // 集合可能不存在，自动创建
+    if (err.errCode === -502003 || (err.message && err.message.includes('collection'))) {
+      try {
+        await db.createCollection('user_data');
+        return { success: true, data: null };
+      } catch (e2) { /* ignore */ }
+    }
+    return { success: false, errMsg: err.message };
+  }
+};
+
+/**
+ * 保存部分数据到云端（增量更新指定 section）
+ * @param {string} section - 'checkin' | 'studyStats' | 'practiceHistory' | 'slashProgress'
+ * @param {*} data - 该 section 的完整数据
+ */
+const saveUserData = async (event) => {
+  const { section, data } = event;
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+
+  if (!section) {
+    return { success: false, errMsg: '缺少 section 参数' };
+  }
+
+  try {
+    // 查找用户文档
+    const res = await db.collection('user_data').where({ openid }).limit(1).get();
+
+    if (res.data.length === 0) {
+      // 文档不存在 → 创建新文档
+      const newDoc = {
+        openid,
+        checkin: { dates: [] },
+        studyStats: { weeklySeconds: { weekStart: '', seconds: 0 }, totalSeconds: 0, totalQuestions: 0, todayQuestions: { date: '', count: 0 } },
+        practiceHistory: [],
+        slashProgress: { classSlash: {}, questionSlash: {}, kpProgress: {} },
+        wrongBook: [],
+        errorTracking: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      newDoc[section] = data;
+      await db.collection('user_data').add({ data: newDoc });
+      return { success: true };
+    }
+
+    // 文档存在 → 更新指定 section
+    const docId = res.data[0]._id;
+    const updateData = {
+      updatedAt: new Date().toISOString()
+    };
+    updateData[section] = data;
+
+    await db.collection('user_data').doc(docId).update({ data: updateData });
+    return { success: true };
+  } catch (err) {
+    return { success: false, errMsg: err.message };
+  }
+};
+
+/**
+ * 首次登录迁移本地数据到云端
+ * 策略：云端有数据 → 云端优先，合并本地（取较大值）；云端无数据 → 直接写入
+ * @param {Object} localData - { checkin, studyStats, practiceHistory, slashProgress }
+ */
+const migrateLocalData = async (event) => {
+  const { localData } = event;
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+
+  if (!localData) {
+    return { success: false, errMsg: '缺少 localData' };
+  }
+
+  try {
+    const res = await db.collection('user_data').where({ openid }).limit(1).get();
+
+    if (res.data.length === 0) {
+      // 云端无数据 → 直接写入本地数据
+      const newDoc = {
+        openid,
+        checkin: localData.checkin || { dates: [] },
+        studyStats: localData.studyStats || { weeklySeconds: { weekStart: '', seconds: 0 }, totalSeconds: 0, totalQuestions: 0, todayQuestions: { date: '', count: 0 } },
+        practiceHistory: localData.practiceHistory || [],
+        slashProgress: localData.slashProgress || { classSlash: {}, questionSlash: {}, kpProgress: {} },
+        wrongBook: localData.wrongBook || [],
+        errorTracking: localData.errorTracking || {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await db.collection('user_data').add({ data: newDoc });
+      return { success: true, data: newDoc };
+    }
+
+    // 云端有数据 → 合并（取较大值/并集）
+    const existing = res.data[0];
+    const docId = existing._id;
+    const merged = { ...existing };
+
+    // 打卡：日期取并集
+    if (localData.checkin && localData.checkin.dates) {
+      const cloudDates = (existing.checkin && existing.checkin.dates) || [];
+      const dateSet = new Set([...cloudDates, ...localData.checkin.dates]);
+      merged.checkin = { dates: Array.from(dateSet).sort() };
+    }
+
+    // 学习统计：取较大值
+    if (localData.studyStats) {
+      const ls = localData.studyStats;
+      const es = existing.studyStats || {};
+      merged.studyStats = {
+        totalSeconds: Math.max(ls.totalSeconds || 0, es.totalSeconds || 0),
+        totalQuestions: Math.max(ls.totalQuestions || 0, es.totalQuestions || 0),
+        weeklySeconds: (ls.weeklySeconds && ls.weeklySeconds.seconds > ((es.weeklySeconds && es.weeklySeconds.seconds) || 0))
+          ? ls.weeklySeconds : (es.weeklySeconds || ls.weeklySeconds),
+        todayQuestions: (ls.todayQuestions && ls.todayQuestions.count > ((es.todayQuestions && es.todayQuestions.count) || 0))
+          ? ls.todayQuestions : (es.todayQuestions || ls.todayQuestions),
+      };
+    }
+
+    // 练习历史：以本地为主合并（本地有的更新云端，云端有的保留）
+    if (localData.practiceHistory) {
+      const cloudHist = existing.practiceHistory || [];
+      const localHist = localData.practiceHistory;
+      const map = {};
+      cloudHist.forEach(function (r) { map[r.bankId] = r; });
+      localHist.forEach(function (r) {
+        if (map[r.bankId]) {
+          // 合并：取较新的记录
+          var existingRec = map[r.bankId];
+          if (new Date(r.lastTimeISO || 0) > new Date(existingRec.lastTimeISO || 0)) {
+            map[r.bankId] = r;
+          }
+        } else {
+          map[r.bankId] = r;
+        }
+      });
+      merged.practiceHistory = Object.values(map).sort(function (a, b) {
+        return new Date(b.lastTimeISO || 0) - new Date(a.lastTimeISO || 0);
+      }).slice(0, 50);
+    }
+
+    // 斩题进度：合并（本地 + 云端，冲突取已斩状态）
+    if (localData.slashProgress) {
+      var lp = localData.slashProgress;
+      var ep = existing.slashProgress || {};
+      merged.slashProgress = {
+        classSlash: _mergeSlashProgress(ep.classSlash || {}, lp.classSlash || {}),
+        questionSlash: _mergeSlashProgress(ep.questionSlash || {}, lp.questionSlash || {}),
+        kpProgress: _mergeSlashProgress(ep.kpProgress || {}, lp.kpProgress || {}),
+      };
+    }
+
+    // 错题本：合并去重（以 questionId 为唯一键，冲突取较新的记录）
+    if (localData.wrongBook) {
+      var cloudWrong = existing.wrongBook || [];
+      var localWrong = localData.wrongBook;
+      var wrongMap = {};
+      cloudWrong.forEach(function (w) { wrongMap[w.questionId] = w; });
+      localWrong.forEach(function (w) {
+        var existingW = wrongMap[w.questionId];
+        if (!existingW) {
+          wrongMap[w.questionId] = w;
+        } else {
+          // 取较新的记录
+          var existingDate = new Date(existingW.updatedAt || 0);
+          var localDate = new Date(w.updatedAt || 0);
+          if (localDate > existingDate) {
+            wrongMap[w.questionId] = w;
+          }
+        }
+      });
+      merged.wrongBook = Object.values(wrongMap);
+    }
+
+    // 错题追踪：合并取较大值
+    if (localData.errorTracking) {
+      var cloudTracking = existing.errorTracking || {};
+      var localTracking = localData.errorTracking;
+      var trackingKeys = new Set(Object.keys(cloudTracking).concat(Object.keys(localTracking)));
+      var mergedTracking = {};
+      trackingKeys.forEach(function (key) {
+        var cv = cloudTracking[key];
+        var lv = localTracking[key];
+        if (!cv) { mergedTracking[key] = lv; }
+        else if (!lv) { mergedTracking[key] = cv; }
+        else {
+          // 合并：取 totalErrors 较大值
+          mergedTracking[key] = (cv.totalErrors || 0) >= (lv.totalErrors || 0) ? cv : lv;
+        }
+      });
+      merged.errorTracking = mergedTracking;
+    }
+
+    merged.updatedAt = new Date().toISOString();
+    await db.collection('user_data').doc(docId).update({ data: merged });
+    return { success: true, data: merged };
+  } catch (err) {
+    return { success: false, errMsg: err.message };
+  }
+};
+
+/**
+ * 合并斩题进度：已斩状态取并集（任一方已斩即视为已斩），答题数取较大值
+ */
+function _mergeSlashProgress(cloudObj, localObj) {
+  var merged = { ...cloudObj };
+  var keys = Object.keys(localObj);
+  for (var i = 0; i < keys.length; i++) {
+    var key = keys[i];
+    var localEntry = localObj[key];
+    var cloudEntry = merged[key];
+    if (!cloudEntry) {
+      merged[key] = localEntry;
+    } else {
+      // 已斩取或
+      merged[key] = {
+        ...cloudEntry,
+        slashed: cloudEntry.slashed || localEntry.slashed,
+        slashedAt: cloudEntry.slashedAt || localEntry.slashedAt,
+        answered: Math.max(cloudEntry.answered || 0, localEntry.answered || 0),
+        correct: Math.max(cloudEntry.correct || 0, localEntry.correct || 0),
+        recentCorrect: (localEntry.recentCorrect && localEntry.recentCorrect.length > 0)
+          ? localEntry.recentCorrect : (cloudEntry.recentCorrect || []),
+        name: localEntry.name || cloudEntry.name || '',
+        bankId: localEntry.bankId || cloudEntry.bankId || '',
+        stem: localEntry.stem || cloudEntry.stem || '',
+      };
+    }
+  }
+  return merged;
+}
+
 // ─── 云函数入口 ───
 exports.main = async (event, context) => {
   switch (event.type) {
@@ -1334,6 +1637,15 @@ exports.main = async (event, context) => {
       return await getUserProfile();
     case 'updateUserProfile':
       return await updateUserProfile(event);
+    // 用户数据同步（跨设备互通）
+    case 'getUserData':
+      return await getUserData();
+    case 'saveUserData':
+      return await saveUserData(event);
+    case 'migrateLocalData':
+      return await migrateLocalData(event);
+    case 'getMyBanks':
+      return await getMyBanks();
     // 真题模块
     case 'getExamCategories':
       return await getExamCategories();

@@ -8,6 +8,7 @@
  *  - 每日 3 次回滚撤销
  *
  * 自定义题库仍按单题维度斩题（保持 v1 逻辑）。
+ * 本地存储 + 云端同步（write-through）
  */
 
 const CLASS_PROGRESS_KEY = 'classSlashProgress';
@@ -24,6 +25,31 @@ const REVIVE_MS = REVIVE_DAYS * 24 * 60 * 60 * 1000;
 /** 每日回滚上限 */
 const MAX_ROLLBACK = 3;
 
+/** 懒加载 cloudSync */
+var _cloudSync = null;
+function _getCloudSync() {
+  if (_cloudSync === null) {
+    try { _cloudSync = require('./cloudSync'); } catch (e) { _cloudSync = false; }
+  }
+  return _cloudSync || null;
+}
+
+/** 异步同步斩题进度到云端（防抖） */
+var _syncTimer = null;
+function _syncToCloud() {
+  var cs = _getCloudSync();
+  if (!cs) return;
+  if (_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(function () {
+    _syncTimer = null;
+    cs.saveSection('slashProgress', {
+      classSlash: wx.getStorageSync(CLASS_PROGRESS_KEY) || {},
+      questionSlash: wx.getStorageSync(Q_SLASH_KEY) || {},
+      kpProgress: wx.getStorageSync(KP_PROGRESS_KEY) || {}
+    });
+  }, 2000);
+}
+
 /* ================================================================
  * 读 / 写
  * ================================================================ */
@@ -34,6 +60,7 @@ function getClassProgress() {
 
 function saveClassProgress(data) {
   wx.setStorageSync(CLASS_PROGRESS_KEY, data);
+  _syncToCloud();
 }
 
 function getQuestionProgress() {
@@ -42,6 +69,7 @@ function getQuestionProgress() {
 
 function saveQuestionProgress(data) {
   wx.setStorageSync(Q_SLASH_KEY, data);
+  _syncToCloud();
 }
 
 function getKpProgress() {
@@ -262,6 +290,11 @@ function checkAndRevive() {
   if (kpRevived > 0) {
     wx.setStorageSync(KP_PROGRESS_KEY, kp);
     total += kpRevived;
+  }
+
+  // 如果有复活，触发同步
+  if (total > 0) {
+    _syncToCloud();
   }
 
   if (total > 0) {

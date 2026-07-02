@@ -339,10 +339,11 @@ Page({
       return;
     }
 
-    // SM-2 更新当前错题
+    // SM-2 更新当前错题（仅当该题尚未被处理过时）
     const lastAnswer = this._reviewAnswers[this._reviewAnswers.length - 1];
-    if (lastAnswer && lastAnswer.isCorrect !== null) {
+    if (lastAnswer && lastAnswer.isCorrect !== null && !lastAnswer._reviewed) {
       wrongBook.reviewAnswer(lastAnswer.wrongId, lastAnswer.isCorrect);
+      lastAnswer._reviewed = true;
     }
 
     if (currentIndex + 1 >= totalQuestions) {
@@ -382,10 +383,11 @@ Page({
     var reviewTotalTime = Math.round((Date.now() - this.data.sessionStartTime) / 1000);
     studyTimeManager.addStudyTime(reviewTotalTime);
 
-    // 处理最后一道题的SM-2更新
+    // 处理最后一道题的SM-2更新（仅当该题尚未被处理过时）
     const lastAnswer = this._reviewAnswers[this._reviewAnswers.length - 1];
-    if (lastAnswer && lastAnswer.isCorrect !== null) {
+    if (lastAnswer && lastAnswer.isCorrect !== null && !lastAnswer._reviewed) {
       wrongBook.reviewAnswer(lastAnswer.wrongId, lastAnswer.isCorrect);
+      lastAnswer._reviewed = true;
     }
 
     const answers = this._reviewAnswers;
@@ -425,10 +427,11 @@ Page({
         cancelText: '继续复习',
         success: (res) => {
           if (res.confirm) {
-            // 保存已完成的复习
+            // 保存已完成的复习（仅当该题尚未被处理过时）
             const lastAnswer = this._reviewAnswers[this._reviewAnswers.length - 1];
-            if (lastAnswer && lastAnswer.isCorrect !== null) {
+            if (lastAnswer && lastAnswer.isCorrect !== null && !lastAnswer._reviewed) {
               wrongBook.reviewAnswer(lastAnswer.wrongId, lastAnswer.isCorrect);
+              lastAnswer._reviewed = true;
             }
             wx.removeStorageSync('wrongReviewList');
             wx.navigateBack();

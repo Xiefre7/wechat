@@ -4,15 +4,53 @@
  * 追踪用户在刷题/背题/错题复习中的累计学习时长
  * - 按周统计（每周一 00:00 自动刷新）
  * - 同时维护一个「总累计时长」用于 mine 页展示
- * - 当前使用本地存储，后续可平滑升级为云数据库
+ * - 本地存储 + 云端同步（write-through）
  */
 
 /** 当周学习时长（秒） — 每周一重置 */
 const WEEKLY_KEY = 'study_time_weekly';
 /** 历史总累计（秒） — 只增不减 */
 const TOTAL_KEY = 'study_time_total';
-/** 累计刷题数 */
+/** 累计答题数 */
 const QUESTIONS_KEY = 'total_questions_answered';
+/** 今日答题计数 — 每日重置 */
+const TODAY_KEY = 'today_questions_answered';
+
+/** 懒加载 cloudSync（避免循环依赖） */
+var _cloudSync = null;
+function _getCloudSync() {
+  if (_cloudSync === null) {
+    try { _cloudSync = require('./cloudSync'); } catch (e) { _cloudSync = false; }
+  }
+  return _cloudSync || null;
+}
+
+/** 异步同步 studyStats 到云端（防抖：合并短时间内的多次写入） */
+var _syncTimer = null;
+function _syncToCloud() {
+  var cs = _getCloudSync();
+  if (!cs) return;
+  if (_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(function () {
+    _syncTimer = null;
+    var data = {
+      weeklySeconds: wx.getStorageSync(WEEKLY_KEY) || { weekStart: '', seconds: 0 },
+      totalSeconds: wx.getStorageSync(TOTAL_KEY) || 0,
+      totalQuestions: wx.getStorageSync(QUESTIONS_KEY) || 0,
+      todayQuestions: wx.getStorageSync(TODAY_KEY) || { date: '', count: 0 }
+    };
+    cs.saveSection('studyStats', data);
+  }, 2000);
+}
+
+/**
+ * 获取今日日期字符串
+ * @returns {string} 'YYYY-MM-DD'
+ */
+function getToday() {
+  var now = new Date();
+  return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+}
 
 /**
  * 获取本周起始日期（周一）
@@ -64,6 +102,9 @@ function addStudyTime(seconds) {
   var total = wx.getStorageSync(TOTAL_KEY) || 0;
   total += seconds;
   wx.setStorageSync(TOTAL_KEY, total);
+
+  // 异步上云
+  _syncToCloud();
 }
 
 /**
@@ -116,11 +157,24 @@ function getTotalFormatted() {
 }
 
 /**
- * 记录一道题已作答（累加总刷题数）
+ * 记录一道题已作答（累加总刷题数 + 今日刷题数）
  */
 function recordQuestionAnswered() {
+  // 累计总数
   var count = getTotalQuestions() + 1;
   wx.setStorageSync(QUESTIONS_KEY, count);
+
+  // 今日计数
+  var todayData = wx.getStorageSync(TODAY_KEY);
+  if (!todayData || todayData.date !== getToday()) {
+    todayData = { date: getToday(), count: 0 };
+  }
+  todayData.count += 1;
+  wx.setStorageSync(TODAY_KEY, todayData);
+
+  // 异步上云
+  _syncToCloud();
+
   return count;
 }
 
@@ -130,6 +184,18 @@ function recordQuestionAnswered() {
  */
 function getTotalQuestions() {
   return wx.getStorageSync(QUESTIONS_KEY) || 0;
+}
+
+/**
+ * 获取今日刷题数（跨日自动归零）
+ * @returns {number}
+ */
+function getTodayQuestions() {
+  var todayData = wx.getStorageSync(TODAY_KEY);
+  if (!todayData || todayData.date !== getToday()) {
+    return 0;
+  }
+  return todayData.count || 0;
 }
 
 module.exports = {
@@ -142,4 +208,5 @@ module.exports = {
   // 答题计数
   recordQuestionAnswered: recordQuestionAnswered,
   getTotalQuestions: getTotalQuestions,
+  getTodayQuestions: getTodayQuestions,
 };

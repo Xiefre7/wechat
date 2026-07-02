@@ -35,19 +35,19 @@
 
         <view class="file-upload-area" bindtap="downloadTemplate">
           <view class="upload-hint">
-            <view class="hint-icon">📥</view>
+            <image class="hint-icon" src="/images/kzg/file-blue.svg" mode="aspectFit" style="width:44rpx;height:44rpx;"></image>
             <view class="hint-text">下载 Excel 导入模板</view>
           </view>
         </view>
 
         <view class="file-upload-area {{uploadFile ? 'has-file' : ''}}" bindtap="chooseExcel">
           <view class="upload-hint" wx:if="{{!uploadFile}}">
-            <view class="hint-icon">📁</view>
+            <image class="hint-icon" src="/images/kzg/file-blue.svg" mode="aspectFit" style="width:44rpx;height:44rpx;"></image>
             <view class="hint-text">点击选择 .xlsx / .xls 文件</view>
             <view class="hint-sub">文件大小不超过 10MB</view>
           </view>
           <view class="upload-hint" wx:else>
-            <view class="hint-icon">✅</view>
+            <view class="hint-icon">✓</view>
             <view class="hint-text">{{uploadFile.name}}</view>
             <view class="hint-sub">{{uploadFile.size}}</view>
           </view>
@@ -72,19 +72,19 @@
 
         <view class="file-upload-area" bindtap="downloadWordTemplate">
           <view class="upload-hint">
-            <view class="hint-icon">📥</view>
+            <image class="hint-icon" src="/images/kzg/file-blue.svg" mode="aspectFit" style="width:44rpx;height:44rpx;"></image>
             <view class="hint-text">下载 Word 导入模板</view>
           </view>
         </view>
 
         <view class="file-upload-area {{uploadWordFile ? 'has-file' : ''}}" bindtap="chooseWord">
           <view class="upload-hint" wx:if="{{!uploadWordFile}}">
-            <view class="hint-icon">📄</view>
+            <image class="hint-icon" src="/images/kzg/file-blue.svg" mode="aspectFit" style="width:44rpx;height:44rpx;"></image>
             <view class="hint-text">点击选择 .docx 文件</view>
             <view class="hint-sub">文件大小不超过 10MB</view>
           </view>
           <view class="upload-hint" wx:else>
-            <view class="hint-icon">✅</view>
+            <view class="hint-icon">✓</view>
             <view class="hint-text">{{uploadWordFile.name}}</view>
             <view class="hint-sub">{{uploadWordFile.size}}</view>
           </view>
@@ -110,7 +110,7 @@
 
         <view class="format-example glass-button" bindtap="toggleFormatHelp">
           <view class="example-header">
-            <view class="example-title">📋 支持的格式示例</view>
+            <view class="example-title">支持的格式示例</view>
             <view class="example-toggle">{{showFormatHelp ? '收起' : '展开'}}</view>
           </view>
           <view class="example-content" wx:if="{{showFormatHelp}}">
@@ -175,11 +175,11 @@ B. 错
 
         <view class="ocr-actions">
           <button class="ocr-btn glass-button" bindtap="takePhoto">
-            <view class="ocr-btn-icon">📷</view>
+            <image class="ocr-btn-icon" src="/images/kzg/camera-alt.svg" mode="aspectFit" style="width:44rpx;height:44rpx;"></image>
             <view class="ocr-btn-label">拍照识别</view>
           </button>
           <button class="ocr-btn glass-button" bindtap="chooseImage">
-            <view class="ocr-btn-icon">🖼️</view>
+            <image class="ocr-btn-icon" src="/images/kzg/file-blue.svg" mode="aspectFit" style="width:44rpx;height:44rpx;"></image>
             <view class="ocr-btn-label">从相册选择</view>
           </button>
         </view>
@@ -219,8 +219,8 @@ B. 错
                 <view class="manual-item-meta">{{item.typeLabel}} · 答案：{{item.answer}}</view>
               </view>
               <view class="manual-item-actions">
-                <view class="manual-action" data-index="{{index}}" bindtap="editManualQuestion" aria-label="编辑">✏️</view>
-                <view class="manual-action" data-index="{{index}}" bindtap="deleteManualQuestion" aria-label="删除">🗑️</view>
+                <image class="manual-action" data-index="{{index}}" bindtap="editManualQuestion" aria-label="编辑" src="/images/kzg/pen-blue.svg" mode="aspectFit"></image>
+                <image class="manual-action" data-index="{{index}}" bindtap="deleteManualQuestion" aria-label="删除" src="/images/kzg/delete-x-red.svg" mode="aspectFit"></image>
               </view>
             </view>
           </view>

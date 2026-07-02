@@ -162,7 +162,7 @@
       <!-- 解析区域 -->
       <view class="explanation-card glass-card" wx:if="{{showExplanation && currentQuestion.content.explanation}}">
         <view class="expl-header" bindtap="toggleExplanation">
-          <view class="expl-title">📖 题目解析</view>
+          <view class="expl-title">题目解析</view>
           <view class="expl-toggle">{{showExplanation ? '收起' : '展开'}}</view>
         </view>
         <view class="expl-content" wx:if="{{showExplanation}}">

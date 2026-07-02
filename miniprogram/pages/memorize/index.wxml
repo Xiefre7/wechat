@@ -67,6 +67,10 @@
 
     <!-- Action button -->
     <view class="memorize-actions">
+      <button class="not-remember-btn-large" bindtap="markNotMemorized" hover-class="pressing">
+        <view class="memorize-btn-icon">✗</view>
+        <view class="memorize-btn-label">没记住</view>
+      </button>
       <button class="remember-btn-large" bindtap="markMemorized" hover-class="pressing">
         <view class="memorize-btn-icon">✓</view>
         <view class="memorize-btn-label">记住了</view>

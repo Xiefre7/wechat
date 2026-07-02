@@ -88,7 +88,7 @@ function findQuestionsByBank(bankId, opts) {
 
     return wx.cloud.callFunction({
       name: 'quickstartFunctions',
-      data: { type: 'getBankQuestions', bankId: bankId },
+      data: { type: 'getBankQuestions', bankId: bankId, condition: condition },
     }).then(function (res) {
       if (res.result && res.result.success) return res.result.data || [];
       return [];

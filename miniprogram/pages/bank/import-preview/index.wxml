@@ -261,7 +261,7 @@
 
     <!-- 空状态 -->
     <view class="empty-state" wx:if="{{questions.length === 0}}">
-      <view class="empty-icon">📋</view>
+      <image class="empty-icon" src="/images/kzg/file-blue.svg" mode="aspectFit" style="width:64rpx;height:64rpx;"></image>
       <view class="empty-text">未解析到题目</view>
       <view class="empty-desc">请检查导入内容格式后重试</view>
     </view>

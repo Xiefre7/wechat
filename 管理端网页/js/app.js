@@ -11,11 +11,15 @@ const App = (() => {
 
   // ==================== 初始化 ====================
 
-  function init() {
-    if (Auth.isLoggedIn()) {
+  async function init() {
+    // 向服务端验证会话是否有效（cookie 自动携带）
+    const res = await API.checkAuth()
+    if (res.code === 0 && res.data && res.data.username) {
+      Auth.saveSession(res.data.username)
       showApp()
       navigate('dashboard')
     } else {
+      Auth.clearSession()
       showLogin()
     }
     bindEvents()
@@ -55,7 +59,7 @@ const App = (() => {
     btn.textContent = '登 录'
 
     if (res.code === 0) {
-      Auth.saveSession(res.data.token, res.data.username)
+      Auth.saveSession(res.data.username)
       showApp()
       navigate('dashboard')
     } else {

@@ -82,6 +82,30 @@
         <image class="feedback-chevron" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
       </view>
     </view>
+
+    <!-- 隐私政策 -->
+    <view class="feedback-card glass-card" bindtap="handlePrivacyTap" hover-class="pressing">
+      <view class="feedback-row">
+        <image class="feedback-icon" src="/images/kzg/file-blue.svg" mode="aspectFit"></image>
+        <view class="feedback-text">
+          <view class="feedback-title">隐私政策</view>
+          <view class="feedback-desc">查看用户隐私保护指引</view>
+        </view>
+        <image class="feedback-chevron" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
+      </view>
+    </view>
+
+    <!-- 账号管理 -->
+    <view class="feedback-card glass-card" bindtap="handleAccountTap" hover-class="pressing">
+      <view class="feedback-row">
+        <image class="feedback-icon" src="/images/kzg/user-blue.svg" mode="aspectFit"></image>
+        <view class="feedback-text">
+          <view class="feedback-title">{{isLoggedIn ? '退出登录' : '微信登录'}}</view>
+          <view class="feedback-desc">{{isLoggedIn ? '退出后数据将不再同步到云端' : '登录后数据云端同步，换设备不丢失'}}</view>
+        </view>
+        <image class="feedback-chevron" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
+      </view>
+    </view>
   </scroll-view>
 
   <view class="bottom-dock">

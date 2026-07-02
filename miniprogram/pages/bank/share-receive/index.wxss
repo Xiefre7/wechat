@@ -272,7 +272,7 @@ page {
   .theme-dark .success-desc,
   .theme-dark .bank-desc,
   .theme-dark .error-text {
-    color: #1A2538;
+    color: rgba(255,255,255,0.6);
   }
 
   .theme-dark .bank-tag {

@@ -42,8 +42,40 @@ function corsHeaders() {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type,Authorization'
+    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+    'Access-Control-Allow-Credentials': 'true'
   }
+}
+
+/** 从请求中提取 token（优先 cookie，回退 Authorization header） */
+function extractToken(event) {
+  var headers = event.headers || {}
+  // 1. 优先从 cookie 读取
+  var cookie = headers.cookie || headers.Cookie || ''
+  if (cookie) {
+    var match = cookie.match(/admin_token=([a-f0-9]+)/)
+    if (match) return match[1]
+  }
+  // 2. 回退到 Authorization header（兼容旧前端）
+  return headers.authorization || headers.Authorization || ''
+}
+
+/** 生成 Set-Cookie header（HttpOnly + Secure + SameSite=None） */
+function buildSetCookie(token, maxAgeSeconds) {
+  var parts = [
+    'admin_token=' + token,
+    'Path=/',
+    'HttpOnly',
+    'Secure',
+    'SameSite=None',
+    'Max-Age=' + maxAgeSeconds
+  ]
+  return parts.join('; ')
+}
+
+/** 生成清除 cookie 的 header */
+function buildClearCookie() {
+  return 'admin_token=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0'
 }
 
 /** 解析请求体 */
@@ -56,7 +88,7 @@ function parseBody(event) {
 
 /** 验证管理员身份，返回用户名 */
 async function authenticate(event) {
-  const token = (event.headers || {}).authorization || (event.headers || {}).Authorization || ''
+  const token = extractToken(event)
   if (!token) return null
   try {
     const res = await db.collection('admin_sessions').where({ token, expireAt: _.gt(new Date()) }).get()
@@ -143,15 +175,31 @@ async function handleLogin(body) {
     await db.collection('admin_sessions').where({ expireAt: _.lt(new Date()) }).remove()
   } catch (e) { /* ignore */ }
 
-  return ok({ token, username, role: admin.role })
+  // 通过 HttpOnly Cookie 下发 token（前端无需手动管理，防 XSS 窃取）
+  var maxAge = 24 * 60 * 60 // 24小时（秒）
+  var headers = corsHeaders()
+  headers['Set-Cookie'] = buildSetCookie(token, maxAge)
+
+  return {
+    statusCode: 200,
+    headers: headers,
+    body: JSON.stringify({ code: 0, msg: 'ok', data: { username, role: admin.role } })
+  }
 }
 
-async function handleLogout(headers) {
-  const token = (headers || {}).authorization || (headers || {}).Authorization || ''
+async function handleLogout(event) {
+  const token = extractToken(event)
   if (token) {
     try { await db.collection('admin_sessions').where({ token }).remove() } catch (e) { /* ignore */ }
   }
-  return ok({}, '已退出登录')
+  // 清除 cookie
+  var headers = corsHeaders()
+  headers['Set-Cookie'] = buildClearCookie()
+  return {
+    statusCode: 200,
+    headers: headers,
+    body: JSON.stringify({ code: 0, msg: '已退出登录', data: {} })
+  }
 }
 
 async function handleCheckAuth(username) {
@@ -672,7 +720,7 @@ async function route(event, username) {
 
   // POST /api/logout
   if (method === 'POST' && parts[0] === 'api' && parts[1] === 'logout') {
-    return handleLogout(event.headers)
+    return handleLogout(event)
   }
 
   // GET /api/check-auth

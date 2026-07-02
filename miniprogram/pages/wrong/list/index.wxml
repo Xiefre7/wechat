@@ -113,7 +113,7 @@
 
     <!-- 空状态 -->
     <view class="empty-state" wx:if="{{isEmpty}}">
-      <view class="empty-icon">📝</view>
+      <image class="empty-icon" src="/images/kzg/pen-blue.svg" mode="aspectFit" style="width:72rpx;height:72rpx;"></image>
       <view class="empty-title">错题本是空的</view>
       <view class="empty-desc">做题过程中答错的题目会自动加入错题本，你也可以在答题时手动添加</view>
       <button class="go-practice-btn glass-card" bindtap="goBack">

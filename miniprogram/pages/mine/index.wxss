@@ -31,7 +31,7 @@ button::after {
   background:
     radial-gradient(ellipse 300rpx 180rpx at 20% 10%, rgba(59, 130, 246, 0.16), transparent 60%),
     radial-gradient(ellipse 240rpx 150rpx at 70% 5%, rgba(90, 200, 250, 0.10), transparent 60%),
-    radial-gradient(ellipse 200rpx 140rpx at 50% 18%, rgba(124, 92, 252, 0.08), transparent 60%);
+    radial-gradient(ellipse 200rpx 140rpx at 50% 18%, rgba(90, 200, 250, 0.08), transparent 60%);
   filter: blur(4rpx);
 }
 
@@ -133,8 +133,8 @@ button::after {
 
 .blue-bg  { background: rgba(59, 130, 246, 0.10); }
 .teal-bg  { background: rgba(16, 191, 155, 0.10); }
-.purple-bg { background: rgba(124, 92, 252, 0.10); }
-.warm-bg  { background: rgba(255, 107, 74, 0.10); }
+.purple-bg { background: rgba(90, 200, 250, 0.10); }
+.warm-bg  { background: rgba(255, 59, 48, 0.10); }
 
 .stat-icon {
   width: 32rpx;
@@ -316,7 +316,7 @@ button::after {
 }
 
 .dock-item.active .dock-label {
-  background: linear-gradient(135deg, #4A8FEA, #7C5CFC);
+  background: linear-gradient(135deg, #007AFF, #5AC8FA);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -392,7 +392,7 @@ button::after {
   }
 
   .theme-dark .stat-label {
-    color: #1A2538;
+    color: rgba(255,255,255,0.6);
   }
 
   .theme-dark .glass-card {
@@ -436,11 +436,11 @@ button::after {
   }
 
   .theme-dark .feedback-desc {
-    color: #1A2538;
+    color: rgba(255,255,255,0.6);
   }
 
   .theme-dark .avatar-edit-hint {
-    color: #1A2538;
+    color: rgba(255,255,255,0.6);
   }
 
   .theme-dark .nickname-input {

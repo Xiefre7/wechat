@@ -133,7 +133,7 @@
 
     <!-- 空状态 -->
     <view class="empty-state" wx:if="{{banks.length === 0 && currentTab === 'custom'}}">
-      <view class="empty-icon">📂</view>
+      <image class="empty-icon" src="/images/kzg/file-blue.svg" mode="aspectFit" style="width:64rpx;height:64rpx;"></image>
       <view class="empty-text">还没有自导入题库</view>
       <view class="empty-desc">导入你的题目，系统按单题管理并支持智能练习</view>
       <button class="import-btn glass-card" bindtap="goImport" hover-class="pressing">

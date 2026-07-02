@@ -78,6 +78,14 @@ App({
     // 加载用户资料
     this.loadUserProfile();
 
+    // 静默初始化 openid（用于跨设备数据同步）
+    try {
+      var authManager = require('./utils/authManager');
+      authManager.silentInit();
+    } catch (e) {
+      // 忽略
+    }
+
     // 斩题复活检查
     try {
       var slashManager = require('./utils/slashManager');

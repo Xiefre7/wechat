@@ -37,14 +37,8 @@ const API = (() => {
     // 构建请求
     const fetchOptions = {
       method,
-      headers: { 'Content-Type': 'application/json' }
-    }
-
-    if (!noAuth) {
-      const token = Auth.getToken()
-      if (token) {
-        fetchOptions.headers['Authorization'] = token
-      }
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'  // P1-7: 自动携带 HttpOnly Cookie
     }
 
     if (body && method !== 'GET') {
@@ -169,11 +163,11 @@ const API = (() => {
     var formData = new FormData();
     formData.append('file', file);
     var url = BASE_URL + '/api/news/import-word';
-    var token = Auth.getToken();
     try {
       var res = await fetch(url, {
         method: 'POST',
-        headers: token ? { 'Authorization': token } : {},
+        headers: {},  // FormData 自动设置 Content-Type，避免覆盖 boundary
+        credentials: 'include',  // P1-7: 自动携带 Cookie
         body: formData,
       });
       return await res.json();

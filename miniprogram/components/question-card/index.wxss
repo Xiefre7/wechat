@@ -41,7 +41,7 @@
   border-radius: 20rpx;
   border: 1.5rpx solid #E6EAF2;
   transition: border-color 180ms ease, background-color 180ms ease;
-  min-height: 76rpx;
+  min-height: 88rpx;
 }
 
 .option-item.selected {
@@ -56,8 +56,8 @@
 }
 
 .option-item.wrong {
-  border-color: #F2545B;
-  background: rgba(242,84,91,0.06);
+  border-color: #FF3B30;
+  background: rgba(255,59,48,0.06);
   animation: shake 0.4s ease;
 }
 
@@ -98,7 +98,7 @@
 }
 
 .option-item.wrong .option-key {
-  background: #F2545B;
+  background: #FF3B30;
   color: #ffffff;
 }
 
@@ -126,7 +126,7 @@
 }
 
 .option-item.wrong .option-icon {
-  color: #F2545B;
+  color: #FF3B30;
 }
 
 .option-pressing {

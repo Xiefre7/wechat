@@ -5,7 +5,7 @@
     <view class="ambient-strip finish-strip"></view>
     <scroll-view class="finish-scroll" scroll-y enhanced show-scrollbar="{{false}}">
       <view class="finish-hero">
-        <view class="finish-icon">{{reviewResult.accuracy >= 80 ? '🎉' : '💪'}}</view>
+        <view class="finish-icon">{{reviewResult.accuracy >= 80 ? '完成' : '加油'}}</view>
         <view class="finish-title">复习完成！</view>
       </view>
 
@@ -183,7 +183,7 @@
         <!-- 解析区域 -->
         <view class="explanation-card glass-card" wx:if="{{showExplanation && currentQuestion.content.explanation}}">
           <view class="expl-header" bindtap="toggleExplanation">
-            <view class="expl-title">📖 题目解析</view>
+            <view class="expl-title">题目解析</view>
             <view class="expl-toggle">{{showExplanation ? '收起' : '展开'}}</view>
           </view>
           <view class="expl-content" wx:if="{{showExplanation}}">

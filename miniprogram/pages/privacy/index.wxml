@@ -1,0 +1,65 @@
+<view class="privacy-page {{isDark ? 'theme-dark' : ''}}">
+  <background-image opacity="0.30" />
+
+  <scroll-view class="privacy-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="privacy-card glass-card">
+      <view class="privacy-title">导题斩题小工具 隐私保护指引</view>
+      <view class="privacy-update">更新日期：2026年7月2日</view>
+
+      <view class="privacy-section">
+        <view class="section-heading">一、引言</view>
+        <view class="section-text">"导题斩题小工具"（以下简称"本小程序"）是一款面向福建省职教高考考生的刷题备考工具。我们高度重视您的个人信息保护，本指引旨在向您说明我们如何收集、使用、存储和保护您的个人信息。</view>
+      </view>
+
+      <view class="privacy-section">
+        <view class="section-heading">二、我们收集的信息</view>
+        <view class="section-text">1. 微信授权信息：当您使用微信登录时，我们会获取您的微信 openid 用于身份识别，不收集您的微信号、密码等敏感信息。</view>
+        <view class="section-text">2. 用户资料：您可自愿设置昵称和头像，这些信息仅存储在小程序内用于个性化展示。</view>
+        <view class="section-text">3. 学习数据：包括打卡记录、刷题进度、错题记录、斩题进度等，用于为您提供学习功能。</view>
+        <view class="section-text">4. 题库内容：您导入的自定义题库内容会存储在云端，仅您本人可见。</view>
+        <view class="section-text">5. 反馈信息：您主动提交的问题反馈，包括反馈类型、内容和可选的联系方式。</view>
+      </view>
+
+      <view class="privacy-section">
+        <view class="section-heading">三、信息使用</view>
+        <view class="section-text">我们收集的信息仅用于以下目的：</view>
+        <view class="section-text">1. 提供刷题、错题复习、斩题等核心功能；</view>
+        <view class="section-text">2. 实现跨设备数据同步；</view>
+        <view class="section-text">3. 改善小程序功能和用户体验；</view>
+        <view class="section-text">4. 处理您提交的问题反馈。</view>
+      </view>
+
+      <view class="privacy-section">
+        <view class="section-heading">四、信息存储与保护</view>
+        <view class="section-text">1. 您的数据存储在微信云开发平台，采用云端加密存储。</view>
+        <view class="section-text">2. 自导入题库数据通过 ownerId 进行隔离，仅题库所有者可访问。</view>
+        <view class="section-text">3. 我们不会将您的个人信息出售或分享给第三方。</view>
+      </view>
+
+      <view class="privacy-section">
+        <view class="section-heading">五、信息删除</view>
+        <view class="section-text">您可以随时通过以下方式删除数据：</view>
+        <view class="section-text">1. 删除自导入题库将同时删除该题库下所有题目和错题记录；</view>
+        <view class="section-text">2. 清理错题本中已掌握的错题；</view>
+        <view class="section-text">3. 清除小程序缓存将删除本地存储的所有数据。</view>
+      </view>
+
+      <view class="privacy-section">
+        <view class="section-heading">六、用户权利</view>
+        <view class="section-text">您有权访问、更正和删除您的个人信息。如需行使上述权利，请通过问题反馈功能联系我们。</view>
+      </view>
+
+      <view class="privacy-section">
+        <view class="section-heading">七、未成年人保护</view>
+        <view class="section-text">本小程序面向职教高考考生，若您是未成年人，请在监护人指导下使用，并确保已获得监护人同意。</view>
+      </view>
+
+      <view class="privacy-section">
+        <view class="section-heading">八、联系我们</view>
+        <view class="section-text">如对本隐私政策有任何疑问，请通过小程序内的"问题反馈"功能与我们联系。</view>
+      </view>
+
+      <view class="safe-bottom"></view>
+    </view>
+  </scroll-view>
+</view>

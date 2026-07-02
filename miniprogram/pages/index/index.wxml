@@ -32,7 +32,7 @@
 
     <!-- 斩题复活通知 -->
     <view class="revive-badge glass-card" wx:if="{{reviveCount > 0}}" bindtap="goSlashManage" hover-class="pressing">
-      <view class="revive-icon">🔄</view>
+      <image class="revive-icon" src="/images/kzg/slash-red.svg" mode="aspectFit" style="width:32rpx;height:32rpx;"></image>
       <view class="revive-text">已复活 {{reviveCount}} 个知识点，点击查看 →</view>
     </view>
 
@@ -116,7 +116,7 @@
         </view>
       </view>
       <view class="history-empty glass-card" wx:else bindtap="handleHistoryTap" hover-class="pressing">
-        <view class="history-empty-icon">📝</view>
+        <image class="history-empty-icon" src="/images/kzg/pen-blue.svg" mode="aspectFit" style="width:28rpx;height:28rpx;"></image>
         <view class="history-empty-text">还没有练习记录，去题库开始刷题吧</view>
       </view>
     </view>

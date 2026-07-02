@@ -200,7 +200,7 @@ page {
 }
 
 .history-tag.politics {
-  color: #FF6B4A;
+  color: #FF3B30;
   background: #FFF0EC;
 }
 
@@ -231,7 +231,7 @@ page {
 
 .progress-fill.math { background: #4A8FEA; }
 .progress-fill.english { background: #10B981; }
-.progress-fill.politics { background: #FF6B4A; }
+.progress-fill.politics { background: #FF3B30; }
 
 .progress-count {
   font-size: 20rpx;
@@ -256,7 +256,7 @@ page {
   }
 
   .theme-dark .page-desc {
-    color: #1A2538;
+    color: rgba(255,255,255,0.6);
   }
 
   .theme-dark .history-card {
@@ -273,7 +273,7 @@ page {
   .theme-dark .progress-count,
   .theme-dark .empty-text,
   .theme-dark .empty-desc {
-    color: #1A2538;
+    color: rgba(255,255,255,0.6);
   }
 
   .theme-dark .progress-bar,
@@ -293,7 +293,7 @@ page {
 
   .theme-dark .history-tag.politics {
     color: #FF8C69;
-    background: rgba(255, 107, 74, 0.12);
+    background: rgba(255, 59, 48, 0.12);
   }
 
   .theme-dark .skeleton-card {

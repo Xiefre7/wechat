@@ -11,7 +11,7 @@
 
     <!-- 错误 -->
     <view class="error-state" wx:elif="{{error && !importSuccess}}">
-      <view class="error-icon">😔</view>
+      <view class="error-icon"></view>
       <view class="error-text">{{error}}</view>
       <button class="back-btn" bindtap="handleGoHome">返回首页</button>
     </view>
@@ -19,7 +19,7 @@
     <!-- 导入成功 -->
     <view class="success-state" wx:elif="{{importSuccess}}">
       <view class="success-card glass-card">
-        <view class="success-icon">✅</view>
+        <view class="success-icon">✓</view>
         <view class="success-title">导入成功！</view>
         <view class="success-desc">
           题库「{{bank.name}}」已添加到你的自导入题库中
@@ -38,7 +38,7 @@
 
         <view class="preview-bank">
           <view class="bank-icon-wrap">
-            <text class="bank-icon-text">📚</text>
+            <image class="bank-icon-text" src="/images/kzg/book-blue.svg" mode="aspectFit" style="width:36rpx;height:36rpx;"></image>
           </view>
           <view class="bank-name">{{bank.name}}</view>
           <view class="bank-meta">

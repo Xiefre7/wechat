@@ -1,23 +1,85 @@
 {
   "pages": [
     "pages/index/index",
-    "pages/bank/list/index",
-    "pages/bank/import/index",
-    "pages/bank/import-preview/index",
-    "pages/bank/import-manual/index",
-    "pages/bank/share-receive/index",
-    "pages/practice/index",
-    "pages/practice/result",
-    "pages/memorize/index",
-    "pages/feedback/index",
-    "pages/placeholder/index",
     "pages/mine/index",
-    "pages/history/index",
-    "pages/wrong/list/index",
-    "pages/exam/list/index",
-    "pages/wrong/review/index",
-    "pages/slash/manage/index"
+    "pages/login/index",
+    "pages/placeholder/index",
+    "pages/privacy/index"
   ],
+  "subPackages": [
+    {
+      "root": "pages/bank",
+      "name": "bank",
+      "pages": [
+        "list/index",
+        "import/index",
+        "import-preview/index",
+        "import-manual/index",
+        "share-receive/index"
+      ]
+    },
+    {
+      "root": "pages/practice",
+      "name": "practice",
+      "pages": [
+        "index",
+        "result"
+      ]
+    },
+    {
+      "root": "pages/memorize",
+      "name": "memorize",
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "root": "pages/wrong",
+      "name": "wrong",
+      "pages": [
+        "list/index",
+        "review/index"
+      ]
+    },
+    {
+      "root": "pages/exam",
+      "name": "exam",
+      "pages": [
+        "list/index"
+      ]
+    },
+    {
+      "root": "pages/slash",
+      "name": "slash",
+      "pages": [
+        "manage/index"
+      ]
+    },
+    {
+      "root": "pages/history",
+      "name": "history",
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "root": "pages/feedback",
+      "name": "feedback",
+      "pages": [
+        "index"
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/index/index": {
+      "network": "all",
+      "packages": ["bank", "practice"]
+    },
+    "pages/bank/list/index": {
+      "network": "all",
+      "packages": ["practice", "wrong"]
+    }
+  },
   "window": {
     "backgroundColor": "#F3F8FF",
     "backgroundTextStyle": "light",

@@ -564,7 +564,7 @@ button::after {
   .theme-dark .ocr-btn-label,
   .theme-dark .manual-item-stem,
   .theme-dark .bank-name-input {
-    color: #1A2538;
+    color: rgba(255,255,255,0.6);
   }
 
   .theme-dark .page-desc,
@@ -575,11 +575,11 @@ button::after {
   .theme-dark .constraint-item,
   .theme-dark .btn-sub,
   .theme-dark .char-count {
-    color: #1A2538;
+    color: rgba(255,255,255,0.6);
   }
 
   .theme-dark .example-text {
-    color: #1A2538;
+    color: rgba(255,255,255,0.6);
     background: rgba(255, 255, 255, 0.05);
   }
 
@@ -599,7 +599,7 @@ button::after {
 
   .theme-dark .tab-label,
   .theme-dark .manual-item-meta {
-    color: #1A2538;
+    color: rgba(255,255,255,0.6);
   }
 
   .theme-dark .method-tab.active .tab-label {

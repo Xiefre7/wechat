@@ -88,9 +88,10 @@ const MIME = {
 
 function corsHeaders() {
   return {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': 'http://localhost:3000',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type,Authorization'
+    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+    'Access-Control-Allow-Credentials': 'true'
   }
 }
 
@@ -171,7 +172,15 @@ function getParams(url) {
 // ==================== 认证 ====================
 
 async function authenticate(req) {
-  const token = (req.headers.authorization || req.headers.Authorization || '')
+  // 优先从 cookie 读取
+  var cookieHeader = req.headers.cookie || req.headers.Cookie || ''
+  var token = ''
+  if (cookieHeader) {
+    var match = cookieHeader.match(/admin_token=([a-f0-9]+)/)
+    if (match) token = match[1]
+  }
+  // 回退到 Authorization header
+  if (!token) token = req.headers.authorization || req.headers.Authorization || ''
   if (!token) return null
   const session = DB.admin_sessions.find(s => s.token === token && new Date(s.expireAt) > new Date())
   if (!session) return null
@@ -201,7 +210,18 @@ async function handleAPI(req, res, method, pathname, params, username) {
     DB.admin_sessions.push({ token, username: uname, createdAt: new Date().toISOString(), expireAt })
     // 清理过期会话
     DB.admin_sessions = DB.admin_sessions.filter(s => new Date(s.expireAt) > new Date())
-    return jsonResponse({ code: 0, msg: 'ok', data: { token, username: uname, role: admin.role } })
+
+    // 通过 HttpOnly Cookie 下发 token
+    var body = JSON.stringify({ code: 0, msg: 'ok', data: { username: uname, role: admin.role } })
+    return {
+      status: 200,
+      headers: {
+        ...corsHeaders(),
+        'Content-Type': 'application/json',
+        'Set-Cookie': 'admin_token=' + token + '; Path=/; HttpOnly; Max-Age=86400'
+      },
+      body
+    }
   }
 
   if (method === 'OPTIONS') {
@@ -214,9 +234,24 @@ async function handleAPI(req, res, method, pathname, params, username) {
   }
 
   if (method === 'POST' && parts[1] === 'logout') {
-    const token = (req.headers.authorization || '')
-    DB.admin_sessions = DB.admin_sessions.filter(s => s.token !== token)
-    return jsonResponse({ code: 0, msg: '已退出登录', data: {} })
+    var cookieH = req.headers.cookie || req.headers.Cookie || ''
+    var logoutToken = ''
+    if (cookieH) {
+      var m = cookieH.match(/admin_token=([a-f0-9]+)/)
+      if (m) logoutToken = m[1]
+    }
+    if (!logoutToken) logoutToken = req.headers.authorization || ''
+    DB.admin_sessions = DB.admin_sessions.filter(s => s.token !== logoutToken)
+    var logoutBody = JSON.stringify({ code: 0, msg: '已退出登录', data: {} })
+    return {
+      status: 200,
+      headers: {
+        ...corsHeaders(),
+        'Content-Type': 'application/json',
+        'Set-Cookie': 'admin_token=; Path=/; HttpOnly; Max-Age=0'
+      },
+      body: logoutBody
+    }
   }
 
   if (method === 'GET' && parts[1] === 'check-auth') {

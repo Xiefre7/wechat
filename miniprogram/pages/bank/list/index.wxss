@@ -182,8 +182,8 @@ button::after { border: 0; }
   border-radius: 8rpx;
   font-size: 20rpx;
   font-weight: 600;
-  color: #FF9500;
-  background: rgba(255,149,0,0.08);
+  color: #5AC8FA;
+  background: rgba(90,200,250,0.08);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -246,12 +246,12 @@ button::after { border: 0; }
 
 /* ─── 删除按钮 ─── */
 .bank-delete {
-  width: 44rpx;
-  height: 44rpx;
+  width: 88rpx;
+  height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 22rpx;
+  border-radius: 44rpx;
   background: #FEF2F2;
   flex-shrink: 0;
   transition: opacity 180ms ease;
@@ -440,7 +440,7 @@ button::after { border: 0; }
 
   .theme-dark .page-desc,
   .theme-dark .bank-meta,
-  .theme-dark .kp-count { color: #1A2538; }
+  .theme-dark .kp-count { color: rgba(255,255,255,0.6); }
 
   .theme-dark .glass-card,
   .theme-dark .tab-item {

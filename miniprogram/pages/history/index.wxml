@@ -26,7 +26,7 @@
 
     <!-- 空状态 -->
     <view class="empty-state" wx:elif="{{empty}}">
-      <view class="empty-icon">📚</view>
+      <image class="empty-icon" src="/images/kzg/book-blue.svg" mode="aspectFit" style="width:72rpx;height:72rpx;"></image>
       <view class="empty-text">暂无历史记录</view>
       <view class="empty-desc">完成一次练习后，记录会出现在这里</view>
       <button class="empty-btn" bindtap="handleItemTap">去题库刷题</button>

@@ -4,6 +4,7 @@ var checkinManager = require('../../utils/checkinManager');
 var studyTimeManager = require('../../utils/studyTimeManager');
 var wrongBook = require('../../utils/wrongBook');
 var practiceHistoryManager = require('../../utils/practiceHistoryManager');
+var authManager = require('../../utils/authManager');
 
 Page({
   data: {
@@ -15,22 +16,17 @@ Page({
     showUserCard: false,
     themeMode: "system",
     isDark: false,
-    // TODO: 接入云数据库后改为从云端拉取真实统计数据
     summary: {
-      totalSolved: 1280,
-      todaySolved: 45,
-      totalWrong: 156,
-      todayReview: 12,
+      totalSolved: 0,
+      todaySolved: 0,
+      totalWrong: 0,
+      todayReview: 0,
       checkinStreak: 0,
       checkedInToday: false,
       weeklyStudyTime: '0小时',
       dueReview: 0
     },
-    studySubjects: [
-      { id: "math", name: "数学", progress: 72, color: "#007AFF" },
-      { id: "english", name: "英语", progress: 48, color: "#34C759" },
-      { id: "politics", name: "政治", progress: 36, color: "#FF9500" }
-    ],
+    studySubjects: [],
     primaryCards: [
       {
         id: "study",
@@ -39,9 +35,9 @@ Page({
         icon: "/images/kzg/book-blue.svg",
         tone: "blue",
         metricLabel: "累计刷题",
-        metricValue: "1280",
+        metricValue: "0",
         subMetricLabel: "今日刷题",
-        subMetricValue: "45"
+        subMetricValue: "0"
       },
       {
         id: "wrong",
@@ -50,9 +46,9 @@ Page({
         icon: "/images/kzg/slash-red.svg",
         tone: "red",
         metricLabel: "累计错题",
-        metricValue: "156",
+        metricValue: "0",
         subMetricLabel: "今日待复习",
-        subMetricValue: "12"
+        subMetricValue: "0"
       }
     ],
     quickActions: [
@@ -65,23 +61,9 @@ Page({
         id: "papers",
         label: "历届真题",
         icon: "/images/kzg/history-blue.svg"
-      },
-      {
-        id: "policy",
-        label: "政策",
-        icon: "/images/kzg/file-blue.svg"
-      },
-      {
-        id: "qa",
-        label: "在线答疑",
-        icon: "/images/kzg/chat-blue.svg"
       }
     ],
-    subjects: [
-      { id: "math", name: "数学", progress: 72, count: "2000题", points: "45个知识点" },
-      { id: "english", name: "英语", progress: 48, count: "1800题", points: "38个知识点" },
-      { id: "politics", name: "政治", progress: 36, count: "1200题", points: "30个知识点" }
-    ],
+    subjects: [],
     news: [
       { id: "exam", tag: "考试政策", title: "福建职教高考备考资讯入口已预留" },
       { id: "slash", tag: "斩题机制", title: "近10题正确率达到80%后可触发斩题" }
@@ -135,11 +117,22 @@ Page({
     });
   },
 
-  /** 加载学习时长 + 待复习数据 */
+  /** 加载学习时长 + 待复习数据 + 卡片统计 */
   loadStudyData() {
+    var wrongStats = wrongBook.getGlobalStats();
+    var totalQuestions = studyTimeManager.getTotalQuestions();
+    var todayQuestions = studyTimeManager.getTodayQuestions();
     this.setData({
       'summary.weeklyStudyTime': studyTimeManager.getWeeklyFormatted(),
-      'summary.dueReview': wrongBook.getGlobalStats().dueReview
+      'summary.dueReview': wrongStats.dueReview,
+      'summary.totalSolved': totalQuestions,
+      'summary.todaySolved': todayQuestions,
+      'summary.totalWrong': wrongStats.totalWrong,
+      'summary.todayReview': wrongStats.dueReview,
+      'primaryCards[0].metricValue': String(totalQuestions),
+      'primaryCards[0].subMetricValue': String(todayQuestions),
+      'primaryCards[1].metricValue': String(wrongStats.totalWrong),
+      'primaryCards[1].subMetricValue': String(wrongStats.dueReview)
     });
   },
 
@@ -164,18 +157,21 @@ Page({
 
   /** 点击打卡 */
   handleCheckinTap() {
-    var result = checkinManager.doCheckin();
-    this.setData({
-      'summary.checkinStreak': result.streak,
-      checkedInToday: true
-    });
-
-    if (result.isToday) {
-      wx.showToast({
-        title: result.streak > 1 ? '已连续打卡 ' + result.streak + ' 天！' : '打卡成功！',
-        icon: 'success'
+    // 登录拦截
+    authManager.ensureLogin(function () {
+      var result = checkinManager.doCheckin();
+      this.setData({
+        'summary.checkinStreak': result.streak,
+        checkedInToday: true
       });
-    }
+
+      if (result.isToday) {
+        wx.showToast({
+          title: result.streak > 1 ? '已连续打卡 ' + result.streak + ' 天！' : '打卡成功！',
+          icon: 'success'
+        });
+      }
+    }.bind(this));
   },
 
   onPullDownRefresh() {
@@ -202,62 +198,57 @@ Page({
   handlePrimaryTap(e) {
     const { id } = e.currentTarget.dataset;
 
-    if (id === 'study') {
-      wx.navigateTo({
-        url: '/pages/bank/list/index',
-      });
-      return;
-    }
+    // 登录拦截
+    authManager.ensureLogin(function () {
+      if (id === 'study') {
+        wx.navigateTo({
+          url: '/pages/bank/list/index',
+        });
+        return;
+      }
 
-    if (id === 'wrong') {
-      wx.navigateTo({
-        url: '/pages/wrong/list/index',
-      });
-      return;
-    }
+      if (id === 'wrong') {
+        wx.navigateTo({
+          url: '/pages/wrong/list/index',
+        });
+        return;
+      }
+    });
   },
 
   handleQuickAction(e) {
     const { id } = e.currentTarget.dataset;
 
-    if (id === 'import') {
-      wx.navigateTo({
-        url: '/pages/bank/import/index',
-      });
-      return;
-    }
+    // 登录拦截
+    authManager.ensureLogin(function () {
+      if (id === 'import') {
+        wx.navigateTo({
+          url: '/pages/bank/import/index',
+        });
+        return;
+      }
 
-    if (id === 'papers') {
-      wx.navigateTo({
-        url: '/pages/exam/list/index',
-      });
-      return;
-    }
-
-    const actionMap = {
-      policy: '政策资讯',
-      qa: '在线答疑',
-    };
-
-    this.openPlaceholder(actionMap[id]);
+      if (id === 'papers') {
+        wx.navigateTo({
+          url: '/pages/exam/list/index',
+        });
+        return;
+      }
+    }.bind(this));
   },
 
   handleSubjectTap(e) {
-    // 跳转到题库选择页
-    wx.navigateTo({
-      url: '/pages/bank/list/index',
+    // 登录拦截
+    authManager.ensureLogin(function () {
+      // 跳转到题库选择页
+      wx.navigateTo({
+        url: '/pages/bank/list/index',
+      });
     });
   },
 
   handleDockTap(e) {
     const { id } = e.currentTarget.dataset;
-
-    if (id === "study") {
-      wx.navigateTo({
-        url: '/pages/bank/list/index',
-      });
-      return;
-    }
 
     if (id === "mine") {
       wx.redirectTo({
@@ -266,23 +257,34 @@ Page({
       return;
     }
 
-    this.openPlaceholder("我的");
+    // "学习" dock 需要登录
+    authManager.ensureLogin(function () {
+      wx.navigateTo({
+        url: '/pages/bank/list/index',
+      });
+    });
   },
 
 
   handleHistoryTap(e) {
-    // 点击历史记录项 → 跳转到题库列表页（重新开始刷题需要选知识点）
-    wx.switchTab({
-      url: '/pages/bank/list/index',
-      fail: function () {
-        wx.navigateTo({ url: '/pages/bank/list/index' });
-      }
+    // 登录拦截
+    authManager.ensureLogin(function () {
+      // 点击历史记录项 → 跳转到题库列表页（重新开始刷题需要选知识点）
+      wx.switchTab({
+        url: '/pages/bank/list/index',
+        fail: function () {
+          wx.navigateTo({ url: '/pages/bank/list/index' });
+        }
+      });
     });
   },
 
   handleHistoryMore() {
-    wx.navigateTo({
-      url: '/pages/history/index',
+    // 登录拦截
+    authManager.ensureLogin(function () {
+      wx.navigateTo({
+        url: '/pages/history/index',
+      });
     });
   },
 
@@ -337,10 +339,13 @@ Page({
 
   /** 进入斩题管理页 */
   goSlashManage() {
-    slashManager.markReviveSeen();
-    this.setData({ reviveCount: 0 });
-    wx.navigateTo({
-      url: '/pages/slash/manage/index',
-    });
+    // 登录拦截
+    authManager.ensureLogin(function () {
+      slashManager.markReviveSeen();
+      this.setData({ reviveCount: 0 });
+      wx.navigateTo({
+        url: '/pages/slash/manage/index',
+      });
+    }.bind(this));
   },
 });

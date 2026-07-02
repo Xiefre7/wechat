@@ -74,7 +74,7 @@ button[disabled] {
 }
 
 .rollback-info.exhausted {
-  color: #EF4444;
+  color: #FF3B30;
 }
 
 /* ─── 玻璃基类 ─── */
@@ -150,15 +150,15 @@ button[disabled] {
 
 .revive-days {
   font-weight: 800;
-  color: #F5A623;
+  color: #5AC8FA;
 }
 
 .revive-tag {
   margin-left: 10rpx;
   padding: 2rpx 10rpx;
   border-radius: 8rpx;
-  background: #FEF3C7;
-  color: #D97706;
+  background: rgba(90,200,250,0.12);
+  color: #5AC8FA;
   font-size: 18rpx;
   font-weight: 700;
 }
@@ -170,7 +170,7 @@ button[disabled] {
   border-radius: 16rpx;
   font-size: 24rpx;
   font-weight: 700;
-  color: #EF4444;
+  color: #FF3B30;
   background: #FEF2F2;
   border: 1rpx solid #FECACA;
 }
@@ -210,39 +210,37 @@ button[disabled] {
   height: calc(env(safe-area-inset-bottom) + 48rpx);
 }
 
-/* ─── 深色模式 ─── */
-@media (prefers-color-scheme: dark) {
-  page {
-    background: #0F172A;
-  }
-
-  .page-title, .item-name {
+/* ─── 深色模式（由 .theme-dark 类驱动） ─── */
+.theme-dark .page-title,
+  .theme-dark .item-name {
     color: #F1F5F9;
   }
 
-  .page-desc, .item-meta, .item-revive, .section-title {
+  .theme-dark .page-desc,
+  .theme-dark .item-meta,
+  .theme-dark .item-revive,
+  .theme-dark .section-title {
     color: #64748B;
   }
 
-  .glass-card {
+  .theme-dark .glass-card {
     background: rgba(30, 41, 59, 0.6);
     border-color: rgba(255, 255, 255, 0.08);
   }
 
-  .rollback-btn {
-    background: rgba(239, 68, 68, 0.12);
-    border-color: rgba(239, 68, 68, 0.2);
+  .theme-dark .rollback-btn {
+    background: rgba(255, 59, 48, 0.12);
+    border-color: rgba(255, 59, 48, 0.2);
     color: #F87171;
   }
 
-  .rollback-btn.disabled {
+  .theme-dark .rollback-btn.disabled {
     background: rgba(255, 255, 255, 0.06);
     border-color: rgba(255, 255, 255, 0.08);
     color: #64748B;
   }
 
-  .revive-tag {
-    background: rgba(245, 158, 11, 0.15);
+  .theme-dark .revive-tag {
+    background: rgba(90, 200, 250, 0.15);
     color: #FBBF24;
   }
-}

@@ -168,18 +168,18 @@ Page({
 
   onItemFieldChange(e) {
     const { index, field } = e.currentTarget.dataset;
-    const questions = [...this.data.questions];
-    questions[index] = { ...questions[index], [field]: e.detail.value };
-    this.setData({ questions });
+    // 使用路径化更新，避免全量 setData 整个 questions 数组
+    this.setData({
+      [`questions[${index}].${field}`]: e.detail.value
+    });
   },
 
   onItemOptionChange(e) {
     const { index, optIndex } = e.currentTarget.dataset;
-    const questions = [...this.data.questions];
-    const options = [...questions[index].options];
-    options[optIndex] = { ...options[optIndex], text: e.detail.value };
-    questions[index] = { ...questions[index], options };
-    this.setData({ questions });
+    // 使用路径化更新，只更新单个选项的 text 字段
+    this.setData({
+      [`questions[${index}].options[${optIndex}].text`]: e.detail.value
+    });
   },
 
   onItemTypeChange(e) {

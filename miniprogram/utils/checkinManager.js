@@ -1,10 +1,25 @@
 /**
- * 打卡管理模块（本地存储版）
- * - 基于 wx.Storage 的轻量打卡追踪
- * - 可后续升级为云数据库版本
+ * 打卡管理模块
+ * - 本地存储 + 云端同步（write-through）
  */
 
 var STORAGE_KEY = 'checkin_dates';
+
+/** 懒加载 cloudSync */
+var _cloudSync = null;
+function _getCloudSync() {
+  if (_cloudSync === null) {
+    try { _cloudSync = require('./cloudSync'); } catch (e) { _cloudSync = false; }
+  }
+  return _cloudSync || null;
+}
+
+/** 异步同步打卡数据到云端 */
+function _syncToCloud() {
+  var cs = _getCloudSync();
+  if (!cs) return;
+  cs.saveSection('checkin', { dates: getCheckinDates() });
+}
 
 /** 获取今天的日期字符串 YYYY-MM-DD */
 function getTodayStr() {
@@ -62,9 +77,13 @@ function calcStreak(dates) {
 
   var streak = 1;
   for (var i = 1; i < sorted.length; i++) {
-    var expectedPrev = new Date(sorted[i - 1]);
+    var expectedPrev = new Date(sorted[i - 1] + 'T00:00:00');
     expectedPrev.setDate(expectedPrev.getDate() - 1);
-    var expectedStr = expectedPrev.toISOString().split('T')[0];
+    // 使用本地日期构造，避免 UTC 时区偏移导致日期错位
+    var ey = expectedPrev.getFullYear();
+    var em = String(expectedPrev.getMonth() + 1).padStart(2, '0');
+    var ed = String(expectedPrev.getDate()).padStart(2, '0');
+    var expectedStr = ey + '-' + em + '-' + ed;
 
     if (sorted[i] === expectedStr) {
       streak++;
@@ -87,6 +106,8 @@ function doCheckin() {
   if (!isToday) {
     dates.push(today);
     saveCheckinDates(dates);
+    // 异步上云
+    _syncToCloud();
   }
 
   return {

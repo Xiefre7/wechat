@@ -2,6 +2,7 @@ const app = getApp();
 const slashManager = require('../../utils/slashManager');
 const checkinManager = require('../../utils/checkinManager');
 const studyTimeManager = require('../../utils/studyTimeManager');
+const authManager = require('../../utils/authManager');
 
 Page({
   data: {
@@ -12,6 +13,7 @@ Page({
     slashCount: 0,
     studyTimeText: '0小时',
     checkinStreak: 0,
+    isLoggedIn: false,
     dockItems: [
       { id: "study", label: "学习", icon: "/images/kzg/book-blue.svg", active: false },
       { id: "mine", label: "我的", icon: "/images/kzg/user-blue.svg", active: true }
@@ -26,6 +28,7 @@ Page({
     this.setData({
       avatarUrl: userInfo.avatarUrl || '',
       nickname: userInfo.nickname || '导题斩题小工具用户',
+      isLoggedIn: authManager.isLoggedIn(),
     });
 
     this.loadCheckinData();
@@ -51,6 +54,7 @@ Page({
   onShow() {
     var effectiveTheme = app.globalData.effectiveTheme || 'light';
     this.setData({ isDark: effectiveTheme === 'dark' });
+    this.setData({ isLoggedIn: authManager.isLoggedIn() });
     this.loadCheckinData();
     this.loadStatsData();
   },
@@ -76,6 +80,13 @@ Page({
    */
   onChooseAvatar(e) {
     var that = this;
+
+    // 未登录时引导登录
+    if (!authManager.isLoggedIn()) {
+      wx.navigateTo({ url: '/pages/login/index' });
+      return;
+    }
+
     var tempPath = e.detail.avatarUrl;
 
     // 1. 立即更新 UI（用临时路径预览）
@@ -105,6 +116,8 @@ Page({
    * 昵称输入完成（失焦）
    */
   onNicknameBlur(e) {
+    // 未登录时不保存
+    if (!authManager.isLoggedIn()) return;
     var value = e.detail.value;
     if (value && value.trim()) {
       var nickname = value.trim();
@@ -117,6 +130,8 @@ Page({
    * 昵称输入完成（确认）
    */
   onNicknameConfirm(e) {
+    // 未登录时不保存
+    if (!authManager.isLoggedIn()) return;
     var value = e.detail.value;
     if (value && value.trim()) {
       var nickname = value.trim();
@@ -126,8 +141,16 @@ Page({
   },
 
   handleFeedbackTap() {
+    authManager.ensureLogin(function () {
+      wx.navigateTo({
+        url: '/pages/feedback/index'
+      });
+    });
+  },
+
+  handlePrivacyTap() {
     wx.navigateTo({
-      url: '/pages/feedback/index'
+      url: '/pages/privacy/index'
     });
   },
 
@@ -145,8 +168,34 @@ Page({
 
   /** 进入斩题管理页 */
   goSlashManage() {
-    wx.navigateTo({
-      url: '/pages/slash/manage/index',
+    authManager.ensureLogin(function () {
+      wx.navigateTo({
+        url: '/pages/slash/manage/index',
+      });
     });
+  },
+
+  /** 账号管理：未登录→登录页，已登录→退出登录 */
+  handleAccountTap() {
+    var that = this;
+    if (authManager.isLoggedIn()) {
+      wx.showModal({
+        title: '退出登录',
+        content: '退出后本地数据将保留，但新数据不会同步到云端。下次登录可恢复同步。',
+        confirmText: '退出登录',
+        confirmColor: '#FF3B30',
+        success: function (res) {
+          if (res.confirm) {
+            authManager.logout();
+            that.setData({ isLoggedIn: false });
+            wx.showToast({ title: '已退出登录', icon: 'none' });
+          }
+        }
+      });
+    } else {
+      wx.navigateTo({
+        url: '/pages/login/index'
+      });
+    }
   },
 });

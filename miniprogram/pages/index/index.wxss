@@ -180,7 +180,7 @@ button::after {
   flex: 1;
   font-size: 24rpx;
   font-weight: 700;
-  color: #F5A623;
+  color: #5AC8FA;
 }
 
 /* ─── 主卡片区 ─── */
@@ -227,7 +227,7 @@ button::after {
 
 /* 错题卡片 */
 .red-card {
-  border-color: rgba(255, 107, 74, 0.18);
+  border-color: rgba(255, 59, 48, 0.18);
 }
 
 .card-icon-area {
@@ -248,7 +248,7 @@ button::after {
 }
 
 .red-orbit {
-  background: rgba(255, 107, 74, 0.07);
+  background: rgba(255, 59, 48, 0.07);
 }
 
 .card-icon {
@@ -287,7 +287,7 @@ button::after {
 }
 
 .red-text {
-  color: #FF6B4A;
+  color: #FF3B30;
 }
 
 .metric-item {
@@ -452,7 +452,7 @@ button::after {
 }
 
 .history-subject.politics {
-  color: #FF6B4A;
+  color: #FF3B30;
   background: #FFF0EC;
 }
 
@@ -491,7 +491,7 @@ button::after {
 }
 
 .history-progress-fill.politics {
-  background: #FF6B4A;
+  background: #FF3B30;
 }
 
 .history-count {
@@ -657,7 +657,7 @@ button::after {
   border: none;
   box-shadow:
     0 6rpx 24rpx rgba(0, 0, 0, 0.12),
-    0 0 40rpx rgba(255, 107, 74, 0.08);
+    0 0 40rpx rgba(255, 59, 48, 0.08);
   transition: all 700ms cubic-bezier(0.175, 0.885, 0.32, 2.2);
 }
 
@@ -963,7 +963,7 @@ button::after {
 .theme-dark .stat-label,
 .theme-dark .metric-label-small,
 .theme-dark .dock-label {
-  color: #1A2538;
+  color: rgba(255,255,255,0.6);
 }
 
 .theme-dark .quick-label {
@@ -989,7 +989,7 @@ button::after {
 }
 
 .theme-dark .red-card {
-  border-color: rgba(255, 107, 74, 0.24);
+  border-color: rgba(255, 59, 48, 0.24);
 }
 
 .theme-dark .card-title {
@@ -1055,7 +1055,7 @@ button::after {
 .theme-dark .floating-edit {
   box-shadow:
     0 6rpx 24rpx rgba(0, 0, 0, 0.35),
-    0 0 40rpx rgba(255, 107, 74, 0.1);
+    0 0 40rpx rgba(255, 59, 48, 0.1);
 }
 
 .theme-dark .fab-glass-fill {
@@ -1078,7 +1078,7 @@ button::after {
 }
 
 .theme-dark .section-more {
-  color: #1A2538;
+  color: rgba(255,255,255,0.6);
 }
 
 .theme-dark .history-name {
@@ -1088,7 +1088,7 @@ button::after {
 
 .theme-dark .history-time,
 .theme-dark .history-count {
-  color: #1A2538;
+  color: rgba(255,255,255,0.6);
 }
 
 .theme-dark .history-progress-bar {
@@ -1107,7 +1107,7 @@ button::after {
 
 .theme-dark .history-subject.politics {
   color: #FF8C69;
-  background: rgba(255, 107, 74, 0.12);
+  background: rgba(255, 59, 48, 0.12);
 }
 
 .theme-dark .hero-avatar {
@@ -1136,7 +1136,7 @@ button::after {
 }
 
 .theme-dark .user-card-stat-label {
-  color: #1A2538;
+  color: rgba(255,255,255,0.6);
 }
 
 .theme-dark .user-card-stats {

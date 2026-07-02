@@ -36,3 +36,12 @@ scroll-view {
 }
 
 /* ─── 主题由 JS 驱动 .theme-dark 类 + app.applyThemeToUI() 处理 ─── */
+
+@media (prefers-reduced-motion: reduce) {
+  view, text, button, scroll-view, image, input, textarea, navigator, swiper, swiper-item,
+  view::before, view::after, text::before, text::after, button::before, button::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

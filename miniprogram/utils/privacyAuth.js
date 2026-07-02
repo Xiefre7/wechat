@@ -21,7 +21,11 @@
  * @returns {Promise<void>}
  */
 function ensureAuthorized() {
-  return new Promise(function (resolve, reject) {
+  // 防止递归循环：限制最多重试 1 次
+  var retryCount = 0;
+
+  function _doCheck() {
+    return new Promise(function (resolve, reject) {
     // 微信基础库 2.32.3+ 支持 getPrivacySetting
     if (!wx.getPrivacySetting) {
       // 旧版本基础库无需隐私授权检查，直接放行
@@ -51,8 +55,13 @@ function ensureAuthorized() {
                   if (modalRes.confirm) {
                     wx.openPrivacyContract({
                       success: function () {
-                        // 用户查看完隐私协议后返回，再次尝试
-                        ensureAuthorized().then(resolve).catch(reject);
+                        // 用户查看完隐私协议后返回，仅重试一次，防止无限循环
+                        if (retryCount < 1) {
+                          retryCount++;
+                          _doCheck().then(resolve).catch(reject);
+                        } else {
+                          reject(new Error('用户查看协议后仍未授权'));
+                        }
                       },
                       fail: function () {
                         reject(new Error('打开隐私协议失败'));
@@ -71,12 +80,16 @@ function ensureAuthorized() {
         }
       },
       fail: function (err) {
-        // getPrivacySetting 失败，降级放行（避免阻断核心功能）
+        // getPrivacySetting 失败时拒绝调用，由调用方决定降级策略
+        // 隐私合规是强制要求，不能静默放行
         console.warn('[privacyAuth] getPrivacySetting failed:', err);
-        resolve();
+        reject(new Error('隐私授权检查失败，请稍后重试'));
       },
     });
-  });
+    });
+  }
+
+  return _doCheck();
 }
 
 /**

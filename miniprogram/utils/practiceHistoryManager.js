@@ -6,14 +6,34 @@
  * - 历史记录页展示完整列表
  *
  * 按题库聚合：同一题库多次刷题会合并为一条记录，更新最后时间和累计进度
+ * 本地存储 + 云端同步（write-through）
  *
  * 存储 key：practice_history
- * 数据结构：[{ bankId, bankName, bankType, category, knowledgePointName,
- *            lastTimeText, lastTimeISO, totalDone, totalQuestions, accuracy }]
  */
 
 const STORAGE_KEY = 'practice_history';
 const MAX_RECORDS = 50;
+
+/** 懒加载 cloudSync */
+var _cloudSync = null;
+function _getCloudSync() {
+  if (_cloudSync === null) {
+    try { _cloudSync = require('./cloudSync'); } catch (e) { _cloudSync = false; }
+  }
+  return _cloudSync || null;
+}
+
+/** 异步同步练习历史到云端（防抖） */
+var _syncTimer = null;
+function _syncToCloud() {
+  var cs = _getCloudSync();
+  if (!cs) return;
+  if (_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(function () {
+    _syncTimer = null;
+    cs.saveSection('practiceHistory', getHistory());
+  }, 2000);
+}
 
 /**
  * 读取全部历史记录（按最近时间倒序）
@@ -88,6 +108,10 @@ function recordSession(info) {
   }
 
   wx.setStorageSync(STORAGE_KEY, list);
+
+  // 异步上云
+  _syncToCloud();
+
   return record;
 }
 

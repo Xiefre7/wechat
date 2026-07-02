@@ -1,9 +1,9 @@
-const mockData = require('../../data/mockData');
 const wrongBook = require('../../utils/wrongBook');
 const slashManager = require('../../utils/slashManager');
 const imageUploader = require('../../utils/imageUploader');
 const studyTimeManager = require('../../utils/studyTimeManager');
 const practiceHistoryManager = require('../../utils/practiceHistoryManager');
+const questionData = require('../../utils/questionData');
 
 /** 斩题阈值：近10题正确率达到此值触发 */
 const SLASH_THRESHOLD = 0.8;
@@ -461,7 +461,7 @@ Page({
 
   /* ─── 切换到下一个随机题类 ─── */
   switchToNextClass() {
-    const { allClassIds, questionClassId, knowledgePointId } = this.data;
+    const { allClassIds, questionClassId, bankId } = this.data;
 
     // 获取未斩题类
     const unslashed = allClassIds.filter((id) => !slashManager.isClassSlashed(id));
@@ -477,60 +477,94 @@ Page({
       return;
     }
 
-    // 随机选下一个题类（排除当前的）
+    // 加权随机选下一个题类：距离上次出现越久权重越高
     const candidates = unslashed.filter((id) => id !== questionClassId);
-    const nextClassId = candidates.length > 0
-      ? candidates[Math.floor(Math.random() * candidates.length)]
-      : unslashed[Math.floor(Math.random() * unslashed.length)];
+    const pool = candidates.length > 0 ? candidates : unslashed;
 
-    // 获取该题类的题目
-    let questions = mockData.questions.filter((q) => q.questionClassId === nextClassId);
-    // 随机打乱
-    for (let i = questions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [questions[i], questions[j]] = [questions[j], questions[i]];
-    }
-
-    // 获取题类名称
-    const qc = mockData.questionClasses.find((c) => c._id === nextClassId);
-    const className = qc ? qc.name : '';
-
-    // 重置刷题状态
-    const firstQuestion = this.formatQuestion(questions[0]);
-    this.setData({
-      questions,
-      totalQuestions: questions.length,
-      currentIndex: 0,
-      currentQuestion: firstQuestion,
-      processedOptions: this.buildOptionClasses(firstQuestion, { submitted: false, isCorrect: null, selectedAnswer: '', selectedAnswers: {}, isShortAnswer: firstQuestion.isShortAnswer || false, isMultiChoice: firstQuestion.isMulti || false }),
-      questionTypeLabel: TYPE_LABELS[firstQuestion.type] || '未知题型',
-      questionNumber: 1,
-      selectedAnswer: '',
-      selectedAnswers: {},
-      userInput: '',
-      submitted: false,
-      isCorrect: null,
-      showExplanation: false,
-      isShortAnswer: firstQuestion.isShortAnswer || false,
-      isMultiChoice: firstQuestion.isMulti || false,
-      shortAnswerJudged: false,
-      questionStartTime: Date.now(),
-      questionTimeSpent: 0,
-      scrollTop: 0,
-      showSlashButton: false,
-      questionClassId: nextClassId,
-      questionClassName: className,
-      classAnsweredCount: 0,
-      classCorrectCount: 0,
+    // 计算权重：基于上次出现时间，越久权重越高
+    const now = Date.now();
+    let totalWeight = 0;
+    const weighted = pool.map((id) => {
+      const state = slashManager.getClassSessionState(id);
+      const lastSeen = state.lastSeenAt || 0;
+      const elapsed = now - lastSeen;
+      // 权重 = 1 + elapsed / 3600000（每小时增加1权重，最低权重1）
+      const weight = 1 + elapsed / 3600000;
+      totalWeight += weight;
+      return { id, weight };
     });
 
-    this._sessionAnswers = [];
-    this.updateWrongBookStatus();
+    // 加权随机选择
+    let rand = Math.random() * totalWeight;
+    let nextClassId = weighted[0].id;
+    for (const item of weighted) {
+      rand -= item.weight;
+      if (rand <= 0) {
+        nextClassId = item.id;
+        break;
+      }
+    }
 
-    wx.showToast({
-      title: '下一题类：' + (className || '新题类'),
-      icon: 'none',
-      duration: 2000,
+    // 从云端/本地数据层获取该题类的题目
+    wx.showLoading({ title: '加载中...', mask: true });
+    questionData.findQuestionsByBank(bankId, { questionClassId: nextClassId }).then((questions) => {
+      wx.hideLoading();
+
+      if (!questions || questions.length === 0) {
+        wx.showToast({ title: '该题类暂无题目', icon: 'none' });
+        return;
+      }
+
+      // 随机打乱
+      for (let i = questions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [questions[i], questions[j]] = [questions[j], questions[i]];
+      }
+
+      // 获取题类名称
+      const qc = questionData.findQuestionClassById(nextClassId);
+      const className = qc ? qc.name : '';
+
+      // 重置刷题状态
+      const firstQuestion = this.formatQuestion(questions[0]);
+      this.setData({
+        questions,
+        totalQuestions: questions.length,
+        currentIndex: 0,
+        currentQuestion: firstQuestion,
+        processedOptions: this.buildOptionClasses(firstQuestion, { submitted: false, isCorrect: null, selectedAnswer: '', selectedAnswers: {}, isShortAnswer: firstQuestion.isShortAnswer || false, isMultiChoice: firstQuestion.isMulti || false }),
+        questionTypeLabel: TYPE_LABELS[firstQuestion.type] || '未知题型',
+        questionNumber: 1,
+        selectedAnswer: '',
+        selectedAnswers: {},
+        userInput: '',
+        submitted: false,
+        isCorrect: null,
+        showExplanation: false,
+        isShortAnswer: firstQuestion.isShortAnswer || false,
+        isMultiChoice: firstQuestion.isMulti || false,
+        shortAnswerJudged: false,
+        questionStartTime: Date.now(),
+        questionTimeSpent: 0,
+        scrollTop: 0,
+        showSlashButton: false,
+        questionClassId: nextClassId,
+        questionClassName: className,
+        classAnsweredCount: 0,
+        classCorrectCount: 0,
+      });
+
+      this._sessionAnswers = [];
+      this.updateWrongBookStatus();
+
+      wx.showToast({
+        title: '下一题类：' + (className || '新题类'),
+        icon: 'none',
+        duration: 2000,
+      });
+    }).catch(() => {
+      wx.hideLoading();
+      wx.showToast({ title: '加载题目失败', icon: 'none' });
     });
   },
 

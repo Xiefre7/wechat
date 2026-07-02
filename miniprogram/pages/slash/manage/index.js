@@ -1,5 +1,6 @@
 const slashManager = require('../../../utils/slashManager');
 const mockData = require('../../../data/mockData');
+const app = getApp();
 
 Page({
   data: {
@@ -7,13 +8,18 @@ Page({
     customItems: [],
     rollbackRemaining: 3,
     hasItems: false,
+    isDark: false,
   },
 
   onLoad() {
+    var effectiveTheme = app.globalData.effectiveTheme || 'light';
+    this.setData({ isDark: effectiveTheme === 'dark' });
     this.loadData();
   },
 
   onShow() {
+    var effectiveTheme = app.globalData.effectiveTheme || 'light';
+    this.setData({ isDark: effectiveTheme === 'dark' });
     this.loadData();
   },
 

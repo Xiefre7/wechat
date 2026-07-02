@@ -98,7 +98,7 @@ button[disabled] {
 }
 
 .highlight {
-  color: #FF6B4A;
+  color: #FF3B30;
   font-weight: 800;
 }
 
@@ -264,7 +264,7 @@ button[disabled] {
 }
 
 .q-action-btn.danger {
-  color: #EF4444;
+  color: #FF3B30;
   background: #FEF2F2;
 }
 
@@ -311,7 +311,7 @@ button[disabled] {
 }
 
 .q-answer.multi {
-  color: #F59E0B;
+  color: #5AC8FA;
 }
 
 .answer-val {
@@ -431,7 +431,7 @@ button[disabled] {
   background: #FEF2F2;
   font-size: 32rpx;
   font-weight: 700;
-  color: #EF4444;
+  color: #FF3B30;
 }
 
 .add-opt-btn {
@@ -483,7 +483,7 @@ button[disabled] {
 }
 
 .opt-required {
-  color: #EF4444;
+  color: #FF3B30;
 }
 
 /* ─── 空状态 ─── */
@@ -530,7 +530,7 @@ button[disabled] {
 .import-tip {
   margin-top: 6rpx;
   font-size: 22rpx;
-  color: #EF4444;
+  color: #FF3B30;
 }
 
 .confirm-btn {
@@ -588,7 +588,7 @@ button[disabled] {
   .theme-dark .edit-opt-input,
   .theme-dark .progress-text,
   .theme-dark .cancel-label {
-    color: #1A2538;
+    color: rgba(255,255,255,0.6);
   }
 
   .theme-dark .page-desc,
@@ -597,11 +597,11 @@ button[disabled] {
   .theme-dark .edit-label,
   .theme-dark .q-expl,
   .theme-dark .expl-val {
-    color: #1A2538;
+    color: rgba(255,255,255,0.6);
   }
 
   .theme-dark .q-opt {
-    color: #1A2538;
+    color: rgba(255,255,255,0.6);
   }
 
   .theme-dark .q-meta {
@@ -639,7 +639,7 @@ button[disabled] {
   }
 
   .theme-dark .q-action-btn.danger {
-    background: rgba(239, 68, 68, 0.12);
+    background: rgba(255, 59, 48, 0.12);
     color: #F87171;
   }
 
@@ -648,7 +648,7 @@ button[disabled] {
   }
 
   .theme-dark .opt-del-btn {
-    background: rgba(239, 68, 68, 0.12);
+    background: rgba(255, 59, 48, 0.12);
     color: #F87171;
   }
 
@@ -765,16 +765,16 @@ button[disabled] {
   position: absolute;
   top: 4rpx;
   right: 4rpx;
-  width: 40rpx;
-  height: 40rpx;
+  width: 88rpx;
+  height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(239, 68, 68, 0.85);
+  background: rgba(255, 59, 48, 0.85);
   color: #fff;
   font-size: 28rpx;
   font-weight: 700;
-  border-radius: 20rpx;
+  border-radius: 44rpx;
   line-height: 1;
 }
 
@@ -841,7 +841,7 @@ button[disabled] {
 
 .opt-image-remove {
   font-size: 22rpx;
-  color: #EF4444;
+  color: #FF3B30;
   font-weight: 600;
   flex-shrink: 0;
 }

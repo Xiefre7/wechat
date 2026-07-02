@@ -155,6 +155,7 @@ Page({
         bankId: bank._id,
         bankName: bank.name,
         bankType: bank.type || 'exam',
+        bankCategory: bank.category || '',
         knowledgePointId: '',
         knowledgePointName: '',
         questions: normalizedQuestions,

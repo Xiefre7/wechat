@@ -158,7 +158,7 @@ const App = (() => {
 
     const res = await API.getStats()
     if (res.code !== 0) {
-      el.innerHTML = '<div class="empty-state"><p>加载失败：' + res.msg + '</p></div>'
+      el.innerHTML = '<div class="empty-state"><p>加载失败：' + escHtml(res.msg) + '</p></div>'
       return
     }
 
@@ -230,7 +230,7 @@ const App = (() => {
 
     const res = await API.getExamCategories()
     if (res.code !== 0) {
-      el.innerHTML = '<div class="empty-state"><p>加载失败：' + res.msg + '</p></div>'
+      el.innerHTML = '<div class="empty-state"><p>加载失败：' + escHtml(res.msg) + '</p></div>'
       return
     }
 
@@ -305,7 +305,7 @@ const App = (() => {
 
     const res = await API.getBanks({ type: typeFilter })
     if (res.code !== 0) {
-      el.innerHTML = '<div class="empty-state"><p>加载失败：' + res.msg + '</p></div>'
+      el.innerHTML = '<div class="empty-state"><p>加载失败：' + escHtml(res.msg) + '</p></div>'
       return
     }
 
@@ -643,7 +643,7 @@ const App = (() => {
     })
 
     if (res.code !== 0) {
-      el.innerHTML = '<div class="empty-state"><p>加载失败：' + res.msg + '</p></div>'
+      el.innerHTML = '<div class="empty-state"><p>加载失败：' + escHtml(res.msg) + '</p></div>'
       return
     }
 
@@ -1059,7 +1059,7 @@ const App = (() => {
 
     const res = await API.getNews({ page: newsPage, size: 20 })
     if (res.code !== 0) {
-      el.innerHTML = '<div class="empty-state"><p>加载失败：' + res.msg + '</p></div>'
+      el.innerHTML = '<div class="empty-state"><p>加载失败：' + escHtml(res.msg) + '</p></div>'
       return
     }
 
@@ -1182,7 +1182,7 @@ const App = (() => {
     // 渲染 HTML 预览
     var previewSection = document.getElementById('newsPreviewSection');
     var previewEl = document.getElementById('newsPreview');
-    previewEl.innerHTML = data.htmlContent || '';
+    previewEl.innerHTML = sanitizeHtml(data.htmlContent || '');
     previewSection.style.display = 'block';
 
     // 启用发布按钮
@@ -1285,7 +1285,7 @@ const App = (() => {
 
     const res = await API.getFeedback({ page: feedbackPage, size: 20 })
     if (res.code !== 0) {
-      el.innerHTML = '<div class="empty-state"><p>加载失败：' + res.msg + '</p></div>'
+      el.innerHTML = '<div class="empty-state"><p>加载失败：' + escHtml(res.msg) + '</p></div>'
       return
     }
 
@@ -1388,6 +1388,21 @@ const App = (() => {
   function escHtml(str) {
     if (!str) return ''
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+  }
+
+  /** 消毒 HTML：移除 script 标签、事件处理器、javascript: 协议 */
+  function sanitizeHtml(html) {
+    if (!html) return ''
+    var s = String(html)
+    // 移除 <script> 标签及其内容
+    s = s.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    // 移除所有 on* 事件属性
+    s = s.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    // 移除 javascript: 协议的 href/src
+    s = s.replace(/(href|src)\s*=\s*("|')\s*javascript:[^"']*\2/gi, '$1=""')
+    // 移除 iframe、object、embed 标签
+    s = s.replace(/<\/?(iframe|object|embed)\b[^>]*>/gi, '')
+    return s
   }
 
   function fmtDate(dateStr) {

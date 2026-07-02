@@ -3,5 +3,7 @@
     "openapi": []
   },
   "timeout": 60,
-  "envVariables": {}
+  "envVariables": {
+    "ADMIN_CORS_ORIGIN": "https://mvp1-d8grozotx0e93940c-1445854594.tcloudbaseapp.com"
+  }
 }

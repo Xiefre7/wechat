@@ -135,6 +135,33 @@ button::after {
   background: #E6EAF2;
 }
 
+/* 打卡按钮样式 */
+.checkin-stat {
+  position: relative;
+  cursor: pointer;
+}
+.checkin-stat .stat-label {
+  transition: color 0.2s;
+}
+.checkin-stat.checked-in .stat-label {
+  color: #34C759;
+}
+.checkin-stat.checked-in .stat-number {
+  color: #34C759;
+}
+/* 未打卡时的小红点提示 */
+.checkin-stat:not(.checked-in)::after {
+  content: '';
+  position: absolute;
+  top: -2rpx;
+  right: 12rpx;
+  width: 12rpx;
+  height: 12rpx;
+  background: #FF3B30;
+  border-radius: 50%;
+  border: 2rpx solid rgba(255,255,255,0.8);
+}
+
 /* ─── 斩题复活通知 ─── */
 .revive-badge {
   display: flex;
@@ -469,6 +496,24 @@ button::after {
 
 .history-count {
   font-size: 20rpx;
+  color: #95A6BD;
+}
+
+/* 历史记录空状态 — 与 history-card 同尺寸的单行提示 */
+.history-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  padding: 20rpx 22rpx;
+  border-radius: 20rpx;
+}
+.history-empty-icon {
+  font-size: 28rpx;
+  opacity: 0.7;
+}
+.history-empty-text {
+  font-size: 24rpx;
   color: #95A6BD;
 }
 
@@ -969,6 +1014,15 @@ button::after {
 .theme-dark .stat-divider,
 .theme-dark .metric-divider {
   background: rgba(255, 255, 255, 0.08);
+}
+
+.theme-dark .checkin-stat.checked-in .stat-number,
+.theme-dark .checkin-stat.checked-in .stat-label {
+  color: #4CD964;
+}
+
+.theme-dark .checkin-stat:not(.checked-in)::after {
+  border-color: rgba(30, 41, 59, 0.8);
 }
 
 /* ─── 深色 dock 液态玻璃胶囊 ─── */

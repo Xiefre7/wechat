@@ -1,15 +1,17 @@
 const app = getApp();
 const slashManager = require('../../utils/slashManager');
+const checkinManager = require('../../utils/checkinManager');
+const studyTimeManager = require('../../utils/studyTimeManager');
 
 Page({
   data: {
     isDark: false,
     avatarUrl: '',
     nickname: '',
-    totalQuestions: 1523,
-    slashCount: 47,
-    studyTimeText: '22.8小时',
-    checkinStreak: 12,
+    totalQuestions: 0,
+    slashCount: 0,
+    studyTimeText: '0小时',
+    checkinStreak: 0,
     dockItems: [
       { id: "study", label: "学习", icon: "/images/kzg/book-blue.svg", active: false },
       { id: "mine", label: "我的", icon: "/images/kzg/user-blue.svg", active: true }
@@ -25,11 +27,48 @@ Page({
       avatarUrl: userInfo.avatarUrl || '',
       nickname: userInfo.nickname || '导题斩题小工具用户',
     });
+
+    this.loadCheckinData();
+    this.loadStatsData();
+
+    // 订阅主题变化，实时更新页面深色状态
+    var that = this;
+    this._themeCb = function () {
+      var theme = app.globalData.effectiveTheme || 'light';
+      that.setData({ isDark: theme === 'dark' });
+    };
+    if (app.onThemeChange) {
+      app.onThemeChange(this._themeCb);
+    }
+  },
+
+  onUnload() {
+    if (app.offThemeChange && this._themeCb) {
+      app.offThemeChange(this._themeCb);
+    }
   },
 
   onShow() {
     var effectiveTheme = app.globalData.effectiveTheme || 'light';
     this.setData({ isDark: effectiveTheme === 'dark' });
+    this.loadCheckinData();
+    this.loadStatsData();
+  },
+
+  /** 加载真实打卡数据 */
+  loadCheckinData() {
+    var info = checkinManager.getCheckinSummary();
+    this.setData({ checkinStreak: info.streak });
+  },
+
+  /** 加载学习统计数据 */
+  loadStatsData() {
+    var slashedItems = slashManager.getAllSlashedItems();
+    this.setData({
+      totalQuestions: studyTimeManager.getTotalQuestions(),
+      slashCount: slashedItems ? slashedItems.length : 0,
+      studyTimeText: studyTimeManager.getTotalFormatted(),
+    });
   },
 
   /**

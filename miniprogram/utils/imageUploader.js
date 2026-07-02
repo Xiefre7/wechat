@@ -13,6 +13,8 @@
 
 'use strict';
 
+var privacyAuth = require('./privacyAuth');
+
 /** 图片最大宽度（px），超过则压缩 */
 const MAX_WIDTH = 1024;
 /** 压缩质量 0-100 */
@@ -76,30 +78,36 @@ function chooseImages(count, maxCount) {
     return Promise.resolve([]);
   }
 
-  return new Promise(function (resolve) {
-    wx.chooseMedia({
-      count: Math.min(count, remaining),
-      mediaType: ['image'],
-      sourceType: ['album', 'camera'],
-      sizeType: ['compressed'],
-      success: function (res) {
-        // 持久化临时文件（Windows 开发者工具兼容）
-        var paths = (res.tempFiles || []).map(function (f) {
-          return persistFile(f.tempFilePath);
-        });
-        resolve(paths);
-      },
-      fail: function (err) {
-        // 用户取消不算错误
-        if (err.errMsg && err.errMsg.indexOf('cancel') > -1) {
+  return privacyAuth.ensureAuthorized().then(function () {
+    return new Promise(function (resolve) {
+      wx.chooseMedia({
+        count: Math.min(count, remaining),
+        mediaType: ['image'],
+        sourceType: ['album', 'camera'],
+        sizeType: ['compressed'],
+        success: function (res) {
+          // 持久化临时文件（Windows 开发者工具兼容）
+          var paths = (res.tempFiles || []).map(function (f) {
+            return persistFile(f.tempFilePath);
+          });
+          resolve(paths);
+        },
+        fail: function (err) {
+          // 用户取消不算错误
+          if (err.errMsg && err.errMsg.indexOf('cancel') > -1) {
+            resolve([]);
+            return;
+          }
+          console.error('[imageUploader] chooseMedia failed:', err);
+          wx.showToast({ title: '选择图片失败，请重试', icon: 'none' });
           resolve([]);
-          return;
-        }
-        console.error('[imageUploader] chooseMedia failed:', err);
-        wx.showToast({ title: '选择图片失败，请重试', icon: 'none' });
-        resolve([]);
-      },
+        },
+      });
     });
+  }).catch(function (err) {
+    // 用户拒绝隐私授权，静默返回空数组（不发Toast，ensureAuthorized 内部已处理）
+    console.warn('[imageUploader] 隐私授权未通过:', err.message || err);
+    return [];
   });
 }
 

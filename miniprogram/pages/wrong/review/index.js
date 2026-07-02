@@ -2,6 +2,7 @@ const wrongBook = require('../../../utils/wrongBook');
 const mockData = require('../../../data/mockData');
 var questionData = require('../../../utils/questionData');
 const imageUploader = require('../../../utils/imageUploader');
+const studyTimeManager = require('../../../utils/studyTimeManager');
 
 /** 题型中文名 */
 const TYPE_LABELS = {
@@ -44,6 +45,7 @@ Page({
 
     /* 计时 */
     questionStartTime: 0,
+    sessionStartTime: 0,
     questionTimeSpent: 0,
 
     /* 多选题提示 */
@@ -113,6 +115,7 @@ Page({
       questionTypeLabel: TYPE_LABELS[firstQuestion.type] || '未知题型',
       questionNumber: 1,
       questionStartTime: Date.now(),
+      sessionStartTime: Date.now(),
     });
 
     this._reviewAnswers = [];
@@ -228,6 +231,9 @@ Page({
       wx.showToast({ title: '请先作答', icon: 'none' });
       return;
     }
+
+    // 累加答题计数
+    studyTimeManager.recordQuestionAnswered();
 
     const timeSpent = Math.round((Date.now() - this.data.questionStartTime) / 1000);
 
@@ -372,6 +378,10 @@ Page({
 
   /* ─── 完成复习 ─── */
   finishReview() {
+    // 累加学习时长
+    var reviewTotalTime = Math.round((Date.now() - this.data.sessionStartTime) / 1000);
+    studyTimeManager.addStudyTime(reviewTotalTime);
+
     // 处理最后一道题的SM-2更新
     const lastAnswer = this._reviewAnswers[this._reviewAnswers.length - 1];
     if (lastAnswer && lastAnswer.isCorrect !== null) {

@@ -29,6 +29,24 @@ App({
     effectiveTheme: "light" // 实际生效的主题 'light' | 'dark'
   },
 
+  // 主题变化监听器（供 background-image 等组件订阅）
+  _themeListeners: [],
+
+  onThemeChange: function (cb) {
+    this._themeListeners.push(cb);
+  },
+
+  offThemeChange: function (cb) {
+    var idx = this._themeListeners.indexOf(cb);
+    if (idx > -1) this._themeListeners.splice(idx, 1);
+  },
+
+  _notifyThemeChange: function () {
+    for (var i = 0; i < this._themeListeners.length; i++) {
+      try { this._themeListeners[i](); } catch (e) { /* ignore */ }
+    }
+  },
+
   onLaunch: function () {
     // 读取持久化的主题模式
     try {
@@ -67,6 +85,19 @@ App({
     } catch (e) {
       // 忽略复活检查失败
     }
+
+    // 监听系统主题变化，实现"跟随系统"实时切换
+    var that = this;
+    if (wx.onThemeChange) {
+      wx.onThemeChange(function (res) {
+        if (that.globalData.themeMode === 'system') {
+          that.globalData.effectiveTheme = res.theme || 'light';
+          that.applyThemeToUI();
+          that.pickBackgroundImage();
+          that._notifyThemeChange();
+        }
+      });
+    }
   },
 
   /**
@@ -101,6 +132,7 @@ App({
     wx.setStorageSync('themeMode', mode);
     this.updateEffectiveTheme();
     this.pickBackgroundImage();
+    this._notifyThemeChange();
   },
 
   /**

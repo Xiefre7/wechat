@@ -29,7 +29,7 @@
       <view class="empty-icon">📚</view>
       <view class="empty-text">暂无历史记录</view>
       <view class="empty-desc">完成一次练习后，记录会出现在这里</view>
-      <button class="empty-btn" bindtap="handleBack">去学习</button>
+      <button class="empty-btn" bindtap="handleItemTap">去题库刷题</button>
     </view>
 
     <!-- 历史列表 -->
@@ -49,14 +49,14 @@
 
         <view class="card-meta">
           <text class="history-tag {{item.subject}}">{{item.subjectName}}</text>
-          <text class="history-date">{{item.lastTimeText}}</text>
+          <text class="history-date">{{item.lastTime}}</text>
         </view>
 
         <view class="card-progress">
           <view class="progress-bar">
             <view class="progress-fill {{item.subject}}" style="width: {{item.progress}}%"></view>
           </view>
-          <view class="progress-count">{{item.doneCount}}/{{item.totalCount}} 题</view>
+          <view class="progress-count">已练 {{item.doneCount}} 题 · 正确率 {{item.accuracy}}%</view>
         </view>
       </view>
     </view>

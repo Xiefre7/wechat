@@ -46,7 +46,7 @@
   },
   "appid": "wx16fe10b89c4b8ef8",
   "projectname": "导题斩题小工具",
-  "libVersion": "2.20.1",
+  "libVersion": "3.5.0",
   "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
   "condition": {
     "search": {

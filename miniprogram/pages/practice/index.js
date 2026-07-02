@@ -2,6 +2,8 @@ const mockData = require('../../data/mockData');
 const wrongBook = require('../../utils/wrongBook');
 const slashManager = require('../../utils/slashManager');
 const imageUploader = require('../../utils/imageUploader');
+const studyTimeManager = require('../../utils/studyTimeManager');
+const practiceHistoryManager = require('../../utils/practiceHistoryManager');
 
 /** 斩题阈值：近10题正确率达到此值触发 */
 const SLASH_THRESHOLD = 0.8;
@@ -21,6 +23,8 @@ Page({
     /* 会话信息 */
     bankName: '',
     bankType: '',
+    bankId: '',
+    bankCategory: '',
     knowledgePointName: '',
     questions: [],
     totalQuestions: 0,
@@ -102,6 +106,8 @@ Page({
     this.setData({
       bankName: session.bankName,
       bankType: session.bankType,
+      bankId: session.bankId || '',
+      bankCategory: session.bankCategory || '',
       knowledgePointName: session.knowledgePointName || '',
       questions: session.questions,
       totalQuestions,
@@ -278,6 +284,9 @@ Page({
       wx.showToast({ title: '请先作答', icon: 'none' });
       return;
     }
+
+    // 累加答题计数
+    studyTimeManager.recordQuestionAnswered();
 
     // 计算耗时
     const timeSpent = Math.round((Date.now() - this.data.questionStartTime) / 1000);
@@ -685,6 +694,7 @@ Page({
     const totalTime = Math.round((Date.now() - this.data.sessionStartTime) / 1000);
     const answers = this._sessionAnswers;
     const correctCount = answers.filter((a) => a.isCorrect === true).length;
+    const accuracy = this.data.totalQuestions > 0 ? Math.round((correctCount / this.data.totalQuestions) * 100) : 0;
 
     const result = {
       bankName: this.data.bankName,
@@ -693,13 +703,28 @@ Page({
       correctCount,
       wrongCount: answers.filter((a) => a.isCorrect === false).length,
       unjudgedCount: answers.filter((a) => a.isCorrect === null).length,
-      accuracy: this.data.totalQuestions > 0 ? Math.round((correctCount / this.data.totalQuestions) * 100) : 0,
+      accuracy,
       totalTime,
       avgTime: answers.length > 0 ? Math.round(totalTime / answers.length) : 0,
       answers,
       mode: this.data.mode,
       finishedAt: new Date().toISOString(),
     };
+
+    // 累加学习时长
+    studyTimeManager.addStudyTime(totalTime);
+
+    // 记录练习历史（用于首页历史记录展示）
+    practiceHistoryManager.recordSession({
+      bankId: this.data.bankId,
+      bankName: this.data.bankName,
+      bankType: this.data.bankType,
+      category: this.data.bankCategory,
+      knowledgePointName: this.data.knowledgePointName,
+      totalQuestions: this.data.totalQuestions,
+      correctCount: correctCount,
+      accuracy: accuracy,
+    });
 
     wx.setStorageSync('practiceResult', result);
 

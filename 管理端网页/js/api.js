@@ -6,10 +6,18 @@
  */
 const API = (() => {
   // ==================== 配置 ====================
-  // TODO: 部署后替换为实际的云函数 HTTP 地址
-  // 本地测试: http://localhost:3000
-  // 正式部署: https://your-env-id.service.tcloudbase.com/admin-api
-  const BASE_URL = 'http://localhost:3000'
+  // 部署后替换为实际的云函数 HTTP 触发地址（HTTPS）
+  // 在微信云开发控制台 → 云函数 → admin-api → HTTP 触发器 中获取 URL
+  // 示例: https://your-env-id.service.tcloudbase.com/admin-api
+  var API_BASE_URL = (function () {
+    // 优先从 localStorage 读取已配置的地址（部署时通过控制台写入）
+    var stored = ''
+    try { stored = localStorage.getItem('ADMIN_API_BASE_URL') || '' } catch (e) {}
+    if (stored) return stored
+    // 回退到占位地址，部署时必须替换
+    return 'https://mvp1-d8grozotx0e93940c.service.tcloudbase.com/admin-api'
+  })()
+  var BASE_URL = API_BASE_URL
 
   // ==================== 内部方法 ====================
 

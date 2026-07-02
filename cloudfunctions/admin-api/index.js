@@ -7,10 +7,17 @@ const _ = db.command
 
 // ==================== 工具函数 ====================
 
-/** 生成密码哈希 */
-function hashPassword(password) {
-  const salt = 'kaozhanguo_admin_salt_2024'
-  return crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha256').toString('hex')
+/** 生成密码哈希（使用每用户独立随机盐） */
+function hashPassword(password, salt) {
+  var actualSalt = salt || crypto.randomBytes(16).toString('hex')
+  var hash = crypto.pbkdf2Sync(password, actualSalt, 10000, 64, 'sha256').toString('hex')
+  return { hash: hash, salt: actualSalt }
+}
+
+/** 验证密码 */
+function verifyPassword(password, storedHash, storedSalt) {
+  var result = hashPassword(password, storedSalt)
+  return result.hash === storedHash
 }
 
 /** 生成会话 token */
@@ -28,11 +35,12 @@ function fail(code = -1, msg = 'error', statusCode = 400) {
   return { statusCode, headers: corsHeaders(), body: JSON.stringify({ code, msg }) }
 }
 
-/** CORS 头 */
+/** CORS 头 — 从环境变量读取允许的来源，未配置时拒绝跨域 */
 function corsHeaders() {
+  var allowedOrigin = process.env.ADMIN_CORS_ORIGIN || 'https://mvp1-d8grozotx0e93940c-1445854594.tcloudbaseapp.com'
   return {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type,Authorization'
   }
@@ -61,32 +69,47 @@ async function authenticate(event) {
 
 /** 确保 admin 集合和默认账号存在 */
 async function ensureAdminExists() {
+  var adminPassword = process.env.ADMIN_PASSWORD || ''
+  console.log('[ensureAdminExists] ADMIN_PASSWORD 已配置:', adminPassword.length > 0 ? '是' : '否（长度:' + adminPassword.length + '）')
+  if (!adminPassword) {
+    console.error('未配置 ADMIN_PASSWORD 环境变量，无法初始化管理员账号。请在云开发控制台→admin-api→环境变量中设置。')
+    return
+  }
+
   try {
     const countRes = await db.collection('admin_users').count()
+    console.log('[ensureAdminExists] admin_users 记录数:', countRes.total)
     if (countRes.total === 0) {
+      var pwdResult = hashPassword(adminPassword)
       await db.collection('admin_users').add({
         data: {
           username: 'admin',
-          passwordHash: hashPassword('admin123'),
+          passwordHash: pwdResult.hash,
+          passwordSalt: pwdResult.salt,
           role: 'superadmin',
           createdAt: new Date()
         }
       })
-      console.log('默认管理员账号已创建: admin / admin123')
+      console.log('默认管理员账号已创建（用户名: admin）')
+    } else {
+      console.log('[ensureAdminExists] admin 账号已存在，跳过创建')
     }
   } catch (e) {
+    console.log('[ensureAdminExists] 异常（集合可能不存在）:', e.message)
     // 集合可能尚不存在，尝试创建
     try {
       await db.createCollection('admin_users')
+      var pwdResult2 = hashPassword(adminPassword)
       await db.collection('admin_users').add({
         data: {
           username: 'admin',
-          passwordHash: hashPassword('admin123'),
+          passwordHash: pwdResult2.hash,
+          passwordSalt: pwdResult2.salt,
           role: 'superadmin',
           createdAt: new Date()
         }
       })
-      console.log('admin_users 集合已创建，默认管理员账号: admin / admin123')
+      console.log('admin_users 集合已创建，默认管理员账号已初始化（用户名: admin）')
     } catch (e2) {
       console.error('创建管理员账号失败:', e2)
     }
@@ -102,10 +125,11 @@ async function handleLogin(body) {
   await ensureAdminExists()
 
   const res = await db.collection('admin_users').where({ username }).get()
+  console.log('[handleLogin] 查到用户数:', res.data.length, '用户名:', username)
   if (res.data.length === 0) return fail(-1, '用户名或密码错误')
 
   const admin = res.data[0]
-  if (admin.passwordHash !== hashPassword(password)) return fail(-1, '用户名或密码错误')
+  if (!verifyPassword(password, admin.passwordHash, admin.passwordSalt)) return fail(-1, '用户名或密码错误')
 
   // 创建会话
   const token = generateToken()
@@ -141,10 +165,11 @@ async function handleChangePassword(username, body) {
 
   const res = await db.collection('admin_users').where({ username }).get()
   const admin = res.data[0]
-  if (admin.passwordHash !== hashPassword(oldPassword)) return fail(-1, '旧密码错误')
+  if (!verifyPassword(oldPassword, admin.passwordHash, admin.passwordSalt)) return fail(-1, '旧密码错误')
 
+  var newPwdResult = hashPassword(newPassword)
   await db.collection('admin_users').doc(admin._id).update({
-    data: { passwordHash: hashPassword(newPassword) }
+    data: { passwordHash: newPwdResult.hash, passwordSalt: newPwdResult.salt }
   })
   return ok({}, '密码修改成功')
 }

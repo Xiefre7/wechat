@@ -14,18 +14,18 @@
     </view>
 
     <view class="stat-ribbon">
-      <view class="stat-item">
+      <view class="stat-item checkin-stat {{checkedInToday ? 'checked-in' : ''}}" bindtap="handleCheckinTap" hover-class="pressing">
         <view class="stat-number">{{summary.checkinStreak}}</view>
-        <view class="stat-label">连续打卡</view>
+        <view class="stat-label">{{checkedInToday ? '已打卡' : '连续打卡'}}</view>
       </view>
       <view class="stat-divider"></view>
       <view class="stat-item">
-        <view class="stat-number">{{summary.slashCount}}</view>
-        <view class="stat-label">已斩知识点</view>
+        <view class="stat-number">{{summary.weeklyStudyTime}}</view>
+        <view class="stat-label">学习时长</view>
       </view>
       <view class="stat-divider"></view>
       <view class="stat-item">
-        <view class="stat-number">{{summary.todayReview}}</view>
+        <view class="stat-number">{{summary.dueReview}}</view>
         <view class="stat-label">待复习</view>
       </view>
     </view>
@@ -91,7 +91,7 @@
         <view class="section-title">历史记录</view>
         <view class="section-more" bindtap="handleHistoryMore">查看全部 ›</view>
       </view>
-      <view class="history-list">
+      <view class="history-list" wx:if="{{historyBanks.length > 0}}">
         <view
           wx:for="{{historyBanks}}"
           wx:key="id"
@@ -111,9 +111,13 @@
             <view class="history-progress-bar">
               <view class="history-progress-fill {{item.subject}}" style="width: {{item.progress}}%"></view>
             </view>
-            <view class="history-count">{{item.doneCount}}/{{item.totalCount}}</view>
+            <view class="history-count">已练{{item.doneCount}}题</view>
           </view>
         </view>
+      </view>
+      <view class="history-empty glass-card" wx:else bindtap="handleHistoryTap" hover-class="pressing">
+        <view class="history-empty-icon">📝</view>
+        <view class="history-empty-text">还没有练习记录，去题库开始刷题吧</view>
       </view>
     </view>
 
@@ -167,8 +171,8 @@
         </view>
         <view class="user-card-stat-divider"></view>
         <view class="user-card-stat">
-          <view class="user-card-stat-num">{{summary.slashCount}}</view>
-          <view class="user-card-stat-label">已斩知识点</view>
+          <view class="user-card-stat-num">{{summary.weeklyStudyTime}}</view>
+          <view class="user-card-stat-label">本周学习</view>
         </view>
       </view>
       <!-- 主题模式切换 — 液态玻璃胶囊 -->

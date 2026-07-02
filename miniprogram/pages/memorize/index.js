@@ -1,4 +1,6 @@
 var imageUploader = require('../../utils/imageUploader');
+var studyTimeManager = require('../../utils/studyTimeManager');
+var practiceHistoryManager = require('../../utils/practiceHistoryManager');
 
 /** 题型中文名 */
 var TYPE_LABELS = {
@@ -14,6 +16,8 @@ Page({
     isDark: false,
     bankName: '',
     bankType: '',
+    bankId: '',
+    bankCategory: '',
     questions: [],
     totalQuestions: 0,
     currentIndex: 0,
@@ -47,6 +51,8 @@ Page({
     this.setData({
       bankName: session.bankName,
       bankType: session.bankType,
+      bankId: session.bankId || '',
+      bankCategory: session.bankCategory || '',
       questions: session.questions,
       totalQuestions: totalQuestions,
       currentIndex: 0,
@@ -64,6 +70,7 @@ Page({
       showAnswer: true,
       isShortAnswer: firstQuestion.isShortAnswer || false,
       isMultiChoice: firstQuestion.isMulti || false,
+      sessionStartTime: Date.now(),
     });
 
     this._memorizeMarks = [];
@@ -290,6 +297,24 @@ Page({
       }
     }
 
+    // 累加学习时长（背题模式）
+    var totalTime = Math.round((Date.now() - (this.data.sessionStartTime || Date.now())) / 1000);
+    studyTimeManager.addStudyTime(totalTime);
+
+    // 记录练习历史
+    var accuracy = this.data.totalQuestions > 0
+      ? Math.round((rememberedCount / this.data.totalQuestions) * 100) : 0;
+    practiceHistoryManager.recordSession({
+      bankId: this.data.bankId,
+      bankName: this.data.bankName,
+      bankType: this.data.bankType,
+      category: this.data.bankCategory,
+      knowledgePointName: '背题模式',
+      totalQuestions: this.data.totalQuestions,
+      correctCount: rememberedCount,
+      accuracy: accuracy,
+    });
+
     var result = {
       bankName: this.data.bankName,
       totalQuestions: this.data.totalQuestions,
@@ -297,6 +322,7 @@ Page({
       rememberedCount: rememberedCount,
       notRememberedCount: notRememberedCount,
       marks: uniqueMarks,
+      totalTime: totalTime,
       finishedAt: new Date().toISOString(),
     };
 

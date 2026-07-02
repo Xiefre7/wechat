@@ -14,6 +14,22 @@ Component({
   lifetimes: {
     attached() {
       this.refreshBackground();
+      // 订阅 app 级主题变化通知
+      var that = this;
+      this._themeCb = function () {
+        that.refreshBackground();
+      };
+      var app = getApp();
+      if (app.onThemeChange) {
+        app.onThemeChange(this._themeCb);
+      }
+    },
+    detached() {
+      // 取消订阅，避免内存泄漏
+      var app = getApp();
+      if (app.offThemeChange && this._themeCb) {
+        app.offThemeChange(this._themeCb);
+      }
     }
   },
 

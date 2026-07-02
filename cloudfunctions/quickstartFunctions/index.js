@@ -225,8 +225,8 @@ const importBank = async (event) => {
 
     const bankId = bankRes._id;
 
-    // 2. 批量写入题目（分批 100 条/批，微信云数据库单次限制）
-    const BATCH_SIZE = 100;
+    // 2. 批量写入题目（每批20条并发，微信云数据库单次 add 最多20条）
+    const BATCH_SIZE = 20;
     let insertedCount = 0;
 
     for (let i = 0; i < questions.length; i += BATCH_SIZE) {
@@ -250,11 +250,11 @@ const importBank = async (event) => {
         createdAt: new Date().toISOString(),
       }));
 
-      // 逐条添加（云数据库批量add限制）
-      for (const item of batch) {
-        await db.collection('questions').add({ data: item });
-        insertedCount++;
-      }
+      // 并发写入本批（最多20条同时 add）
+      const results = await Promise.all(
+        batch.map((item) => db.collection('questions').add({ data: item }))
+      );
+      insertedCount += results.length;
     }
 
     // 3. 更新题库题目计数
@@ -446,8 +446,6 @@ const importBankByExcel = async (event) => {
 const parseWordDocument = async (event) => {
   const { fileID } = event;
 
-  console.log('[parseWordDocument] Started, fileID:', fileID);
-
   if (!fileID) {
     console.warn('[parseWordDocument] Missing fileID');
     return { success: false, errMsg: '缺少 Word 文件' };
@@ -455,16 +453,13 @@ const parseWordDocument = async (event) => {
 
   try {
     // 下载云存储文件
-    console.log('[parseWordDocument] Downloading file from cloud storage...');
     const downloadRes = await cloud.downloadFile({ fileID });
     const fileBuffer = downloadRes.fileContent;
-    console.log('[parseWordDocument] File downloaded, buffer size:', fileBuffer ? fileBuffer.length : 0, 'bytes');
 
     // 动态加载 mammoth
     let mammoth;
     try {
       mammoth = require('mammoth');
-      console.log('[parseWordDocument] mammoth loaded successfully');
     } catch (e) {
       console.error('[parseWordDocument] mammoth require failed:', e.message);
       return {
@@ -474,10 +469,8 @@ const parseWordDocument = async (event) => {
     }
 
     // 提取纯文本
-    console.log('[parseWordDocument] Extracting text with mammoth...');
     const extractResult = await mammoth.extractRawText({ buffer: fileBuffer });
     const rawText = extractResult.value;
-    console.log('[parseWordDocument] Text extracted, length:', rawText ? rawText.length : 0, 'chars');
 
     if (!rawText || !rawText.trim()) {
       return {
@@ -487,19 +480,16 @@ const parseWordDocument = async (event) => {
     }
 
     // 用规则引擎结构化（增强版：多选项布局 + 题型打分引擎）
-    console.log('[parseWordDocument] Calling parseOcrText, rawText first 100 chars:', rawText.substring(0, 100));
     let questions;
     let parseUsedFallback = false;
     try {
       questions = parseOcrText(rawText);
-      console.log('[parseWordDocument] parseOcrText returned', questions.length, 'questions');
     } catch (parseErr) {
       console.error('[parseWordDocument] Enhanced parser failed:', parseErr.message);
       console.error('[parseWordDocument] Stack:', parseErr.stack);
       // 回退到简单解析（仅按行分割，不做标准化）
       questions = parseOcrTextFallback(rawText);
       parseUsedFallback = true;
-      console.log('[parseWordDocument] Fallback parser returned', questions.length, 'questions');
     }
 
     // 为每道题添加识别置信度标记，方便前端提示用户核对
@@ -561,7 +551,6 @@ const parseWordDocument = async (event) => {
     questions.forEach((q) => {
       typeCounts[q.type] = (typeCounts[q.type] || 0) + 1;
     });
-    console.log('[parseWordDocument] Question type distribution:', typeCounts);
 
     // 截断过长文本
     const warnings = [];
@@ -1121,6 +1110,12 @@ const getWrongStats = async (event) => {
 /** 分享题库：存储题库数据并返回分享码 */
 const shareBank = async (event) => {
   const { bank, questions } = event;
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+
+  if (!openid) {
+    return { success: false, message: '无法获取用户身份' };
+  }
   if (!bank || !questions) {
     return { success: false, message: '缺少题库数据' };
   }
@@ -1133,6 +1128,7 @@ const shareBank = async (event) => {
         shareCode,
         bank,
         questions,
+        ownerId: openid,
         createdAt: new Date(),
         // 7天过期
         expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -1301,14 +1297,6 @@ exports.main = async (event, context) => {
       return await getMiniProgramCode();
     case 'createCollection':
       return await createCollection();
-    case 'selectRecord':
-      return await selectRecord();
-    case 'updateRecord':
-      return await updateRecord(event);
-    case 'insertRecord':
-      return await insertRecord(event);
-    case 'deleteRecord':
-      return await deleteRecord(event);
     // 题库导入
     case 'importBank':
       return await importBank(event);

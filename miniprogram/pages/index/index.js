@@ -1,5 +1,9 @@
 var app = getApp();
 var slashManager = require('../../utils/slashManager');
+var checkinManager = require('../../utils/checkinManager');
+var studyTimeManager = require('../../utils/studyTimeManager');
+var wrongBook = require('../../utils/wrongBook');
+var practiceHistoryManager = require('../../utils/practiceHistoryManager');
 
 Page({
   data: {
@@ -17,8 +21,10 @@ Page({
       todaySolved: 45,
       totalWrong: 156,
       todayReview: 12,
-      checkinStreak: 7,
-      slashCount: 18
+      checkinStreak: 0,
+      checkedInToday: false,
+      weeklyStudyTime: '0小时',
+      dueReview: 0
     },
     studySubjects: [
       { id: "math", name: "数学", progress: 72, color: "#007AFF" },
@@ -84,49 +90,23 @@ Page({
       { id: "study", label: "学习", icon: "/images/kzg/book-blue.svg", active: true },
       { id: "mine", label: "我的", icon: "/images/kzg/user-blue.svg", active: false }
     ],
-    historyBanks: [
-      {
-        id: "h1",
-        name: "2024福建职教高考数学真题",
-        subject: "math",
-        subjectName: "数学",
-        lastTime: "3天前",
-        progress: 72,
-        doneCount: 36,
-        totalCount: 50
-      },
-      {
-        id: "h2",
-        name: "英语高频词汇练习",
-        subject: "english",
-        subjectName: "英语",
-        lastTime: "昨天",
-        progress: 45,
-        doneCount: 90,
-        totalCount: 200
-      },
-      {
-        id: "h3",
-        name: "政治时事热点题库",
-        subject: "politics",
-        subjectName: "政治",
-        lastTime: "5天前",
-        progress: 28,
-        doneCount: 14,
-        totalCount: 50
-      }
-    ]
+    historyBanks: []
   },
 
   onLoad() {
     this.updateGreeting();
     this.loadUserData();
+    this.loadCheckinData();
+    this.loadStudyData();
+    this.loadHistoryData();
   },
 
   onShow() {
-    // 每次显示时刷新用户数据（从 mine 页返回时可能已更新）
+    // 每次显示时刷新用户数据（从练习页返回时历史/时长可能已更新）
     this.loadUserData();
-    // 检查斩题复活通知
+    this.loadCheckinData();
+    this.loadStudyData();
+    this.loadHistoryData();
     var revive = slashManager.getReviveNotification();
     if (revive && !revive.seen && revive.count > 0) {
       this.setData({ reviveCount: revive.count });
@@ -144,6 +124,58 @@ Page({
       nickname: userInfo.nickname || '导题斩题小工具用户',
       isDark: effectiveTheme === 'dark',
     });
+  },
+
+  /** 加载真实打卡数据 */
+  loadCheckinData() {
+    var info = checkinManager.getCheckinSummary();
+    this.setData({
+      'summary.checkinStreak': info.streak,
+      checkedInToday: info.checkedInToday
+    });
+  },
+
+  /** 加载学习时长 + 待复习数据 */
+  loadStudyData() {
+    this.setData({
+      'summary.weeklyStudyTime': studyTimeManager.getWeeklyFormatted(),
+      'summary.dueReview': wrongBook.getGlobalStats().dueReview
+    });
+  },
+
+  /** 加载最近练习历史（最多3条） */
+  loadHistoryData() {
+    var recent = practiceHistoryManager.getRecent(5);
+    // 适配 wxml 字段
+    var list = recent.map(function (r) {
+      return {
+        id: r.bankId,
+        name: r.bankName,
+        subject: r.subject || 'other',
+        subjectName: r.subjectName || r.category || '',
+        lastTime: r.lastTimeText,
+        progress: r.progress || 0,
+        doneCount: r.totalDone || 0,
+        totalCount: r.totalQuestions || 0
+      };
+    });
+    this.setData({ historyBanks: list });
+  },
+
+  /** 点击打卡 */
+  handleCheckinTap() {
+    var result = checkinManager.doCheckin();
+    this.setData({
+      'summary.checkinStreak': result.streak,
+      checkedInToday: true
+    });
+
+    if (result.isToday) {
+      wx.showToast({
+        title: result.streak > 1 ? '已连续打卡 ' + result.streak + ' 天！' : '打卡成功！',
+        icon: 'success'
+      });
+    }
   },
 
   onPullDownRefresh() {
@@ -239,13 +271,13 @@ Page({
 
 
   handleHistoryTap(e) {
-    const { id } = e.currentTarget.dataset;
-    const bank = this.data.historyBanks.find(b => b.id === id);
-    if (bank) {
-      wx.navigateTo({
-        url: `/pages/practice/index?bankId=${id}&bankName=${encodeURIComponent(bank.name)}`,
-      });
-    }
+    // 点击历史记录项 → 跳转到题库列表页（重新开始刷题需要选知识点）
+    wx.switchTab({
+      url: '/pages/bank/list/index',
+      fail: function () {
+        wx.navigateTo({ url: '/pages/bank/list/index' });
+      }
+    });
   },
 
   handleHistoryMore() {

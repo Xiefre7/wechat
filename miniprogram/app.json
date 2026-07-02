@@ -11,7 +11,6 @@
     "pages/memorize/index",
     "pages/feedback/index",
     "pages/placeholder/index",
-    "pages/example/index",
     "pages/mine/index",
     "pages/history/index",
     "pages/wrong/list/index",
@@ -28,6 +27,8 @@
   },
   "sitemapLocation": "sitemap.json",
   "style": "v2",
+  "darkmode": true,
+  "__usePrivacyCheck__": true,
   "usingComponents": {
     "background-image": "/components/background-image/index"
   }

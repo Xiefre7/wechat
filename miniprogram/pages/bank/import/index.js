@@ -1,4 +1,5 @@
 const { parseQuestions } = require('../../../utils/questionParser');
+const privacyAuth = require('../../../utils/privacyAuth');
 
 const TYPE_LABELS = {
   single_choice: '单选题',
@@ -144,6 +145,7 @@ Page({
   },
 
   chooseExcel() {
+    privacyAuth.ensureAuthorized().then(() => {
     wx.chooseMessageFile({
       count: 1,
       type: 'file',
@@ -167,6 +169,9 @@ Page({
         if (err.errMsg.includes('cancel')) return;
         wx.showToast({ title: '选择文件失败', icon: 'none' });
       },
+    });
+    }).catch(() => {
+      // 用户拒绝隐私授权，静默处理
     });
   },
 
@@ -200,6 +205,7 @@ Page({
   },
 
   chooseWord() {
+    privacyAuth.ensureAuthorized().then(() => {
     wx.chooseMessageFile({
       count: 1,
       type: 'file',
@@ -223,6 +229,9 @@ Page({
         if (err.errMsg.includes('cancel')) return;
         wx.showToast({ title: '选择文件失败', icon: 'none' });
       },
+    });
+    }).catch(() => {
+      // 用户拒绝隐私授权，静默处理
     });
   },
 
@@ -354,23 +363,31 @@ Page({
   /* ─── OCR ─── */
   takePhoto() {
     if (!this.checkOcrAvailable()) return;
-    wx.chooseMedia({
-      count: 1,
-      mediaType: ['image'],
-      sourceType: ['camera'],
-      sizeType: ['compressed'],
-      success: (res) => this.processOcrImage(res.tempFiles[0].tempFilePath),
+    privacyAuth.ensureAuthorized().then(() => {
+      wx.chooseMedia({
+        count: 1,
+        mediaType: ['image'],
+        sourceType: ['camera'],
+        sizeType: ['compressed'],
+        success: (res) => this.processOcrImage(res.tempFiles[0].tempFilePath),
+      });
+    }).catch(() => {
+      // 用户拒绝隐私授权，静默处理
     });
   },
 
   chooseImage() {
     if (!this.checkOcrAvailable()) return;
-    wx.chooseMedia({
-      count: 1,
-      mediaType: ['image'],
-      sourceType: ['album'],
-      sizeType: ['compressed'],
-      success: (res) => this.processOcrImage(res.tempFiles[0].tempFilePath),
+    privacyAuth.ensureAuthorized().then(() => {
+      wx.chooseMedia({
+        count: 1,
+        mediaType: ['image'],
+        sourceType: ['album'],
+        sizeType: ['compressed'],
+        success: (res) => this.processOcrImage(res.tempFiles[0].tempFilePath),
+      });
+    }).catch(() => {
+      // 用户拒绝隐私授权，静默处理
     });
   },
 

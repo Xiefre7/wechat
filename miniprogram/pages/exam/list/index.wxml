@@ -22,8 +22,24 @@
       </view>
     </scroll-view>
 
+    <!-- 骨架屏：云函数数据加载前展示，消除白屏空档 -->
+    <view class="sk-wrap" wx:if="{{!loaded}}">
+      <view class="sk-exam-list">
+        <view class="sk-exam-card glass-card" wx:for="{{[1, 2, 3]}}" wx:key="*this">
+          <view class="sk-exam-card-left">
+            <view class="sk-exam-icon sk-bone"></view>
+            <view class="sk-exam-info">
+              <view class="sk-exam-name sk-bone"></view>
+              <view class="sk-exam-meta sk-bone"></view>
+            </view>
+          </view>
+          <view class="sk-exam-arrow sk-bone"></view>
+        </view>
+      </view>
+    </view>
+
     <!-- 真题试卷列表 -->
-    <view class="exam-list" wx:if="{{exams.length > 0}}">
+    <view class="exam-list" wx:elif="{{exams.length > 0}}">
       <view
         wx:for="{{exams}}"
         wx:key="_id"
@@ -51,16 +67,10 @@
     </view>
 
     <!-- 空状态 -->
-    <view class="empty-state" wx:if="{{exams.length === 0 && loaded}}">
+    <view class="empty-state" wx:else>
       <image class="empty-icon" src="/images/kzg/file-blue.svg" mode="aspectFit" style="width:64rpx;height:64rpx;"></image>
       <view class="empty-text">暂无真题试卷</view>
       <view class="empty-desc">管理员正在整理中，敬请期待</view>
-    </view>
-
-    <!-- 加载中 -->
-    <view class="empty-state" wx:if="{{!loaded}}">
-      <view class="empty-icon"></view>
-      <view class="empty-text">加载中...</view>
     </view>
 
     <view class="safe-bottom"></view>

@@ -1,0 +1,25 @@
+<view class="placeholder-wrap">
+  <view class="ph-badge"></view>
+  <view class="ph-stem glass-card">
+    <view class="ph-line ph-line-long"></view>
+    <view class="ph-line ph-line-mid"></view>
+  </view>
+  <view class="ph-options">
+    <view class="ph-option glass-card">
+      <view class="ph-key"></view>
+      <view class="ph-line ph-line-full"></view>
+    </view>
+    <view class="ph-option glass-card">
+      <view class="ph-key"></view>
+      <view class="ph-line ph-line-full"></view>
+    </view>
+    <view class="ph-option glass-card">
+      <view class="ph-key"></view>
+      <view class="ph-line ph-line-full"></view>
+    </view>
+    <view class="ph-option glass-card">
+      <view class="ph-key"></view>
+      <view class="ph-line ph-line-full"></view>
+    </view>
+  </view>
+</view>

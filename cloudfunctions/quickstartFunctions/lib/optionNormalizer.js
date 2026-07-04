@@ -494,6 +494,212 @@ function cleanStem(raw) {
   return result.trim();
 }
 
+// ==================== 数学符号规范化 ====================
+
+/**
+ * 规范化数学符号 — 统一常见数学表达的不同写法
+ * 在 parseOcrText 输出后、入库前调用
+ */
+function normalizeMathSymbols(text) {
+  if (!text) return text;
+  var result = text;
+
+  // 全角运算符 → 半角
+  result = result.replace(/＋/g, '+')
+    .replace(/－/g, '-')
+    .replace(/×/g, '\u00D7')   // ×
+    .replace(/÷/g, '\u00F7');  // ÷
+
+  // 全角括号在数学上下文中 → 半角（仅当两侧都是数字/变量时）
+  result = result.replace(/（/g, '(').replace(/）/g, ')');
+
+  // 常见 LaTeX 残留清理
+  result = result.replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '$1/$2');
+  result = result.replace(/\\sqrt\{([^}]*)\}/g, '\u221A($1)');
+  result = result.replace(/\\sqrt\s+(\S)/g, '\u221A$1');
+  result = result.replace(/\\pi/g, '\u03C0');
+  result = result.replace(/\\infty/g, '\u221E');
+  result = result.replace(/\\alpha/g, '\u03B1');
+  result = result.replace(/\\beta/g, '\u03B2');
+  result = result.replace(/\\gamma/g, '\u03B3');
+  result = result.replace(/\\delta/g, '\u03B4');
+  result = result.replace(/\\theta/g, '\u03B8');
+  result = result.replace(/\\lambda/g, '\u03BB');
+  result = result.replace(/\\mu/g, '\u03BC');
+  result = result.replace(/\\sigma/g, '\u03C3');
+  result = result.replace(/\\phi/g, '\u03C6');
+  result = result.replace(/\\omega/g, '\u03C9');
+  result = result.replace(/\\Delta/g, '\u0394');
+  result = result.replace(/\\Sigma/g, '\u03A3');
+  result = result.replace(/\\leq/g, '\u2264');
+  result = result.replace(/\\geq/g, '\u2265');
+  result = result.replace(/\\neq/g, '\u2260');
+  result = result.replace(/\\approx/g, '\u2248');
+  result = result.replace(/\\pm/g, '\u00B1');
+  result = result.replace(/\\mp/g, '\u2213');
+  result = result.replace(/\\cdot/g, '\u00B7');
+  result = result.replace(/\\cdots/g, '\u22EF');
+  result = result.replace(/\\ldots/g, '\u2026');
+  result = result.replace(/\\sum/g, '\u2211');
+  result = result.replace(/\\int/g, '\u222B');
+  result = result.replace(/\\prod/g, '\u220F');
+  result = result.replace(/\\partial/g, '\u2202');
+  result = result.replace(/\\nabla/g, '\u2207');
+  result = result.replace(/\\forall/g, '\u2200');
+  result = result.replace(/\\exists/g, '\u2203');
+  result = result.replace(/\\in\b/g, '\u2208');
+  result = result.replace(/\\notin/g, '\u2209');
+  result = result.replace(/\\cup/g, '\u222A');
+  result = result.replace(/\\cap/g, '\u2229');
+  result = result.replace(/\\emptyset/g, '\u2205');
+  result = result.replace(/\\infty/g, '\u221E');
+  result = result.replace(/\\to/g, '\u2192');
+  result = result.replace(/\\rightarrow/g, '\u2192');
+  result = result.replace(/\\Rightarrow/g, '\u21D2');
+  result = result.replace(/\\leftrightarrow/g, '\u2194');
+  result = result.replace(/\\Leftrightarrow/g, '\u21D4');
+  result = result.replace(/\\angle/g, '\u2220');
+  result = result.replace(/\\perp/g, '\u22A5');
+  result = result.replace(/\\parallel/g, '\u2225');
+  result = result.replace(/\\circ/g, '\u2218');
+  result = result.replace(/\\bullet/g, '\u2022');
+  result = result.replace(/\\star/g, '\u22C6');
+  result = result.replace(/\\deg/g, '\u00B0');
+  result = result.replace(/\\le/g, '\u2264');
+  result = result.replace(/\\ge/g, '\u2265');
+  result = result.replace(/\\ne/g, '\u2260');
+  result = result.replace(/\\sim/g, '\u223C');
+  result = result.replace(/\\equiv/g, '\u2261');
+  result = result.replace(/\\propto/g, '\u221D');
+  result = result.replace(/\\div/g, '\u00F7');
+
+  // \times 已经是 ×
+  result = result.replace(/\\times/g, '\u00D7');
+
+  // 上下标 LaTeX 残留
+  result = result.replace(/\^\{([^}]*)\}/g, function (m, p1) {
+    return formatSuperscriptLatex(p1);
+  });
+  result = result.replace(/_\{([^}]*)\}/g, function (m, p1) {
+    return formatSubscriptLatex(p1);
+  });
+
+  // 单字符上下标
+  result = result.replace(/\^([A-Za-z0-9])/g, function (m, p1) {
+    return formatSuperscriptLatex(p1);
+  });
+  result = result.replace(/_([A-Za-z0-9])/g, function (m, p1) {
+    return formatSubscriptLatex(p1);
+  });
+
+  // 合并多余空格（但保留公式内必要的单空格）
+  result = result.replace(/ {2,}/g, ' ');
+
+  return result;
+}
+
+/** LaTeX 上标转 Unicode */
+function formatSuperscriptLatex(s) {
+  var map = {
+    '0': '\u2070', '1': '\u00B9', '2': '\u00B2', '3': '\u00B3',
+    '4': '\u2074', '5': '\u2075', '6': '\u2076', '7': '\u2077',
+    '8': '\u2078', '9': '\u2079', '+': '\u207A', '-': '\u207B',
+    '=': '\u207C', '(': '\u207D', ')': '\u207E', 'n': '\u207F',
+  };
+  var allConv = true;
+  var result = '';
+  for (var i = 0; i < s.length; i++) {
+    if (map[s[i]]) {
+      result += map[s[i]];
+    } else {
+      allConv = false;
+      break;
+    }
+  }
+  if (allConv) return result;
+  return '^(' + s + ')';
+}
+
+/** LaTeX 下标转 Unicode */
+function formatSubscriptLatex(s) {
+  var map = {
+    '0': '\u2080', '1': '\u2081', '2': '\u2082', '3': '\u2083',
+    '4': '\u2084', '5': '\u2085', '6': '\u2086', '7': '\u2087',
+    '8': '\u2088', '9': '\u2089', '+': '\u208A', '-': '\u208B',
+    '=': '\u208C', '(': '\u208D', ')': '\u208E',
+    'a': '\u2090', 'e': '\u2091', 'o': '\u2092', 'x': '\u2093',
+  };
+  var allConv = true;
+  var result = '';
+  for (var i = 0; i < s.length; i++) {
+    if (map[s[i]]) {
+      result += map[s[i]];
+    } else {
+      allConv = false;
+      break;
+    }
+  }
+  if (allConv) return result;
+  return '_(' + s + ')';
+}
+
+// ==================== 填空题空格检测 ====================
+
+/**
+ * 检测题干中的填空空格数量
+ * 支持的空格标记：
+ *   1. 连续下划线（2+个）：___  ____  _____
+ *   2. 空的中文括号：（）  （ ）
+ *   3. 空的英文括号：()  ( )
+ *   4. 全宽下划线：＿＿＿
+ *
+ * @param {string} stem - 题干文本
+ * @returns {number} 空格数量（至少 1）
+ */
+function countBlanks(stem) {
+  if (!stem) return 1;
+  var text = stem;
+  var count = 0;
+
+  // 1. 连续下划线（半角 2+ 或全角 2+）
+  var underscoreMatches = text.match(/_{2,}|＿{2,}/g);
+  if (underscoreMatches) count += underscoreMatches.length;
+  // 移除已匹配的下划线，避免与括号检测冲突
+  text = text.replace(/_{2,}|＿{2,}/g, ' ');
+
+  // 2. 空的中文括号 （） （ ）
+  var cnBracketMatches = text.match(/（\s*）/g);
+  if (cnBracketMatches) count += cnBracketMatches.length;
+
+  // 3. 空的英文括号 ()  ( )  — 仅匹配括号内只有空白或为空的
+  var enBracketMatches = text.match(/\(\s*\)/g);
+  if (enBracketMatches) count += enBracketMatches.length;
+
+  // 至少 1 个空
+  return Math.max(count, 1);
+}
+
+/**
+ * 将答案字符串按填空数拆分为数组
+ * 支持的答案分隔符：|  |  ｜（全角竖线）
+ * 如果答案数量与空格数不匹配，按空格数截断或补空
+ *
+ * @param {string} answer - 原始答案字符串
+ * @param {number} blankCount - 空格数量
+ * @returns {string[]} 答案数组，长度等于 blankCount
+ */
+function splitFillBlankAnswer(answer, blankCount) {
+  if (!answer || !answer.trim()) {
+    return new Array(blankCount || 1).fill('');
+  }
+  var parts = answer.split(/[|｜]/).map(function (s) { return s.trim(); });
+  var count = blankCount || parts.length || 1;
+  // 补齐或截断
+  while (parts.length < count) parts.push('');
+  if (parts.length > count) parts = parts.slice(0, count);
+  return parts;
+}
+
 // ==================== 导出 ====================
 
 module.exports = {
@@ -526,4 +732,11 @@ module.exports = {
 
   // 题干清洗
   cleanStem: cleanStem,
+
+  // 数学符号规范化
+  normalizeMathSymbols: normalizeMathSymbols,
+
+  // 填空题空格检测
+  countBlanks: countBlanks,
+  splitFillBlankAnswer: splitFillBlankAnswer,
 };

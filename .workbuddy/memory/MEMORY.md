@@ -27,4 +27,7 @@
 - 主色蓝 #007AFF，iOS26 液态玻璃设计风格
 - 主包当前 1.7MB，接近 2MB 上限，后续新增功能需走分包
 - 隐私 API：chooseMedia、chooseMessageFile、chooseAvatar（需配置 requiredPrivateInfos）
+- 隐私指引勾选：用户信息(昵称头像)、选中的照片或视频信息、选中的文件；设备信息(app.js getSystemInfoSync 回退，建议删除)
+- app.json 缺少 requiredPrivateInfos 声明（需补充 chooseMedia, chooseMessageFile）
 - 云函数新增接口需在 quickstartFunctions/index.js switch-case 中注册
+- 云数据库分页陷阱：小程序端 wx.cloud.database() 单次 get 最多 20 条（limit 上限 20）；云函数端单次 get 最多 100 条（limit 上限 1000 但单次仍 100，需 skip 分页）。批量取数必须走云函数 + skip/limit 循环

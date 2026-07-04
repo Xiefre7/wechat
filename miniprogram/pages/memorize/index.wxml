@@ -37,7 +37,14 @@
       </view>
       <view class="memorize-answer-card glass-card" wx:if="{{currentQuestion.isFillBlank}}">
         <view class="memorize-answer-label">正确答案：</view>
-        <view class="memorize-answer-value">{{currentQuestion.content.answer}}</view>
+        <view class="memorize-answer-value">
+          <block wx:if="{{currentQuestion.content.fillBlankAnswers && currentQuestion.content.fillBlankAnswers.length > 0}}">
+            <text wx:for="{{currentQuestion.content.fillBlankAnswers}}" wx:for-item="ans" wx:for-index="bi" wx:key="bi" class="memorize-fill-blank-ans">
+              空{{bi + 1}}：{{ans}}{{bi < currentQuestion.content.fillBlankAnswers.length - 1 ? '  ' : ''}}
+            </text>
+          </block>
+          <text wx:else>{{currentQuestion.content.answer}}</text>
+        </view>
       </view>
       <view class="memorize-answer-card glass-card" wx:if="{{currentQuestion.isShortAnswer}}">
         <view class="memorize-answer-label">参考要点：</view>
@@ -67,12 +74,7 @@
 
     <!-- Action button -->
     <view class="memorize-actions">
-      <button class="not-remember-btn-large" bindtap="markNotMemorized" hover-class="pressing">
-        <view class="memorize-btn-icon">✗</view>
-        <view class="memorize-btn-label">没记住</view>
-      </button>
       <button class="remember-btn-large" bindtap="markMemorized" hover-class="pressing">
-        <view class="memorize-btn-icon">✓</view>
         <view class="memorize-btn-label">记住了</view>
       </button>
     </view>

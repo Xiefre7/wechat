@@ -1,2 +1,10 @@
-<image class="bg-image" src="{{imagePath}}" mode="aspectFill" style="opacity: {{opacity}};"></image>
+<image
+  class="bg-image {{loading ? 'bg-image-loading' : ''}}"
+  src="{{imagePath}}"
+  mode="aspectFill"
+  style="opacity: {{opacity}};"
+  bindload="onImageLoad"
+  binderror="onImageError"
+/>
+<view class="bg-fallback {{overlayClass}}"></view>
 <view class="bg-overlay {{overlayClass}}"></view>

@@ -209,17 +209,42 @@
                 data-q-idx="{{qi}}" data-opt-key="B" catchtap="toggleOptionAnswer">错</view>
             </view>
           </view>
-          <!-- 答案：填空题用文本框 -->
+          <!-- 答案：填空题分空输入 -->
           <view class="edit-group" wx:elif="{{item.type === 'fill_blank'}}">
-            <view class="edit-label">答案 <text class="opt-required">*</text></view>
-            <input
-              class="edit-input glass-input"
-              value="{{item.answer}}"
-              placeholder="多个填空用 | 分隔"
-              data-index="{{qi}}"
-              data-field="answer"
-              bindinput="onItemFieldChange"
-            />
+            <view class="edit-label">
+              答案 <text class="opt-required">*</text>
+              <text class="fill-blank-count">（{{item.fillBlankCount || 1}}个空）</text>
+            </view>
+            <view class="fill-blank-list">
+              <view
+                wx:for="{{item.fillBlankAnswers}}"
+                wx:for-item="blankAns"
+                wx:for-index="blankIdx"
+                wx:key="blankIdx"
+                class="fill-blank-row"
+              >
+                <view class="fill-blank-num">空{{blankIdx + 1}}</view>
+                <input
+                  class="edit-input fill-blank-input glass-input"
+                  value="{{blankAns}}"
+                  placeholder="输入第{{blankIdx + 1}}空的答案"
+                  data-index="{{qi}}"
+                  data-blank-idx="{{blankIdx}}"
+                  bindinput="onFillBlankAnswerChange"
+                />
+                <view
+                  class="fill-blank-del"
+                  data-index="{{qi}}"
+                  data-blank-idx="{{blankIdx}}"
+                  catchtap="removeFillBlank"
+                  wx:if="{{item.fillBlankAnswers.length > 1}}"
+                >✕</view>
+              </view>
+              <view class="fill-blank-add" data-index="{{qi}}" catchtap="addFillBlank" wx:if="{{item.fillBlankAnswers.length < 10}}">
+                <text class="fill-blank-add-icon">+</text>
+                <text class="fill-blank-add-text">添加空格</text>
+              </view>
+            </view>
           </view>
           <!-- 答案：简答题用多行文本框 -->
           <view class="edit-group" wx:elif="{{item.type === 'short_answer'}}">

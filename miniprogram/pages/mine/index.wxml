@@ -7,7 +7,7 @@
     <view class="profile-card glass-card">
       <!-- 头像选择按钮 -->
       <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
-        <image class="avatar" src="{{avatarUrl || ''}}" mode="aspectFill"></image>
+        <image class="avatar" src="{{avatarUrl || '/images/kzg/default-avatar.svg'}}" mode="aspectFill"></image>
         <view class="avatar-edit-hint">点击更换</view>
       </button>
 
@@ -106,6 +106,9 @@
         <image class="feedback-chevron" src="/images/kzg/chevron-blue.svg" mode="aspectFit"></image>
       </view>
     </view>
+
+    <!-- 底部安全区占位，让最后一张卡片可滚出导航栏 -->
+    <view class="safe-bottom"></view>
   </scroll-view>
 
   <view class="bottom-dock">

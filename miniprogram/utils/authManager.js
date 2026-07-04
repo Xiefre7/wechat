@@ -181,12 +181,38 @@ function doLogin(userInfo, callback) {
 
 /**
  * 退出登录
+ *
+ * 完整清除当前账号所有关联数据：
+ * 1. 清除本地缓存中的所有用户数据（打卡、学习统计、斩题进度、错题本、历史记录等）
+ * 2. 清除 openid 和登录态标记
+ * 3. 重置 globalData.userInfo 为默认值
+ *
+ * 重新登录后，doLogin 流程会从云端拉取该账号数据恢复本地缓存
  */
 function logout() {
+  // 1. 清除所有用户绑定的本地缓存数据
+  try {
+    cloudSync.clearAllUserData();
+  } catch (e) {
+    console.warn('[authManager] 清除用户数据失败:', e);
+  }
+
+  // 2. 清除登录态标记、迁移标记、openid
   try {
     wx.removeStorageSync(LOGIN_KEY);
     wx.removeStorageSync(MIGRATED_KEY);
+    wx.removeStorageSync(OPENID_KEY);
   } catch (e) { /* ignore */ }
+
+  // 3. 重置 globalData.userInfo 和 avatarTempUrl 为默认值
+  var app = getApp();
+  if (app && app.globalData) {
+    app.globalData.userInfo = { nickname: '导题斩题小工具用户', avatarUrl: '' };
+    app.globalData.avatarTempUrl = '';
+    try {
+      wx.setStorageSync('userInfo', app.globalData.userInfo);
+    } catch (e) { /* ignore */ }
+  }
 }
 
 function _markLoggedIn() {

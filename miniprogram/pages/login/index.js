@@ -1,15 +1,14 @@
 var app = getApp();
 var authManager = require('../../utils/authManager');
 
-// 白天模式背景图列表（与 app.js BG_LIGHT_LIST 一致）
-var BG_LIGHT_LIST = [
-  "/images/bg-light/1.jpg",
-  "/images/bg-light/2.jpg",
-  "/images/bg-light/3.jpg",
-  "/images/bg-light/4.jpg",
-  "/images/bg-light/5.jpg",
-  "/images/bg-light/7.jpg"
-];
+// 登录页背景图统一从 app.js 获取，以支持云端/本地自动切换
+function pickLoginBg() {
+  var list = app.getBgList ? app.getBgList(false) : [];
+  if (!list || list.length === 0) {
+    list = ["/images/bg-light/1.jpg"];
+  }
+  return list[Math.floor(Math.random() * list.length)];
+}
 
 Page({
   data: {
@@ -27,11 +26,10 @@ Page({
 
   onLoad: function (options) {
     // 随机选一张白天背景图
-    var randomIndex = Math.floor(Math.random() * BG_LIGHT_LIST.length);
     this.setData({
       redirect: options.redirect || '/pages/index/index',
       isDark: app.globalData.effectiveTheme === 'dark',
-      bgImage: BG_LIGHT_LIST[randomIndex]
+      bgImage: pickLoginBg()
     });
   },
 
@@ -39,28 +37,35 @@ Page({
   onChooseAvatar: function (e) {
     var avatarUrl = e.detail.avatarUrl;
     if (!avatarUrl) return;
+    var newHasAvatar = true;
+    // 注意：不能在此处调用 this._checkCanLogin()，因为 this.data 尚未更新
+    // 需要用新值直接计算 canLogin，否则状态会滞后一步
     this.setData({
       avatarUrl: avatarUrl,
-      hasAvatar: true,
-      canLogin: this._checkCanLogin()
+      hasAvatar: newHasAvatar,
+      canLogin: newHasAvatar && this.data.hasNickname && this.data.agreedPrivacy && !this.data.logging
     });
   },
 
   /** 昵称输入（input type="nickname"） */
   onNicknameInput: function (e) {
     var nickname = (e.detail.value || '').trim();
+    var newHasNickname = nickname.length > 0;
+    // 用新值直接计算，避免读取未更新的 this.data
     this.setData({
       nickname: nickname,
-      hasNickname: nickname.length > 0,
-      canLogin: this._checkCanLogin()
+      hasNickname: newHasNickname,
+      canLogin: this.data.hasAvatar && newHasNickname && this.data.agreedPrivacy && !this.data.logging
     });
   },
 
   /** 隐私协议勾选 */
   onPrivacyChange: function (e) {
+    var newAgreed = e.detail.value && e.detail.value.length > 0;
+    // 用新值直接计算，避免读取未更新的 this.data
     this.setData({
-      agreedPrivacy: e.detail.value && e.detail.value.length > 0,
-      canLogin: this._checkCanLogin()
+      agreedPrivacy: newAgreed,
+      canLogin: this.data.hasAvatar && this.data.hasNickname && newAgreed && !this.data.logging
     });
   },
 
@@ -71,6 +76,13 @@ Page({
   /** 点击登录按钮 */
   handleLogin: function () {
     var that = this;
+
+    // 安全网：直接校验隐私协议勾选状态，防止 canLogin 状态不同步时绕过
+    if (!this.data.agreedPrivacy) {
+      wx.showToast({ title: '请先勾选同意隐私协议', icon: 'none' });
+      return;
+    }
+
     if (!this.data.canLogin) {
       if (!this.data.hasAvatar) {
         wx.showToast({ title: '请先选择头像', icon: 'none' });

@@ -69,17 +69,43 @@
       </view>
     </view>
 
-    <!-- 填空题（刷题模式） -->
+    <!-- 填空题（刷题模式）— 分空输入 -->
     <view class="input-area" wx:if="{{currentQuestion.isFillBlank }}">
-      <view class="input-label">请输入答案（多个填空用 | 分隔）</view>
-      <input
-        class="answer-input glass-input"
-        placeholder="输入你的答案..."
-        value="{{userInput}}"
-        bindinput="onInputChange"
-        disabled="{{submitted}}"
-        maxlength="500"
-      />
+      <view class="input-label">请逐空输入答案（共{{currentQuestion.content.fillBlankCount || 1}}个空）</view>
+      <view class="fill-blank-input-list">
+        <view
+          wx:for="{{currentQuestion.content.fillBlankAnswers}}"
+          wx:for-item="blankAns"
+          wx:for-index="blankIdx"
+          wx:key="blankIdx"
+          class="fill-blank-input-row"
+        >
+          <view class="fill-blank-input-num">空{{blankIdx + 1}}</view>
+          <input
+            class="answer-input fill-blank-answer-input glass-input"
+            placeholder="输入第{{blankIdx + 1}}空的答案..."
+            value="{{fillBlankInputs[blankIdx]}}"
+            data-blank-idx="{{blankIdx}}"
+            bindinput="onFillBlankInput"
+            disabled="{{submitted}}"
+            maxlength="500"
+          />
+          <!-- 提交后显示对错标记 -->
+          <view class="fill-blank-result" wx:if="{{submitted}}">
+            <text class="fill-blank-correct" wx:if="{{fillBlankResults[blankIdx]}}">✓</text>
+            <text class="fill-blank-wrong" wx:else>✗</text>
+          </view>
+        </view>
+      </view>
+      <!-- 提交后显示正确答案 -->
+      <view class="fill-blank-correct-answers" wx:if="{{submitted && isCorrect === false}}">
+        <view class="fill-blank-correct-title">正确答案：</view>
+        <view class="fill-blank-correct-list">
+          <text wx:for="{{currentQuestion.content.fillBlankAnswers}}" wx:for-item="ans" wx:for-index="bi" wx:key="bi" class="fill-blank-correct-item">
+            空{{bi + 1}}：{{ans || '（无）'}}
+          </text>
+        </view>
+      </view>
     </view>
 
     <!-- 简答题（刷题模式） -->
@@ -214,6 +240,25 @@
       </button>
       <view class="next-hint" wx:if="{{currentIndex + 1 < totalQuestions}}">
         第 {{currentIndex + 2}} 题 / 共 {{totalQuestions}} 题
+      </view>
+
+      <!-- 答错后加入错题本（与提交按钮下方样式一致） -->
+      <view class="wrong-book-action" wx:if="{{isCorrect === false && !inWrongBook}}">
+        <button
+          class="add-wrong-btn glass-button"
+          bindtap="manualAddToWrong"
+          hover-class="pressing"
+          disabled="{{wrongBookAdding}}"
+        >
+          <image class="add-wrong-icon" src="/images/kzg/book-pen.svg" mode="aspectFit"></image>
+          <view class="add-wrong-label">{{wrongBookAdding ? '添加中...' : '加入错题本'}}</view>
+        </button>
+      </view>
+      <view class="wrong-book-action" wx:if="{{isCorrect === false && inWrongBook}}">
+        <view class="in-wrong-book glass-button">
+          <view class="in-wrong-icon">✓</view>
+          <view class="in-wrong-label">已在错题本</view>
+        </view>
       </view>
     </view>
 

@@ -9,6 +9,23 @@
   pointer-events: none;
 }
 
+/* 加载中：图片半透明，露出下方 CSS 渐变兜底背景 */
+.bg-image-loading {
+  opacity: 0.35 !important;
+}
+
+/* 兜底渐变背景：与玻璃卡片主题一致，图片加载前后视觉连贯 */
+.bg-fallback {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
 .bg-overlay {
   position: fixed;
   top: 0;
@@ -19,13 +36,20 @@
   pointer-events: none;
 }
 
-/* 亮色遮罩 */
+/* 亮色模式：柔和蓝白渐变，模拟水彩背景的整体色调 */
 .bg-overlay-light {
   background: rgba(255, 255, 255, 0.15);
 }
 
-/* 深色遮罩 */
+.bg-fallback.bg-overlay-light {
+  background: linear-gradient(160deg, #E8F3FF 0%, #D7EBFF 45%, #F3F8FF 100%);
+}
+
+/* 深色模式：深蓝灰渐变，与夜间背景协调 */
+.bg-fallback.bg-overlay-dark {
+  background: linear-gradient(160deg, #0B162A 0%, #142240 50%, #0A1020 100%);
+}
+
 .bg-overlay-dark {
   background: rgba(0, 0, 0, 0.20);
 }
-

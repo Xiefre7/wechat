@@ -4,16 +4,22 @@ const checkinManager = require('../../utils/checkinManager');
 const studyTimeManager = require('../../utils/studyTimeManager');
 const authManager = require('../../utils/authManager');
 
+// 模块级预读：redirectTo 创建新页时，第一帧 data 就有真实值，消除闪烁
+var _effectiveTheme = (app && app.globalData) ? (app.globalData.effectiveTheme || 'light') : 'light';
+var _userInfo = (app && app.getUserInfo) ? app.getUserInfo() : { nickname: '导题斩题小工具用户', avatarUrl: '' };
+var _checkinInfo = checkinManager.getCheckinSummary();
+var _slashedItems = slashManager.getAllSlashedItems();
+
 Page({
   data: {
-    isDark: false,
-    avatarUrl: '',
-    nickname: '',
-    totalQuestions: 0,
-    slashCount: 0,
-    studyTimeText: '0小时',
-    checkinStreak: 0,
-    isLoggedIn: false,
+    isDark: _effectiveTheme === 'dark',
+    avatarUrl: _userInfo.avatarUrl || '',
+    nickname: _userInfo.nickname || '导题斩题小工具用户',
+    totalQuestions: studyTimeManager.getTotalQuestions(),
+    slashCount: _slashedItems ? _slashedItems.length : 0,
+    studyTimeText: studyTimeManager.getTotalFormatted(),
+    checkinStreak: _checkinInfo.streak,
+    isLoggedIn: authManager.isLoggedIn(),
     dockItems: [
       { id: "study", label: "学习", icon: "/images/kzg/book-blue.svg", active: false },
       { id: "mine", label: "我的", icon: "/images/kzg/user-blue.svg", active: true }
@@ -21,20 +27,11 @@ Page({
   },
 
   onLoad() {
-    var effectiveTheme = app.globalData.effectiveTheme || 'light';
-    this.setData({ isDark: effectiveTheme === 'dark' });
-
+    // 模块级预读的 _userInfo 可能在退出登录后已过期（JS 模块缓存，不会重新求值）
+    // 因此 onLoad 必须从 app.getUserInfo() 读取最新值，覆盖可能过期的 data 初始值
+    // setData 在首次渲染前执行，不会产生可见闪烁
     var userInfo = app.getUserInfo();
-    this.setData({
-      avatarUrl: userInfo.avatarUrl || '',
-      nickname: userInfo.nickname || '导题斩题小工具用户',
-      isLoggedIn: authManager.isLoggedIn(),
-    });
-
-    this.loadCheckinData();
-    this.loadStatsData();
-
-    // 订阅主题变化，实时更新页面深色状态
+    this._firstShow = true;
     var that = this;
     this._themeCb = function () {
       var theme = app.globalData.effectiveTheme || 'light';
@@ -43,6 +40,10 @@ Page({
     if (app.onThemeChange) {
       app.onThemeChange(this._themeCb);
     }
+    this.setData({
+      avatarUrl: userInfo.avatarUrl || '',
+      nickname: userInfo.nickname || '导题斩题小工具用户',
+    });
   },
 
   onUnload() {
@@ -52,11 +53,29 @@ Page({
   },
 
   onShow() {
+    // 首次 onShow 跳过：onLoad 已通过 setData 刷新了用户信息
+    // 避免页面创建后立即 setData 触发重渲染闪烁
+    if (this._firstShow) {
+      this._firstShow = false;
+      return;
+    }
+
+    // 后续 onShow（从其他页返回时）刷新数据
     var effectiveTheme = app.globalData.effectiveTheme || 'light';
-    this.setData({ isDark: effectiveTheme === 'dark' });
-    this.setData({ isLoggedIn: authManager.isLoggedIn() });
-    this.loadCheckinData();
-    this.loadStatsData();
+    var userInfo = app.getUserInfo();
+    var checkinInfo = checkinManager.getCheckinSummary();
+    var slashedItems = slashManager.getAllSlashedItems();
+
+    this.setData({
+      isDark: effectiveTheme === 'dark',
+      isLoggedIn: authManager.isLoggedIn(),
+      avatarUrl: userInfo.avatarUrl || '',
+      nickname: userInfo.nickname || '导题斩题小工具用户',
+      checkinStreak: checkinInfo.streak,
+      totalQuestions: studyTimeManager.getTotalQuestions(),
+      slashCount: slashedItems ? slashedItems.length : 0,
+      studyTimeText: studyTimeManager.getTotalFormatted(),
+    });
   },
 
   /** 加载真实打卡数据 */
@@ -181,13 +200,22 @@ Page({
     if (authManager.isLoggedIn()) {
       wx.showModal({
         title: '退出登录',
-        content: '退出后本地数据将保留，但新数据不会同步到云端。下次登录可恢复同步。',
+        content: '退出后将清除当前账号的所有本地数据（打卡记录、学习进度、错题本、历史记录等）。重新登录后可从云端恢复。',
         confirmText: '退出登录',
         confirmColor: '#FF3B30',
         success: function (res) {
           if (res.confirm) {
             authManager.logout();
-            that.setData({ isLoggedIn: false });
+            // 退出后立即刷新 UI 为默认值
+            that.setData({
+              isLoggedIn: false,
+              avatarUrl: '',
+              nickname: '导题斩题小工具用户',
+              checkinStreak: 0,
+              totalQuestions: 0,
+              slashCount: 0,
+              studyTimeText: '0小时',
+            });
             wx.showToast({ title: '已退出登录', icon: 'none' });
           }
         }

@@ -565,3 +565,98 @@ button::after {
   .theme-dark .opt-image-remove {
     color: #F87171;
   }
+
+/* ─── 填空题分空输入 ─── */
+.fill-blank-count-hint {
+  font-size: 22rpx;
+  font-weight: 500;
+  color: #95A6BD;
+  margin-left: 4rpx;
+}
+
+.fill-blank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.fill-blank-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.fill-blank-num {
+  flex-shrink: 0;
+  width: 64rpx;
+  text-align: center;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #4A8FEA;
+  background: #EDF4FE;
+  border-radius: 10rpx;
+  padding: 8rpx 0;
+  border: 1rpx solid #A8CDF8;
+}
+
+.fill-blank-input {
+  flex: 1;
+}
+
+.fill-blank-del {
+  flex-shrink: 0;
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22rpx;
+  font-size: 24rpx;
+  color: #FF3B30;
+  background: rgba(255, 59, 48, 0.08);
+}
+
+.fill-blank-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  padding: 12rpx 0;
+  margin-top: 4rpx;
+  border-radius: 12rpx;
+  border: 1rpx dashed #A8CDF8;
+  background: rgba(74, 143, 234, 0.04);
+}
+
+.fill-blank-add-icon {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #4A8FEA;
+}
+
+.fill-blank-add-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #4A8FEA;
+}
+
+.theme-dark .fill-blank-num {
+  color: #60A5FA;
+  background: rgba(37, 99, 235, 0.12);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.theme-dark .fill-blank-del {
+  color: #F87171;
+  background: rgba(255, 59, 48, 0.12);
+}
+
+.theme-dark .fill-blank-add {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.theme-dark .fill-blank-add-icon,
+.theme-dark .fill-blank-add-text {
+  color: #60A5FA;
+}

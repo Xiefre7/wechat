@@ -40,7 +40,7 @@ button::after {
   position: relative;
   width: 100%;
   min-height: 100vh;
-  padding: calc(env(safe-area-inset-top) + 8rpx) 24rpx calc(env(safe-area-inset-bottom) + 88rpx);
+  padding: calc(env(safe-area-inset-top) + 8rpx) 24rpx calc(env(safe-area-inset-bottom) + 140rpx);
   color: #1E2A3A;
   overflow: hidden;
 }
@@ -48,7 +48,7 @@ button::after {
 .mine-scroll {
   position: relative;
   z-index: 2;
-  height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 96rpx);
+  height: calc(100vh - env(safe-area-inset-top) - 8rpx);
   padding-bottom: 16rpx;
 }
 
@@ -451,3 +451,8 @@ button::after {
   .theme-dark .nickname-input:focus {
     background: rgba(255, 255, 255, 0.06);
   }
+
+/* ─── 底部安全区占位 ─── */
+.safe-bottom {
+  height: calc(env(safe-area-inset-bottom) + 140rpx);
+}

@@ -6,16 +6,23 @@ var wrongBook = require('../../utils/wrongBook');
 var practiceHistoryManager = require('../../utils/practiceHistoryManager');
 var authManager = require('../../utils/authManager');
 
+// 模块级预读主题状态，确保第一帧的 theme-dark 类正确
+var _initIsDark = (app && app.globalData) ? (app.globalData.effectiveTheme === 'dark') : false;
+var _initThemeMode = (app && app.globalData) ? (app.globalData.themeMode || 'system') : 'system';
+// 模块级预读用户信息，确保第一帧就有头像 URL，消除 avatar 延迟出现
+var _initUserInfo = (app && app.getUserInfo) ? app.getUserInfo() : { nickname: '', avatarUrl: '' };
+
 Page({
   data: {
+    loading: !getApp().globalData.indexFirstLoaded,
     userName: "早上好",
     subtitle: "准备好开始今天的练习了吗？",
     reviveCount: 0,
-    userAvatar: "",
-    nickname: "",
+    userAvatar: _initUserInfo.avatarUrl || '',
+    nickname: _initUserInfo.nickname || '',
     showUserCard: false,
-    themeMode: "system",
-    isDark: false,
+    themeMode: _initThemeMode,
+    isDark: _initIsDark,
     summary: {
       totalSolved: 0,
       todaySolved: 0,
@@ -76,25 +83,118 @@ Page({
   },
 
   onLoad() {
-    this.updateGreeting();
-    this.loadUserData();
-    this.loadCheckinData();
-    this.loadStudyData();
-    this.loadHistoryData();
+    // 启动优化：合并 5 次独立 setData 为 1 次，减少 JS-Native 桥通信开销
+    // 所有数据均从本地管理器同步读取，不依赖网络请求
+    var hour = new Date().getHours();
+    var userName = "早上好";
+    if (hour >= 12 && hour < 18) {
+      userName = "下午好";
+    } else if (hour >= 18 || hour < 5) {
+      userName = "晚上好";
+    }
+
+    var userInfo = app.getUserInfo();
+    var effectiveTheme = app.globalData.effectiveTheme || 'light';
+    var checkinInfo = checkinManager.getCheckinSummary();
+    var wrongStats = wrongBook.getGlobalStats();
+    var totalQuestions = studyTimeManager.getTotalQuestions();
+    var todayQuestions = studyTimeManager.getTodayQuestions();
+    var recent = practiceHistoryManager.getRecent(5);
+
+    var historyList = recent.map(function (r) {
+      return {
+        id: r.bankId,
+        name: r.bankName,
+        subject: r.subject || 'other',
+        subjectName: r.subjectName || r.category || '',
+        lastTime: r.lastTimeText,
+        progress: r.progress || 0,
+        doneCount: r.totalDone || 0,
+        totalCount: r.totalQuestions || 0
+      };
+    });
+
+    // 标记首页已加载，后续 redirectTo 重建时不再显示骨架屏
+    app.globalData.indexFirstLoaded = true;
+    // 首次 onShow 跳过标记
+    this._firstShow = true;
+
+    this.setData({
+      loading: false,
+      userName: userName,
+      userAvatar: userInfo.avatarUrl || '',
+      themeMode: app.globalData.themeMode || 'system',
+      nickname: userInfo.nickname || '导题斩题小工具用户',
+      isDark: effectiveTheme === 'dark',
+      'summary.checkinStreak': checkinInfo.streak,
+      checkedInToday: checkinInfo.checkedInToday,
+      'summary.weeklyStudyTime': studyTimeManager.getWeeklyFormatted(),
+      'summary.dueReview': wrongStats.dueReview,
+      'summary.totalSolved': totalQuestions,
+      'summary.todaySolved': todayQuestions,
+      'summary.totalWrong': wrongStats.totalWrong,
+      'summary.todayReview': wrongStats.dueReview,
+      'primaryCards[0].metricValue': String(totalQuestions),
+      'primaryCards[0].subMetricValue': String(todayQuestions),
+      'primaryCards[1].metricValue': String(wrongStats.totalWrong),
+      'primaryCards[1].subMetricValue': String(wrongStats.dueReview),
+      historyBanks: historyList
+    });
   },
 
   onShow() {
-    // 每次显示时刷新用户数据（从练习页返回时历史/时长可能已更新）
-    this.loadUserData();
-    this.loadCheckinData();
-    this.loadStudyData();
-    this.loadHistoryData();
-    var revive = slashManager.getReviveNotification();
-    if (revive && !revive.seen && revive.count > 0) {
-      this.setData({ reviveCount: revive.count });
-    } else {
-      this.setData({ reviveCount: 0 });
+    // 首次 onShow 跳过：onLoad 已完成所有数据设置
+    // 避免页面创建后立即 setData 触发重渲染闪烁
+    if (this._firstShow) {
+      this._firstShow = false;
+      return;
     }
+
+    // 后续 onShow（从其他页返回时）刷新数据
+    var userInfo = app.getUserInfo();
+    var effectiveTheme = app.globalData.effectiveTheme || 'light';
+    var checkinInfo = checkinManager.getCheckinSummary();
+    var wrongStats = wrongBook.getGlobalStats();
+    var totalQuestions = studyTimeManager.getTotalQuestions();
+    var todayQuestions = studyTimeManager.getTodayQuestions();
+    var recent = practiceHistoryManager.getRecent(5);
+
+    var historyList = recent.map(function (r) {
+      return {
+        id: r.bankId,
+        name: r.bankName,
+        subject: r.subject || 'other',
+        subjectName: r.subjectName || r.category || '',
+        lastTime: r.lastTimeText,
+        progress: r.progress || 0,
+        doneCount: r.totalDone || 0,
+        totalCount: r.totalQuestions || 0
+      };
+    });
+
+    var revive = slashManager.getReviveNotification();
+    var reviveCount = (revive && !revive.seen && revive.count > 0) ? revive.count : 0;
+
+    this.setData({
+      userAvatar: userInfo.avatarUrl || '',
+      themeMode: app.globalData.themeMode || 'system',
+      nickname: userInfo.nickname || '导题斩题小工具用户',
+      isDark: effectiveTheme === 'dark',
+      'summary.checkinStreak': checkinInfo.streak,
+      checkedInToday: checkinInfo.checkedInToday,
+      'summary.weeklyStudyTime': studyTimeManager.getWeeklyFormatted(),
+      'summary.dueReview': wrongStats.dueReview,
+      'summary.totalSolved': totalQuestions,
+      'summary.todaySolved': todayQuestions,
+      'summary.totalWrong': wrongStats.totalWrong,
+      'summary.todayReview': wrongStats.dueReview,
+      'primaryCards[0].metricValue': String(totalQuestions),
+      'primaryCards[0].subMetricValue': String(todayQuestions),
+      'primaryCards[1].metricValue': String(wrongStats.totalWrong),
+      'primaryCards[1].subMetricValue': String(wrongStats.dueReview),
+      historyBanks: historyList,
+      reviveCount: reviveCount
+    });
   },
 
   loadUserData() {

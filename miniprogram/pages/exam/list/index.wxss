@@ -258,3 +258,94 @@ button::after { border: 0; }
   color: #5AC8FA;
   background: rgba(90,200,250,0.12);
 }
+
+/* ─── 骨架屏 ─── */
+/* shimmer 基础动画 — 蓝色折射光带从右向左扫过 */
+.sk-bone {
+  background: linear-gradient(90deg,
+    rgba(74, 143, 234, 0.06) 25%,
+    rgba(74, 143, 234, 0.14) 50%,
+    rgba(74, 143, 234, 0.06) 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes sk-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk-bone {
+    animation: none;
+    background: rgba(74, 143, 234, 0.08);
+  }
+}
+
+.sk-wrap {
+  padding-bottom: 16rpx;
+}
+
+/* 真题卡片骨架 — 匹配 .exam-card 尺寸 */
+.sk-exam-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+.sk-exam-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 28rpx;
+  padding: 24rpx;
+  min-height: 100rpx;
+}
+.sk-exam-card-left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex: 1;
+  min-width: 0;
+}
+.sk-exam-icon {
+  flex-shrink: 0;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 20rpx;
+}
+.sk-exam-info {
+  flex: 1;
+  min-width: 0;
+}
+.sk-exam-name {
+  height: 28rpx;
+  width: 220rpx;
+  border-radius: 6rpx;
+}
+.sk-exam-meta {
+  height: 22rpx;
+  width: 140rpx;
+  border-radius: 4rpx;
+  margin-top: 10rpx;
+}
+.sk-exam-arrow {
+  flex-shrink: 0;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 22rpx;
+}
+
+/* 骨架屏深色模式 */
+.theme-dark .sk-bone {
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 75%);
+  background-size: 200% 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-dark .sk-bone {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}

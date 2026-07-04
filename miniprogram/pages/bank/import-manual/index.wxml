@@ -104,7 +104,7 @@
       </view>
 
       <!-- 答案 -->
-      <view class="form-group" wx:if="{{form.type !== 'short_answer'}}">
+      <view class="form-group" wx:if="{{form.type !== 'short_answer' && form.type !== 'fill_blank'}}">
         <view class="form-label">答案 <text class="required">*</text></view>
         <view wx:if="{{form.type === 'single_choice' || form.type === 'multi_choice'}}">
           <view class="answer-selector">
@@ -134,15 +134,43 @@
             >错</view>
           </view>
         </view>
-        <input
-          wx:if="{{form.type === 'fill_blank'}}"
-          class="form-input glass-input"
-          placeholder="请输入答案（多个填空用 | 分隔）"
-          value="{{form.answer}}"
-          bindinput="onFieldChange"
-          data-field="answer"
-          maxlength="500"
-        />
+      </view>
+
+      <!-- 填空题分空答案 -->
+      <view class="form-group" wx:if="{{form.type === 'fill_blank'}}">
+        <view class="form-label">
+          答案 <text class="required">*</text>
+          <text class="fill-blank-count-hint">（{{form.fillBlankCount || 1}}个空）</text>
+        </view>
+        <view class="fill-blank-list">
+          <view
+            wx:for="{{form.fillBlankAnswers}}"
+            wx:for-item="blankAns"
+            wx:for-index="blankIdx"
+            wx:key="blankIdx"
+            class="fill-blank-row"
+          >
+            <view class="fill-blank-num">空{{blankIdx + 1}}</view>
+            <input
+              class="form-input fill-blank-input glass-input"
+              value="{{blankAns}}"
+              placeholder="输入第{{blankIdx + 1}}空的答案"
+              data-blank-idx="{{blankIdx}}"
+              bindinput="onFillBlankInput"
+              maxlength="500"
+            />
+            <view
+              class="fill-blank-del"
+              data-blank-idx="{{blankIdx}}"
+              bindtap="removeFillBlank"
+              wx:if="{{form.fillBlankAnswers.length > 1}}"
+            >✕</view>
+          </view>
+          <view class="fill-blank-add" bindtap="addFillBlank" wx:if="{{form.fillBlankAnswers.length < 10}}">
+            <text class="fill-blank-add-icon">+</text>
+            <text class="fill-blank-add-text">添加空格</text>
+          </view>
+        </view>
       </view>
 
       <!-- 简答题答案 -->

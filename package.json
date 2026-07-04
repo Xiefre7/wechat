@@ -1,0 +1,27 @@
+{
+  "name": "miniprogram-1",
+  "version": "1.0.0",
+  "description": "这是云开发的快速启动指引，其中演示了如何上手使用云开发的三大基础能力：",
+  "main": "index.js",
+  "scripts": {
+    "analyze:resources": "node scripts/analyze-resources.js",
+    "compress:bg": "node scripts/compress-bg.js",
+    "convert:bg:webp": "node scripts/convert-bg-webp.js",
+    "prepare:cloud-bg": "node scripts/prepare-cloud-bg.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Xiefre7/wechat.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Xiefre7/wechat/issues"
+  },
+  "homepage": "https://github.com/Xiefre7/wechat#readme",
+  "devDependencies": {
+    "sharp": "^0.35.3"
+  }
+}

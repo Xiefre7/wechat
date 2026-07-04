@@ -126,6 +126,7 @@ button::after { border: 0; }
   gap: 16rpx;
   padding: 24rpx;
   min-height: 100rpx;
+  position: relative;
 }
 
 .bank-icon-wrap {
@@ -155,6 +156,7 @@ button::after { border: 0; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 210rpx;
 }
 
 .bank-meta {
@@ -191,7 +193,7 @@ button::after { border: 0; }
 .bank-right {
   display: flex;
   align-items: center;
-  gap: 12rpx;
+  gap: 8rpx;
   flex-shrink: 0;
 }
 
@@ -233,6 +235,8 @@ button::after { border: 0; }
   background: #F0F4FA;
   transition: transform 200ms ease;
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .bank-arrow.rotated {
@@ -246,14 +250,16 @@ button::after { border: 0; }
 
 /* ─── 删除按钮 ─── */
 .bank-delete {
-  width: 88rpx;
-  height: 88rpx;
+  width: 44rpx;
+  height: 44rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 44rpx;
+  border-radius: 22rpx;
   background: #FEF2F2;
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
   transition: opacity 180ms ease;
 }
 
@@ -262,20 +268,31 @@ button::after { border: 0; }
 }
 
 .delete-icon {
-  width: 26rpx;
-  height: 26rpx;
+  width: 24rpx;
+  height: 24rpx;
 }
 
 /* ─── 分享按钮 ─── */
+/* 分享按钮回到 flex 流内，点击热区精确限定在可见内容（图标+文字）上。
+   不再使用绝对定位覆盖题库名称区域，避免卡片其他区域被误判为分享点击。
+   负 margin-right 使按钮视觉上更靠右，紧贴删除按钮。 */
 .share-btn {
+  position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6rpx;
-  padding: 0;
-  padding-left: 190rpx !important;
-  border-radius: 0;
+  padding: 8rpx 16rpx;
+  margin-right: -20rpx;
+  border-radius: 12rpx;
   background: transparent;
   opacity: 0.5;
+  z-index: 2;
+  min-width: 0;
+}
+
+.share-btn:active {
+  opacity: 0.8;
 }
 
 .share-icon {
@@ -461,3 +478,117 @@ button::after { border: 0; }
   .theme-dark .bank-arrow { background: rgba(255,255,255,0.06); }
   .theme-dark .bank-delete { background: rgba(255, 59, 48, 0.12); }
   .theme-dark .progress-bar { background: rgba(255,255,255,0.1); }
+
+/* ─── 骨架屏 ─── */
+/* shimmer 基础动画 — 蓝色折射光带从右向左扫过 */
+.sk-bone {
+  background: linear-gradient(90deg,
+    rgba(74, 143, 234, 0.06) 25%,
+    rgba(74, 143, 234, 0.14) 50%,
+    rgba(74, 143, 234, 0.06) 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes sk-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk-bone {
+    animation: none;
+    background: rgba(74, 143, 234, 0.08);
+  }
+}
+
+.sk-wrap {
+  padding-bottom: 16rpx;
+}
+
+/* 页面头骨架 — 匹配 .page-header 尺寸 */
+.sk-header {
+  padding: 20rpx 4rpx 8rpx;
+}
+.sk-title {
+  height: 44rpx;
+  width: 200rpx;
+  border-radius: 8rpx;
+}
+.sk-desc {
+  height: 26rpx;
+  width: 340rpx;
+  border-radius: 6rpx;
+  margin-top: 12rpx;
+}
+
+/* Tab 骨架 — 匹配 .tab-bar 尺寸 */
+.sk-tab-bar {
+  display: flex;
+  gap: 12rpx;
+  margin: 20rpx 0 18rpx;
+}
+.sk-tab {
+  flex: 1;
+  height: 54rpx;
+  border-radius: 20rpx;
+}
+
+/* 题库卡片骨架 — 匹配 .bank-card 尺寸 */
+.sk-bank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+.sk-bank-card {
+  border-radius: 28rpx;
+}
+.sk-bank-header {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx;
+  min-height: 100rpx;
+}
+.sk-bank-icon {
+  flex-shrink: 0;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 20rpx;
+}
+.sk-bank-info {
+  flex: 1;
+  min-width: 0;
+}
+.sk-bank-name {
+  height: 28rpx;
+  width: 220rpx;
+  border-radius: 6rpx;
+}
+.sk-bank-meta {
+  height: 22rpx;
+  width: 160rpx;
+  border-radius: 4rpx;
+  margin-top: 10rpx;
+}
+.sk-bank-arrow {
+  flex-shrink: 0;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 22rpx;
+}
+
+/* 骨架屏深色模式 */
+.theme-dark .sk-bone {
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 75%);
+  background-size: 200% 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-dark .sk-bone {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}

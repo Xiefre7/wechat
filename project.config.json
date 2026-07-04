@@ -75,5 +75,43 @@
     "tabIndent": "insertSpaces",
     "tabSize": 2
   },
-  "simulatorPluginLibVersion": {}
+  "simulatorPluginLibVersion": {},
+  "skeletonConfig": {
+    "global": {
+      "loading": "shine",
+      "outline": {
+        "remain": true,
+        "replace": "none"
+      },
+      "text": {
+        "color": "#E8EEF7"
+      },
+      "image": {
+        "shape": "circle",
+        "color": "#E8EEF7",
+        "shapeOpposite": []
+      },
+      "button": {
+        "color": "#E8EEF7",
+        "excludes": []
+      },
+      "pseudo": {
+        "color": "#E8EEF7",
+        "shape": "circle",
+        "shapeOpposite": []
+      },
+      "excludes": [],
+      "remove": [],
+      "empty": [],
+      "hide": [],
+      "grayBlock": [],
+      "showNative": false,
+      "backgroundColor": "transparent",
+      "mode": "fullscreen",
+      "templateName": "skeleton",
+      "cssUnit": "rpx",
+      "decimal": 4
+    },
+    "pages": {}
+  }
 }

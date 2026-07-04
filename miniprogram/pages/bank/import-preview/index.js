@@ -89,20 +89,40 @@ Page({
           console.warn('[import-preview onLoad] Null question at index', idx);
           return null;
         }
+
+        var qType = q.type || 'single_choice';
+        var qAnswer = q.answer || '';
+
+        // 填空题：自动从 answer 字段初始化空格数据（兼容手动录入等未设置 fillBlank* 的场景）
+        var fbCount = q.fillBlankCount || 0;
+        var fbAnswers = (q.fillBlankAnswers || []).slice();
+        if (qType === 'fill_blank') {
+          if (fbCount === 0 || fbAnswers.length === 0) {
+            if (qAnswer.trim()) {
+              fbAnswers = qAnswer.split(/[|｜]/).map(function (s) { return s.trim(); });
+              fbCount = fbAnswers.length;
+            } else {
+              fbCount = 1;
+              fbAnswers = [''];
+            }
+          }
+        }
+
         return {
           _idx: idx,
-          type: q.type || 'single_choice',
+          type: qType,
           stem: q.stem || '',
           _stemImages: (q.stemImages || []).slice(),
           _explanationImages: (q.explanationImages || []).slice(),
           options: (q.options || []).map(function(opt) {
-            var ans = q.answer || '';
-            return { key: opt.key, text: opt.text || '', _image: opt.image || '', _sel: ans.indexOf(opt.key) > -1 };
+            return { key: opt.key, text: opt.text || '', _image: opt.image || '', _sel: qAnswer.indexOf(opt.key) > -1 };
           }),
-          answer: q.answer || '',
+          answer: qAnswer,
           explanation: q.explanation || '',
+          fillBlankCount: fbCount,
+          fillBlankAnswers: fbAnswers,
           _editing: false,
-          _typeLabel: TYPE_LABELS[q.type] || '未知',
+          _typeLabel: TYPE_LABELS[qType] || '未知',
           _detectionConfidence: q._detectionConfidence || 'high',
           _detectionNote: q._detectionNote || '',
         };
@@ -213,6 +233,9 @@ Page({
       options: newOptions,
       // 切换题型时清除答案（选项结构可能变化）
       answer: '',
+      // 切到填空题时初始化 1 个空
+      fillBlankCount: value === 'fill_blank' ? 1 : 0,
+      fillBlankAnswers: value === 'fill_blank' ? [''] : [],
     };
     this.setData({ questions });
   },
@@ -231,6 +254,62 @@ Page({
           });
         }
       },
+    });
+  },
+
+  /* ─── 填空题空格管理 ─── */
+
+  // 单个空格答案输入
+  onFillBlankAnswerChange(e) {
+    const { index, blankIdx } = e.currentTarget.dataset;
+    var value = e.detail.value;
+    var questions = this.data.questions;
+    var q = questions[index];
+    var answers = (q.fillBlankAnswers || []).slice();
+    while (answers.length <= blankIdx) answers.push('');
+    answers[blankIdx] = value;
+    var joinedAnswer = answers.join('|');
+    this.setData({
+      ['questions[' + index + '].fillBlankAnswers']: answers,
+      ['questions[' + index + '].answer']: joinedAnswer,
+    });
+  },
+
+  // 新增一个空格
+  addFillBlank(e) {
+    const { index } = e.currentTarget.dataset;
+    var questions = this.data.questions;
+    var q = questions[index];
+    var answers = (q.fillBlankAnswers || []).slice();
+    if (answers.length >= 10) {
+      wx.showToast({ title: '最多 10 个空', icon: 'none' });
+      return;
+    }
+    answers.push('');
+    var count = answers.length;
+    this.setData({
+      ['questions[' + index + '].fillBlankAnswers']: answers,
+      ['questions[' + index + '].fillBlankCount']: count,
+      ['questions[' + index + '].answer']: answers.join('|'),
+    });
+  },
+
+  // 删除一个空格
+  removeFillBlank(e) {
+    const { index, blankIdx } = e.currentTarget.dataset;
+    var questions = this.data.questions;
+    var q = questions[index];
+    var answers = (q.fillBlankAnswers || []).slice();
+    if (answers.length <= 1) {
+      wx.showToast({ title: '至少保留 1 个空', icon: 'none' });
+      return;
+    }
+    answers.splice(blankIdx, 1);
+    var count = answers.length;
+    this.setData({
+      ['questions[' + index + '].fillBlankAnswers']: answers,
+      ['questions[' + index + '].fillBlankCount']: count,
+      ['questions[' + index + '].answer']: answers.join('|'),
     });
   },
 
@@ -507,6 +586,8 @@ Page({
         explanation: q.explanation ? q.explanation.trim() : '',
         stemImages: (q._stemImages || []).filter(function(p) { return p && p.indexOf('cloud://') === 0; }),
         explanationImages: (q._explanationImages || []).filter(function(p) { return p && p.indexOf('cloud://') === 0; }),
+        fillBlankCount: q.fillBlankCount || 0,
+        fillBlankAnswers: (q.fillBlankAnswers || []).map(function(a) { return (a || '').trim(); }),
       };
     });
 

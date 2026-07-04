@@ -3,9 +3,102 @@
   <view class="ambient-strip"></view>
 
   <scroll-view class="home-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 骨架屏：数据加载前展示，消除冷启动白屏空档 -->
+    <view class="sk-wrap" wx:if="{{loading}}">
+      <view class="sk-hero">
+        <view class="sk-avatar sk-bone"></view>
+        <view class="sk-hero-text">
+          <view class="sk-greeting sk-bone"></view>
+          <view class="sk-subtitle sk-bone"></view>
+        </view>
+      </view>
+
+      <view class="sk-ribbon glass-card">
+        <view class="sk-ribbon-item">
+          <view class="sk-ribbon-num sk-bone"></view>
+          <view class="sk-ribbon-label sk-bone"></view>
+        </view>
+        <view class="sk-ribbon-div"></view>
+        <view class="sk-ribbon-item">
+          <view class="sk-ribbon-num sk-bone"></view>
+          <view class="sk-ribbon-label sk-bone"></view>
+        </view>
+        <view class="sk-ribbon-div"></view>
+        <view class="sk-ribbon-item">
+          <view class="sk-ribbon-num sk-bone"></view>
+          <view class="sk-ribbon-label sk-bone"></view>
+        </view>
+      </view>
+
+      <view class="sk-card-row">
+        <view class="sk-card glass-card">
+          <view class="sk-card-icon sk-bone"></view>
+          <view class="sk-card-title sk-bone"></view>
+          <view class="sk-card-desc sk-bone"></view>
+          <view class="sk-card-metrics">
+            <view class="sk-metric sk-bone"></view>
+            <view class="sk-metric-div"></view>
+            <view class="sk-metric sk-bone"></view>
+          </view>
+          <view class="sk-card-arrow sk-bone"></view>
+        </view>
+        <view class="sk-card glass-card">
+          <view class="sk-card-icon sk-bone"></view>
+          <view class="sk-card-title sk-bone"></view>
+          <view class="sk-card-desc sk-bone"></view>
+          <view class="sk-card-metrics">
+            <view class="sk-metric sk-bone"></view>
+            <view class="sk-metric-div"></view>
+            <view class="sk-metric sk-bone"></view>
+          </view>
+          <view class="sk-card-arrow sk-bone"></view>
+        </view>
+      </view>
+
+      <view class="sk-quick-row">
+        <view class="sk-quick">
+          <view class="sk-quick-icon sk-bone"></view>
+          <view class="sk-quick-label sk-bone"></view>
+        </view>
+        <view class="sk-quick">
+          <view class="sk-quick-icon sk-bone"></view>
+          <view class="sk-quick-label sk-bone"></view>
+        </view>
+      </view>
+
+      <view class="sk-history">
+        <view class="sk-history-header">
+          <view class="sk-history-title sk-bone"></view>
+          <view class="sk-history-more sk-bone"></view>
+        </view>
+        <view class="sk-history-card glass-card">
+          <view class="sk-history-left">
+            <view class="sk-history-name sk-bone"></view>
+            <view class="sk-history-meta sk-bone"></view>
+          </view>
+          <view class="sk-history-right">
+            <view class="sk-history-bar sk-bone"></view>
+            <view class="sk-history-count sk-bone"></view>
+          </view>
+        </view>
+        <view class="sk-history-card glass-card">
+          <view class="sk-history-left">
+            <view class="sk-history-name sk-bone"></view>
+            <view class="sk-history-meta sk-bone"></view>
+          </view>
+          <view class="sk-history-right">
+            <view class="sk-history-bar sk-bone"></view>
+            <view class="sk-history-count sk-bone"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 真实内容 -->
+    <block wx:else>
     <view class="hero-copy">
       <view class="hero-avatar" bindtap="handleAvatarTap" hover-class="pressing">
-        <image class="mini-avatar" src="{{userAvatar || ''}}" mode="aspectFill"></image>
+        <image class="mini-avatar" src="{{userAvatar || '/images/kzg/default-avatar.svg'}}" mode="aspectFill"></image>
       </view>
       <view class="hero-left">
         <view class="greeting">{{userName}}</view>
@@ -120,6 +213,7 @@
         <view class="history-empty-text">还没有练习记录，去题库开始刷题吧</view>
       </view>
     </view>
+    </block>
 
   </scroll-view>
 
@@ -157,7 +251,7 @@
   <!-- 用户信息卡片弹窗 -->
   <view class="user-card-overlay {{showUserCard ? 'visible' : ''}}" bindtap="hideUserCard">
     <view class="user-card glass-card" catchtap="noop">
-      <image class="user-card-avatar" src="{{userAvatar || ''}}" mode="aspectFill"></image>
+      <image class="user-card-avatar" src="{{userAvatar || '/images/kzg/default-avatar.svg'}}" mode="aspectFill"></image>
       <view class="user-card-nickname">{{nickname || '导题斩题小工具用户'}}</view>
       <view class="user-card-stats">
         <view class="user-card-stat">

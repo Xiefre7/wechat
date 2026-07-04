@@ -186,9 +186,7 @@ function applyCloudToLocal(cloudData) {
  */
 function hasLocalData() {
   try {
-    var keys = ['checkin_dates', 'study_time_total', 'total_questions_answered',
-                'practice_history', 'classSlashProgress', 'questionSlashProgress',
-                'kpProgress', 'wrongBook', 'errorTracking'];
+    var keys = _USER_DATA_KEYS();
     for (var i = 0; i < keys.length; i++) {
       var val = wx.getStorageSync(keys[i]);
       if (val && (typeof val === 'object' ? Object.keys(val).length > 0 : val > 0)) {
@@ -199,6 +197,79 @@ function hasLocalData() {
   return false;
 }
 
+/**
+ * 所有与用户账号绑定的本地缓存 key 列表
+ * 退出登录时需要全部清除，防止账号间数据残留
+ *
+ * 注意：以下 key 不在此列表中（设备级偏好，非用户绑定）：
+ * - themeMode（主题模式）
+ * - user_logged_in / data_migrated（由 authManager 单独管理）
+ * - user_openid（由 authManager 单独管理）
+ * - userInfo（由 app.js 单独管理）
+ */
+function _USER_DATA_KEYS() {
+  return [
+    // 打卡
+    'checkin_dates',
+    // 学习时长统计
+    'study_time_weekly',
+    'study_time_total',
+    'total_questions_answered',
+    'today_questions_answered',
+    // 练习历史
+    'practice_history',
+    // 斩题进度
+    'classSlashProgress',
+    'questionSlashProgress',
+    'kpProgress',
+    'slashRollbackDaily',
+    'reviveNotification',
+    // 错题本
+    'wrongBook',
+    'errorTracking',
+    // 云同步待重试标记
+    'cloud_sync_pending',
+    // 导入草稿 / 预览数据
+    'manualDraft',
+    'importPreviewData',
+    // 练习会话临时数据
+    'practiceSession',
+    'practiceResult',
+    // 错题复习列表临时数据
+    'wrongReviewList',
+    // OCR 使用次数记录
+    'ocrUsage',
+    // 预解析的头像 temp URL（退出登录后失效，重新登录时重新生成）
+    'avatarTempUrl',
+  ];
+}
+
+/**
+ * 清除所有与当前用户账号绑定的本地缓存数据
+ *
+ * 退出登录时调用，确保：
+ * 1. 头像和昵称重置为默认值（由 authManager 负责 app.globalData.userInfo）
+ * 2. 打卡情况清零
+ * 3. 学习时长归零
+ * 4. 自导入题库草稿清空（云端题库不受影响，重新登录后从云端拉取）
+ * 5. 历史记录清除
+ * 6. 斩题进度清零
+ * 7. 错题本清空
+ * 8. 其他所有个性化数据移除
+ *
+ * 重新登录后，doLogin 流程会从云端拉取该账号数据写入本地
+ */
+function clearAllUserData() {
+  var keys = _USER_DATA_KEYS();
+  for (var i = 0; i < keys.length; i++) {
+    try {
+      wx.removeStorageSync(keys[i]);
+    } catch (e) {
+      console.warn('[cloudSync] 清除 ' + keys[i] + ' 失败:', e);
+    }
+  }
+}
+
 module.exports = {
   fetchCloudData: fetchCloudData,
   saveSection: saveSection,
@@ -206,4 +277,5 @@ module.exports = {
   collectLocalData: collectLocalData,
   applyCloudToLocal: applyCloudToLocal,
   hasLocalData: hasLocalData,
+  clearAllUserData: clearAllUserData,
 };

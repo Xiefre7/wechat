@@ -1,7 +1,11 @@
 {
   "usingComponents": {
     "background-image": "/components/background-image/index",
-    "question-card": "/components/question-card/index"
+    "question-card": "/components/question-card/index",
+    "question-card-placeholder": "/components/question-card-placeholder/index"
+  },
+  "componentPlaceholder": {
+    "question-card": "question-card-placeholder"
   },
   "navigationStyle": "custom"
 }

@@ -4,6 +4,7 @@ const imageUploader = require('../../utils/imageUploader');
 const studyTimeManager = require('../../utils/studyTimeManager');
 const practiceHistoryManager = require('../../utils/practiceHistoryManager');
 const questionData = require('../../utils/questionData');
+const progressManager = require('../../utils/progressManager');
 
 /** 斩题阈值：近10题正确率达到此值触发 */
 const SLASH_THRESHOLD = 0.8;
@@ -41,6 +42,8 @@ Page({
     selectedAnswer: '',
     selectedAnswers: {},
     userInput: '',
+    fillBlankInputs: [],
+    fillBlankResults: [],
     submitted: false,
     isCorrect: null,
     showExplanation: false,
@@ -101,7 +104,19 @@ Page({
     }
 
     const totalQuestions = session.questions.length;
-    const firstQuestion = this.formatQuestion(session.questions[0]);
+    // 进度记忆：从上次退出的位置继续（仅自导入题库）
+    var startIndex = 0;
+    if (session.bankType === 'custom' && session.bankId) {
+      startIndex = progressManager.getProgress(session.bankId, 'practice', totalQuestions);
+      if (startIndex > 0) {
+        wx.showToast({
+          title: '从第' + (startIndex + 1) + '题继续',
+          icon: 'none',
+          duration: 1500,
+        });
+      }
+    }
+    const startQuestion = this.formatQuestion(session.questions[startIndex]);
 
     this.setData({
       bankName: session.bankName,
@@ -111,20 +126,23 @@ Page({
       knowledgePointName: session.knowledgePointName || '',
       questions: session.questions,
       totalQuestions,
-      currentIndex: 0,
-      currentQuestion: firstQuestion,
-      processedOptions: this.buildOptionClasses(firstQuestion, {
+      currentIndex: startIndex,
+      currentQuestion: startQuestion,
+      processedOptions: this.buildOptionClasses(startQuestion, {
         isMemorizeMode: false,
-        isMultiChoice: firstQuestion.isMulti || false,
-        isShortAnswer: firstQuestion.isShortAnswer || false,
+        isMultiChoice: startQuestion.isMulti || false,
+        isShortAnswer: startQuestion.isShortAnswer || false,
       }),
-      questionTypeLabel: TYPE_LABELS[firstQuestion.type] || '未知题型',
-      questionNumber: 1,
+      questionTypeLabel: TYPE_LABELS[startQuestion.type] || '未知题型',
+      questionNumber: startIndex + 1,
       sessionStartTime: Date.now(),
       questionStartTime: Date.now(),
       questionClassId: session.questionClassId || '',
       questionClassName: session.questionClassName || '',
       allClassIds: session.allClassIds || [],
+      fillBlankInputs: startQuestion.isFillBlank
+        ? new Array(startQuestion.content.fillBlankCount || 1).fill('')
+        : [],
     });
 
     this._sessionAnswers = [];
@@ -138,6 +156,30 @@ Page({
     this.setData({ isDark: effectiveTheme === 'dark' });
   },
 
+  onHide() {
+    // 页面隐藏（包括滑出/切换到其他页面）时自动保存进度
+    this._saveCurrentProgress();
+  },
+
+  onUnload() {
+    // 页面卸载时自动保存进度
+    this._saveCurrentProgress();
+  },
+
+  /* ─── 保存当前答题进度（仅自导入题库）─── */
+  _saveCurrentProgress() {
+    // 完成答题后不再保存进度（避免覆盖已清除的进度）
+    if (this._sessionFinished) return;
+    if (this.data.bankType === 'custom' && this.data.bankId && this.data.totalQuestions > 0) {
+      progressManager.saveProgress(
+        this.data.bankId,
+        'practice',
+        this.data.currentIndex,
+        this.data.totalQuestions
+      );
+    }
+  },
+
   /* ─── 格式化题目 ─── */
   formatQuestion(q) {
     // 统一两种数据结构：官方题库用 q.content.*，自导入题库用 q.* 扁平结构
@@ -148,14 +190,49 @@ Page({
       explanation: q.explanation || '',
       stemImages: q.stemImages || [],
       explanationImages: q.explanationImages || [],
+      fillBlankCount: q.fillBlankCount || 0,
+      fillBlankAnswers: q.fillBlankAnswers || [],
     };
-    const hasStemImages = (content.stemImages && content.stemImages.length > 0);
-    const hasExplanationImages = (content.explanationImages && content.explanationImages.length > 0);
+
+    // 兼容：content 存在但缺少 stemImages/explanationImages 时，回退到顶层
+    var stemImages = content.stemImages || q.stemImages || [];
+    var explanationImages = content.explanationImages || q.explanationImages || [];
+
+    // 填空题：确保有空格数量和答案数组（兼容旧数据）
+    var fbCount = content.fillBlankCount || q.fillBlankCount || 0;
+    var fbAnswers = (content.fillBlankAnswers || q.fillBlankAnswers || []).slice();
+    if (q.type === 'fill_blank') {
+      if (fbCount === 0) {
+        // 兼容旧数据：从 answer 字段按 | 拆分推断
+        var rawAns = (content.answer || '').trim();
+        if (rawAns) {
+          fbAnswers = rawAns.split(/[|｜]/).map(function(s) { return s.trim(); });
+          fbCount = fbAnswers.length;
+        } else {
+          fbCount = 1;
+          fbAnswers = [''];
+        }
+      } else if (fbAnswers.length === 0) {
+        var rawAns2 = (content.answer || '').trim();
+        if (rawAns2) {
+          fbAnswers = rawAns2.split(/[|｜]/).map(function(s) { return s.trim(); });
+        } else {
+          fbAnswers = new Array(fbCount).fill('');
+        }
+      }
+    }
+
+    const hasStemImages = (stemImages && stemImages.length > 0);
+    const hasExplanationImages = (explanationImages && explanationImages.length > 0);
 
     return {
       ...q,
       content: {
         ...content,
+        stemImages: stemImages,
+        explanationImages: explanationImages,
+        fillBlankCount: fbCount,
+        fillBlankAnswers: fbAnswers,
         options: (content.options || []).map(function(opt) {
           return { key: opt.key, text: opt.text || '', image: opt.image || '' };
         }),
@@ -264,16 +341,27 @@ Page({
     this.setData({ userInput: e.detail.value });
   },
 
+  /* ─── 填空题分空输入变更 ─── */
+  onFillBlankInput(e) {
+    if (this.data.submitted) return;
+    const { blankIdx } = e.currentTarget.dataset;
+    var inputs = this.data.fillBlankInputs.slice();
+    inputs[blankIdx] = e.detail.value;
+    this.setData({ fillBlankInputs: inputs });
+  },
+
   /* ─── 提交答案 ─── */
   submitAnswer() {
     if (this.data.submitted) return;
 
-    const { currentQuestion, selectedAnswer, selectedAnswers, userInput, isShortAnswer } =
+    const { currentQuestion, selectedAnswer, selectedAnswers, userInput, fillBlankInputs, isShortAnswer } =
       this.data;
 
     // 校验是否已作答
     const hasAnswer = isShortAnswer
       ? userInput.trim().length > 0
+      : currentQuestion.isFillBlank
+      ? fillBlankInputs.some(function(s) { return s && s.trim().length > 0; })
       : currentQuestion.isMulti
       ? Object.keys(selectedAnswers).length > 0
       : currentQuestion.hasOptions
@@ -293,24 +381,41 @@ Page({
 
     // 判断对错
     let isCorrect = false;
+    let userAnswerStr = '';
     if (isShortAnswer) {
       // 简答题：显示参考答案，用户自判
       isCorrect = null;
+      userAnswerStr = userInput.trim();
+    } else if (currentQuestion.isFillBlank) {
+      // 填空题：逐空精确匹配（不区分大小写）
+      var fbAnswers = currentQuestion.content.fillBlankAnswers || [];
+      var fbCount = currentQuestion.content.fillBlankCount || fbAnswers.length || 1;
+      var userParts = fillBlankInputs.map(function(s) { return (s || '').trim(); });
+      var correctParts = fbAnswers.map(function(s) { return (s || '').trim(); });
+      // 补齐 correctParts 长度
+      while (correctParts.length < fbCount) correctParts.push('');
+      isCorrect = true;
+      var fbResults = [];
+      for (var i = 0; i < fbCount; i++) {
+        var correct = (userParts[i] || '').toLowerCase() === (correctParts[i] || '').toLowerCase();
+        fbResults.push(correct);
+        if (!correct) isCorrect = false;
+      }
+      this.setData({ fillBlankResults: fbResults });
+      userAnswerStr = userParts.join('|');
     } else if (currentQuestion.isMulti) {
-      // 多选题：排序后比较
+      // 多选题：排序后比较（支持用户任意选择顺序，如 BCD/DCB/BDC 均判正确）
       const userKeys = Object.keys(selectedAnswers).sort().join(',');
-      const correctKeys = currentQuestion.content.answer
-        .split(/[,，]/)
-        .map((s) => s.trim())
+      const correctKeys = this.parseCorrectKeys(currentQuestion.content.answer, currentQuestion.content.options)
+        .map(function (k) { return k.toUpperCase(); })
         .sort()
         .join(',');
       isCorrect = userKeys === correctKeys;
-    } else if (currentQuestion.isFillBlank) {
-      // 填空题：包含匹配（不区分大小写）
-      isCorrect = this.checkFillBlank(userInput.trim(), currentQuestion.content.answer);
+      userAnswerStr = userKeys;
     } else {
       // 单选/判断：精确匹配
       isCorrect = selectedAnswer === currentQuestion.content.answer;
+      userAnswerStr = selectedAnswer;
     }
 
     // 震动反馈
@@ -326,13 +431,7 @@ Page({
     const answerRecord = {
       questionId: currentQuestion._id,
       knowledgePointId: currentQuestion.knowledgePointId || '',
-      userAnswer: isShortAnswer
-        ? userInput.trim()
-        : currentQuestion.isMulti
-        ? Object.keys(selectedAnswers).sort().join(',')
-        : currentQuestion.hasOptions
-        ? selectedAnswer
-        : userInput.trim(),
+      userAnswer: userAnswerStr,
       isCorrect,
       timeSpent,
     };
@@ -538,6 +637,10 @@ Page({
         selectedAnswer: '',
         selectedAnswers: {},
         userInput: '',
+        fillBlankInputs: firstQuestion.isFillBlank
+          ? new Array(firstQuestion.content.fillBlankCount || 1).fill('')
+          : [],
+        fillBlankResults: [],
         submitted: false,
         isCorrect: null,
         showExplanation: false,
@@ -705,6 +808,10 @@ Page({
       selectedAnswer: '',
       selectedAnswers: {},
       userInput: '',
+      fillBlankInputs: nextQuestion.isFillBlank
+        ? new Array(nextQuestion.content.fillBlankCount || 1).fill('')
+        : [],
+      fillBlankResults: [],
       submitted: false,
       isCorrect: null,
       showExplanation: false,
@@ -721,10 +828,17 @@ Page({
 
     // 更新错题本状态
     this.updateWrongBookStatus();
-  },
 
-  /* ─── 完成答题 ─── */
+    // 保存答题进度（自导入题库）
+    this._saveCurrentProgress();
+  },
   finishSession() {
+    // 完成答题：清除进度记忆，标记会话已结束（阻止 onUnload 重新保存）
+    this._sessionFinished = true;
+    if (this.data.bankType === 'custom' && this.data.bankId) {
+      progressManager.clearProgress(this.data.bankId, 'practice');
+    }
+
     const totalTime = Math.round((Date.now() - this.data.sessionStartTime) / 1000);
     const answers = this._sessionAnswers;
     const correctCount = answers.filter((a) => a.isCorrect === true).length;
@@ -772,15 +886,21 @@ Page({
   /* ─── 返回（二次确认） ─── */
   goBack() {
     const hasProgress = this._sessionAnswers.length > 0;
+    var isCustomBank = this.data.bankType === 'custom' && this.data.bankId;
 
     if (hasProgress) {
+      var content = isCustomBank
+        ? '已完成 ' + this._sessionAnswers.length + '/' + this.data.totalQuestions + ' 题，退出后下次可从此处继续。确定退出吗？'
+        : '已完成 ' + this._sessionAnswers.length + '/' + this.data.totalQuestions + ' 题，退出后本次进度不保存。确定退出吗？';
       wx.showModal({
         title: '确认退出',
-        content: '已完成 ' + this._sessionAnswers.length + '/' + this.data.totalQuestions + ' 题，退出后本次进度不保存。确定退出吗？',
+        content: content,
         confirmText: '退出',
         cancelText: '继续刷题',
         success: (res) => {
           if (res.confirm) {
+            // 自导入题库：退出前保存进度（onUnload 也会保存，这里显式保存确保及时）
+            this._saveCurrentProgress();
             wx.navigateBack();
           }
         },

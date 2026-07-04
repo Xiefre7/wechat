@@ -12,6 +12,7 @@
     "wx-server-sdk": "~2.4.0",
     "xlsx": "^0.18.5",
     "nodemailer": "^6.9.0",
-    "mammoth": "^1.6.0"
+    "mammoth": "^1.6.0",
+    "adm-zip": "^0.5.10"
   }
 }

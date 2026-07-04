@@ -1,0 +1,75 @@
+/* question-card 占位组件 — 液态玻璃骨架屏风格 */
+.placeholder-wrap {
+  padding: 24rpx 0;
+}
+
+.ph-badge {
+  width: 96rpx;
+  height: 36rpx;
+  border-radius: 18rpx;
+  background: rgba(0, 122, 255, 0.10);
+  margin-bottom: 16rpx;
+}
+
+.ph-stem {
+  padding: 28rpx 24rpx;
+  border-radius: 24rpx;
+  margin-bottom: 20rpx;
+  min-height: 160rpx;
+}
+
+.ph-line {
+  height: 28rpx;
+  border-radius: 14rpx;
+  background: rgba(16, 42, 86, 0.08);
+  margin-bottom: 16rpx;
+}
+
+.theme-dark .ph-line {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ph-line-long {
+  width: 100%;
+}
+
+.ph-line-mid {
+  width: 70%;
+  margin-bottom: 0;
+}
+
+.ph-line-full {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.ph-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.ph-option {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 22rpx 24rpx;
+  border-radius: 20rpx;
+  min-height: 88rpx;
+}
+
+.ph-key {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: rgba(0, 122, 255, 0.10);
+  flex-shrink: 0;
+}
+
+.theme-dark .ph-badge {
+  background: rgba(90, 200, 250, 0.12);
+}
+
+.theme-dark .ph-key {
+  background: rgba(90, 200, 250, 0.12);
+}

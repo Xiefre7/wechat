@@ -1,6 +1,7 @@
 var imageUploader = require('../../utils/imageUploader');
 var studyTimeManager = require('../../utils/studyTimeManager');
 var practiceHistoryManager = require('../../utils/practiceHistoryManager');
+var progressManager = require('../../utils/progressManager');
 
 /** 题型中文名 */
 var TYPE_LABELS = {
@@ -46,7 +47,19 @@ Page({
     }
 
     var totalQuestions = session.questions.length;
-    var firstQuestion = this.formatQuestion(session.questions[0]);
+    // 进度记忆：从上次退出的位置继续（仅自导入题库）
+    var startIndex = 0;
+    if (session.bankType === 'custom' && session.bankId) {
+      startIndex = progressManager.getProgress(session.bankId, 'memorize', totalQuestions);
+      if (startIndex > 0) {
+        wx.showToast({
+          title: '从第' + (startIndex + 1) + '题继续',
+          icon: 'none',
+          duration: 1500,
+        });
+      }
+    }
+    var startQuestion = this.formatQuestion(session.questions[startIndex]);
 
     this.setData({
       bankName: session.bankName,
@@ -55,21 +68,21 @@ Page({
       bankCategory: session.bankCategory || '',
       questions: session.questions,
       totalQuestions: totalQuestions,
-      currentIndex: 0,
-      currentQuestion: firstQuestion,
-      processedOptions: this.buildOptionClasses(firstQuestion, {
+      currentIndex: startIndex,
+      currentQuestion: startQuestion,
+      processedOptions: this.buildOptionClasses(startQuestion, {
         isMemorizeMode: true,
         submitted: false,
         isCorrect: null,
-        isMultiChoice: firstQuestion.isMulti || false,
-        isShortAnswer: firstQuestion.isShortAnswer || false,
+        isMultiChoice: startQuestion.isMulti || false,
+        isShortAnswer: startQuestion.isShortAnswer || false,
       }),
-      questionTypeLabel: TYPE_LABELS[firstQuestion.type] || '未知题型',
-      questionNumber: 1,
+      questionTypeLabel: TYPE_LABELS[startQuestion.type] || '未知题型',
+      questionNumber: startIndex + 1,
       showExplanation: true,
       showAnswer: true,
-      isShortAnswer: firstQuestion.isShortAnswer || false,
-      isMultiChoice: firstQuestion.isMulti || false,
+      isShortAnswer: startQuestion.isShortAnswer || false,
+      isMultiChoice: startQuestion.isMulti || false,
       sessionStartTime: Date.now(),
     });
 
@@ -82,6 +95,28 @@ Page({
     this.setData({ isDark: effectiveTheme === 'dark' });
   },
 
+  onHide: function () {
+    this._saveCurrentProgress();
+  },
+
+  onUnload: function () {
+    this._saveCurrentProgress();
+  },
+
+  /* ─── 保存当前背题进度（仅自导入题库）─── */
+  _saveCurrentProgress: function () {
+    // 完成背题后不再保存进度（避免覆盖已清除的进度）
+    if (this._sessionFinished) return;
+    if (this.data.bankType === 'custom' && this.data.bankId && this.data.totalQuestions > 0) {
+      progressManager.saveProgress(
+        this.data.bankId,
+        'memorize',
+        this.data.currentIndex,
+        this.data.totalQuestions
+      );
+    }
+  },
+
   /* ─── 格式化题目 ─── */
   formatQuestion: function (q) {
     // 统一两种数据结构：官方题库用 q.content.*，自导入题库用 q.* 扁平结构
@@ -92,9 +127,32 @@ Page({
       explanation: q.explanation || '',
       stemImages: q.stemImages || [],
       explanationImages: q.explanationImages || [],
+      fillBlankCount: q.fillBlankCount || 0,
+      fillBlankAnswers: q.fillBlankAnswers || [],
     };
-    var hasStemImages = (content.stemImages && content.stemImages.length > 0);
-    var hasExplanationImages = (content.explanationImages && content.explanationImages.length > 0);
+
+    // 兼容：content 存在但缺少 stemImages/explanationImages 时，回退到顶层
+    var stemImages = content.stemImages || q.stemImages || [];
+    var explanationImages = content.explanationImages || q.explanationImages || [];
+
+    // 填空题：兼容旧数据
+    var fbCount = content.fillBlankCount || q.fillBlankCount || 0;
+    var fbAnswers = (content.fillBlankAnswers || q.fillBlankAnswers || []).slice();
+    if (q.type === 'fill_blank') {
+      if (fbCount === 0 || fbAnswers.length === 0) {
+        var rawAns = (content.answer || '').trim();
+        if (rawAns) {
+          fbAnswers = rawAns.split(/[|｜]/).map(function(s) { return s.trim(); });
+          fbCount = fbAnswers.length;
+        } else {
+          fbCount = 1;
+          fbAnswers = [''];
+        }
+      }
+    }
+
+    var hasStemImages = (stemImages && stemImages.length > 0);
+    var hasExplanationImages = (explanationImages && explanationImages.length > 0);
 
     return {
       content: {
@@ -104,8 +162,10 @@ Page({
         }),
         answer: content.answer,
         explanation: content.explanation,
-        stemImages: content.stemImages || [],
-        explanationImages: content.explanationImages || [],
+        stemImages: stemImages,
+        explanationImages: explanationImages,
+        fillBlankCount: fbCount,
+        fillBlankAnswers: fbAnswers,
       },
       _id: q._id || ('tmp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8)),
       type: q.type,
@@ -238,6 +298,9 @@ Page({
       isMultiChoice: nextQuestion.isMulti || false,
       processedOptions: nextOptions,
     });
+
+    // 保存背题进度（自导入题库）
+    this._saveCurrentProgress();
   },
 
   /* ─── 返回上一题 ─── */
@@ -275,6 +338,12 @@ Page({
 
   /* ─── 完成背题 ─── */
   finishMemorizeSession: function () {
+    // 完成背题：清除进度记忆，标记会话已结束（阻止 onUnload 重新保存）
+    this._sessionFinished = true;
+    if (this.data.bankType === 'custom' && this.data.bankId) {
+      progressManager.clearProgress(this.data.bankId, 'memorize');
+    }
+
     var marks = this._memorizeMarks;
     // 按 questionId 去重，保留最后一次标记
     var seen = {};
@@ -336,15 +405,21 @@ Page({
   /* ─── 返回（二次确认） ─── */
   goBack: function () {
     var hasProgress = this._memorizeMarks.length > 0;
+    var that = this;
+    var isCustomBank = this.data.bankType === 'custom' && this.data.bankId;
 
     if (hasProgress) {
+      var content = isCustomBank
+        ? '已浏览 ' + this._memorizeMarks.length + '/' + this.data.totalQuestions + ' 题，退出后下次可从此处继续。确定退出吗？'
+        : '已浏览 ' + this._memorizeMarks.length + '/' + this.data.totalQuestions + ' 题，退出后本次进度不保存。确定退出吗？';
       wx.showModal({
         title: '确认退出',
-        content: '已浏览 ' + this._memorizeMarks.length + '/' + this.data.totalQuestions + ' 题，退出后本次进度不保存。确定退出吗？',
+        content: content,
         confirmText: '退出',
         cancelText: '继续背题',
         success: function (res) {
           if (res.confirm) {
+            that._saveCurrentProgress();
             wx.navigateBack();
           }
         },

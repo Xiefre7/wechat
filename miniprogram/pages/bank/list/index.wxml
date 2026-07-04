@@ -3,6 +3,34 @@
   <view class="ambient-strip"></view>
 
   <scroll-view class="page-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 骨架屏：数据加载前展示，消除分包页面白屏空档 -->
+    <view class="sk-wrap" wx:if="{{loading}}">
+      <view class="sk-header">
+        <view class="sk-title sk-bone"></view>
+        <view class="sk-desc sk-bone"></view>
+      </view>
+
+      <view class="sk-tab-bar">
+        <view class="sk-tab sk-bone"></view>
+        <view class="sk-tab sk-bone"></view>
+      </view>
+
+      <view class="sk-bank-list">
+        <view class="sk-bank-card glass-card" wx:for="{{[1, 2, 3]}}" wx:key="*this">
+          <view class="sk-bank-header">
+            <view class="sk-bank-icon sk-bone"></view>
+            <view class="sk-bank-info">
+              <view class="sk-bank-name sk-bone"></view>
+              <view class="sk-bank-meta sk-bone"></view>
+            </view>
+            <view class="sk-bank-arrow sk-bone"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 真实内容 -->
+    <block wx:else>
     <!-- 页面标题 -->
     <view class="page-header">
       <view class="page-title">题库选择</view>
@@ -142,5 +170,6 @@
     </view>
 
     <view class="safe-bottom"></view>
+    </block>
   </scroll-view>
 </view>

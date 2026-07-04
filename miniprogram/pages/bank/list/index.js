@@ -2,6 +2,10 @@ const mockData = require('../../../data/mockData');
 const slashManager = require('../../../utils/slashManager');
 const wrongBook = require('../../../utils/wrongBook');
 
+// 模块级预读主题状态，确保第一帧 isDark 正确，消除闪烁
+var _app = getApp();
+var _isDark = (_app && _app.globalData) ? (_app.globalData.effectiveTheme === 'dark') : false;
+
 const CATEGORY_COLORS = {
   '数学': { bg: 'rgba(0,122,255,0.08)', text: '#007AFF' },
   '英语': { bg: 'rgba(52,199,89,0.08)', text: '#34C759' },
@@ -10,7 +14,8 @@ const CATEGORY_COLORS = {
 
 Page({
   data: {
-    isDark: false,
+    isDark: _isDark,
+    loading: true,
     currentTab: 'official',
     banks: [],
     expandedBankId: '',
@@ -20,10 +25,6 @@ Page({
   },
 
   onLoad() {
-    var app = getApp();
-    var effectiveTheme = app.globalData.effectiveTheme || 'light';
-    this.setData({ isDark: effectiveTheme === 'dark' });
-
     this.loadBanks();
   },
 
@@ -124,7 +125,14 @@ Page({
         categoryColor: CATEGORY_COLORS[b.category] || { bg: 'rgba(0,122,255,0.08)', text: '#007AFF' },
         progress: this.calcBankProgress(b),
       }));
-    this.setData({ banks });
+
+    // 合并 loading: false 到同一次 setData，减少 JS-Native 桥通信
+    // 仅在 loading 为 true 时才写入，避免 Tab 切换时的冗余更新
+    var dataToUpdate = { banks: banks };
+    if (this.data.loading) {
+      dataToUpdate.loading = false;
+    }
+    this.setData(dataToUpdate);
   },
 
   /* ─── 计算进度 ─── */
@@ -313,8 +321,18 @@ Page({
         options: q.options || [],
         answer: q.answer || '',
         explanation: q.explanation || '',
+        stemImages: q.stemImages || [],
+        explanationImages: q.explanationImages || [],
+        fillBlankCount: q.fillBlankCount || 0,
+        fillBlankAnswers: q.fillBlankAnswers || [],
       },
     }));
+
+    // 自导入题库：按题型分组排序（单选→多选→判断→填空→简答）
+    var sortedQuestions = normalizedQuestions;
+    if (bank.type === 'custom') {
+      sortedQuestions = this.sortByType(normalizedQuestions);
+    }
 
     wx.setStorageSync('practiceSession', {
       bankId: bank._id,
@@ -326,13 +344,30 @@ Page({
       questionClassId: '',
       questionClassName: '',
       allClassIds: [],
-      questions: normalizedQuestions,
+      questions: sortedQuestions,
       mode: this.data.memorizeMode ? 'memorize' : 'practice',
     });
 
     var url = this.data.memorizeMode ? '/pages/memorize/index' : '/pages/practice/index';
     wx.navigateTo({
       url: url,
+    });
+  },
+
+  /* ─── 按题型排序：单选→多选→判断→填空→简答 ─── */
+  sortByType(questions) {
+    var typeOrder = {
+      single_choice: 1,
+      multi_choice: 2,
+      true_false: 3,
+      fill_blank: 4,
+      short_answer: 5,
+    };
+    return questions.slice().sort(function (a, b) {
+      var oa = typeOrder[a.type] || 99;
+      var ob = typeOrder[b.type] || 99;
+      if (oa !== ob) return oa - ob;
+      return 0; // 同类型保持原顺序（稳定排序）
     });
   },
 
@@ -439,38 +474,40 @@ Page({
   },
 
   prepareShareData(bank) {
-    // 本地题库：从 mockData 取题；云端题库：从云数据库取题
+    // 本地题库：mockData 中已持有完整题目数据，直接取用
     const localQuestions = mockData.questions.filter((q) => q.bankId === bank._id);
     if (localQuestions.length > 0) {
       return this.doShare(bank, localQuestions);
     }
-    // 云端自导入题库
-    return wx.cloud.database().collection('questions')
-      .where({ bankId: bank._id })
-      .limit(500)
-      .get()
-      .then((res) => this.doShare(bank, res.data || []))
-      .catch(() => {
-        wx.showToast({ title: '无法获取题目数据', icon: 'none' });
-        return { title: bank.name, path: '/pages/index/index' };
-      });
+    // 云端自导入题库：交给云函数在服务端分页拉取全部题目
+    // 注意：小程序端 wx.cloud.database() 单次 get 最多只返回 20 条，
+    // 在客户端查询会导致分享的题库被截断为 20 题，必须由云函数服务端拉取。
+    return this.doShare(bank, null, bank._id);
   },
 
-  doShare(bank, questions) {
+  doShare(bank, questions, cloudBankId) {
+    const payload = {
+      type: 'shareBank',
+      bank: {
+        name: bank.name,
+        type: bank.type,
+        category: bank.category,
+        subCategory: bank.subCategory || '',
+        description: bank.description || '',
+        questionCount: questions ? questions.length : (bank.questionCount || 0),
+      },
+    };
+    if (questions && questions.length > 0) {
+      // 本地题库：客户端直接传入题目
+      payload.questions = questions;
+    } else if (cloudBankId) {
+      // 云端题库：传题库ID，由云函数服务端分页拉取全部题目
+      payload.bankId = cloudBankId;
+    }
+
     return wx.cloud.callFunction({
       name: 'quickstartFunctions',
-      data: {
-        type: 'shareBank',
-        bank: {
-          name: bank.name,
-          type: bank.type,
-          category: bank.category,
-          subCategory: bank.subCategory || '',
-          description: bank.description || '',
-          questionCount: questions.length,
-        },
-        questions,
-      },
+      data: payload,
     }).then((res) => {
       if (res.result && res.result.success && res.result.shareCode) {
         return {
@@ -481,7 +518,17 @@ Page({
       }
       throw new Error('云函数返回失败');
     }).catch(() => {
-      // 降级：将数据编码到 path（仅适合小题库）
+      // 降级：将数据编码到 path（仅适合小题库，且需客户端已持有题目数据）
+      if (!questions || questions.length === 0) {
+        // 云端题库降级：客户端未持有题目，无法编码到链接
+        wx.showModal({
+          title: '分享失败',
+          content: '云端题库分享需要部署 quickstartFunctions 云函数。\n\n请在微信云开发控制台上传并部署云函数后重试。',
+          showCancel: false,
+          confirmText: '知道了',
+        });
+        return { title: '【题库】' + bank.name + '（需部署云函数后分享）', path: '/pages/index/index' };
+      }
       const pkg = { bank, questions };
       const json = JSON.stringify(pkg);
       if (json.length > 800) {

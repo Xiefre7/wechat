@@ -11,6 +11,8 @@ const EMPTY_FORM = {
     { key: 'D', text: '', _image: '' },
   ],
   answer: '',
+  fillBlankCount: 0,
+  fillBlankAnswers: [],
   explanation: '',
   _explanationImages: [],
 };
@@ -63,11 +65,15 @@ Page({
             _stemImages: (q.stemImages || []).slice(),
             options: editOptions,
             answer: q.answer,
+            fillBlankCount: q.fillBlankCount || (q.type === 'fill_blank' && q.answer ? q.answer.split(/[|｜]/).length : 0),
+            fillBlankAnswers: q.fillBlankAnswers && q.fillBlankAnswers.length > 0
+              ? q.fillBlankAnswers.slice()
+              : (q.type === 'fill_blank' && q.answer ? q.answer.split(/[|｜]/).map(function(s) { return s.trim(); }) : []),
             explanation: q.explanation || '',
             _explanationImages: (q.explanationImages || []).slice(),
           },
           selectedAnswers,
-          showOptions: !['short_answer'].includes(q.type),
+          showOptions: !['short_answer', 'fill_blank'].includes(q.type),
         });
       }
     }
@@ -91,11 +97,22 @@ Page({
         { key: 'B', text: '错', _image: '' },
       ];
       form.answer = '';
-    } else if (type === 'short_answer' || type === 'fill_blank') {
+      form.fillBlankCount = 0;
+      form.fillBlankAnswers = [];
+    } else if (type === 'short_answer') {
       form.options = [];
       form.answer = '';
-    } else if (form.options.length === 0 || this.data.form.type === 'true_false' || this.data.form.type === 'short_answer') {
+      form.fillBlankCount = 0;
+      form.fillBlankAnswers = [];
+    } else if (type === 'fill_blank') {
+      form.options = [];
+      form.answer = '';
+      form.fillBlankCount = 1;
+      form.fillBlankAnswers = [''];
+    } else if (form.options.length === 0 || this.data.form.type === 'true_false' || this.data.form.type === 'short_answer' || this.data.form.type === 'fill_blank') {
       form.options = [...EMPTY_FORM.options];
+      form.fillBlankCount = 0;
+      form.fillBlankAnswers = [];
     }
 
     // 多选切单选时清答案
@@ -106,7 +123,7 @@ Page({
     this.setData({
       form,
       selectedAnswers: {},
-      showOptions: !['short_answer'].includes(type),
+      showOptions: !['short_answer', 'fill_blank'].includes(type),
     });
   },
 
@@ -115,6 +132,47 @@ Page({
     const { field } = e.currentTarget.dataset;
     this.setData({
       [`form.${field}`]: e.detail.value,
+    });
+  },
+
+  /* ─── 填空题分空输入 ─── */
+  onFillBlankInput(e) {
+    const { blankIdx } = e.currentTarget.dataset;
+    var answers = (this.data.form.fillBlankAnswers || []).slice();
+    while (answers.length <= blankIdx) answers.push('');
+    answers[blankIdx] = e.detail.value;
+    this.setData({
+      'form.fillBlankAnswers': answers,
+      'form.answer': answers.join('|'),
+    });
+  },
+
+  addFillBlank() {
+    var answers = (this.data.form.fillBlankAnswers || []).slice();
+    if (answers.length >= 10) {
+      wx.showToast({ title: '最多 10 个空', icon: 'none' });
+      return;
+    }
+    answers.push('');
+    this.setData({
+      'form.fillBlankAnswers': answers,
+      'form.fillBlankCount': answers.length,
+      'form.answer': answers.join('|'),
+    });
+  },
+
+  removeFillBlank(e) {
+    const { blankIdx } = e.currentTarget.dataset;
+    var answers = (this.data.form.fillBlankAnswers || []).slice();
+    if (answers.length <= 1) {
+      wx.showToast({ title: '至少保留 1 个空', icon: 'none' });
+      return;
+    }
+    answers.splice(blankIdx, 1);
+    this.setData({
+      'form.fillBlankAnswers': answers,
+      'form.fillBlankCount': answers.length,
+      'form.answer': answers.join('|'),
     });
   },
 
@@ -261,7 +319,12 @@ Page({
     if (form.type !== 'short_answer' && form.type !== 'fill_blank') {
       if (form.options.some((o) => !o.text.trim())) errors.push('请填写所有选项');
     }
-    if (!form.answer.trim()) errors.push('请设置答案');
+    if (form.type === 'fill_blank') {
+      var hasAnswer = (form.fillBlankAnswers || []).some(function (a) { return a && a.trim(); });
+      if (!hasAnswer) errors.push('请至少填写一个空的答案');
+    } else if (!form.answer.trim()) {
+      errors.push('请设置答案');
+    }
 
     return errors;
   },
@@ -289,6 +352,8 @@ Page({
         return { key: opt.key, text: opt.text.trim(), _image: pathMap[opt._image] || opt._image || '' };
       }),
       answer: form.answer.trim(),
+      fillBlankCount: form.fillBlankCount || 0,
+      fillBlankAnswers: (form.fillBlankAnswers || []).slice(),
       explanation: form.explanation.trim(),
       _explanationImages: (form._explanationImages || []).map(function(p) { return pathMap[p] || p; }),
     };
@@ -302,7 +367,7 @@ Page({
       else if (/^(错|错误|×|✗|F|f|false|False)$/.test(answer)) answer = 'B';
     }
 
-    return {
+    var question = {
       type: formAfterUpload.type,
       stem: formAfterUpload.stem,
       stemImages: (formAfterUpload._stemImages || []).filter(function(p) { return p && p.indexOf('cloud://') === 0; }),
@@ -313,6 +378,14 @@ Page({
       explanation: formAfterUpload.explanation,
       explanationImages: (formAfterUpload._explanationImages || []).filter(function(p) { return p && p.indexOf('cloud://') === 0; }),
     };
+
+    // 填空题：保存空格信息
+    if (formAfterUpload.type === 'fill_blank') {
+      question.fillBlankCount = formAfterUpload.fillBlankCount || (formAfterUpload.fillBlankAnswers || []).length || 1;
+      question.fillBlankAnswers = (formAfterUpload.fillBlankAnswers || []).map(function(a) { return (a || '').trim(); });
+    }
+
+    return question;
   },
 
   /* 写入 storage */
@@ -359,6 +432,8 @@ Page({
         _stemImages: (form._stemImages || []).slice(),
         options: form.options.map(function(opt) { return { key: opt.key, text: opt.text.trim(), _image: opt._image || '' }; }),
         answer: form.answer.trim(),
+        fillBlankCount: form.fillBlankCount || 0,
+        fillBlankAnswers: (form.fillBlankAnswers || []).slice(),
         explanation: form.explanation.trim(),
         _explanationImages: (form._explanationImages || []).slice(),
       };
@@ -393,6 +468,8 @@ Page({
                 _stemImages: [],
                 options: form.options.map(function(opt) { return { key: opt.key, text: opt.text.trim(), _image: '' }; }),
                 answer: form.answer.trim(),
+                fillBlankCount: form.fillBlankCount || 0,
+                fillBlankAnswers: (form.fillBlankAnswers || []).slice(),
                 explanation: form.explanation.trim(),
                 _explanationImages: [],
               };

@@ -2,5 +2,6 @@
   "navigationBarTitleText": "导题斩题小工具",
   "enablePullDownRefresh": true,
   "backgroundTextStyle": "dark",
+  "initialRenderingCache": "static",
   "usingComponents": {}
 }

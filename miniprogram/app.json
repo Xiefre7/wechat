@@ -89,6 +89,7 @@
   },
   "sitemapLocation": "sitemap.json",
   "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
   "darkmode": true,
   "__usePrivacyCheck__": true,
   "usingComponents": {

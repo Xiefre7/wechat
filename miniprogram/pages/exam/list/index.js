@@ -7,6 +7,7 @@ const CATEGORY_COLORS = {
 };
 
 var app = getApp();
+var _isDark = (app && app.globalData) ? (app.globalData.effectiveTheme === 'dark') : false;
 
 Page({
   data: {
@@ -14,12 +15,10 @@ Page({
     currentTab: 'all',
     exams: [],
     loaded: false,
-    isDark: false,
+    isDark: _isDark,
   },
 
   onLoad() {
-    var effectiveTheme = app.globalData.effectiveTheme || 'light';
-    this.setData({ isDark: effectiveTheme === 'dark' });
     this.loadData();
   },
 
@@ -99,7 +98,8 @@ Page({
   switchTab(e) {
     const { tab } = e.currentTarget.dataset;
     if (tab === this.data.currentTab) return;
-    this.setData({ currentTab: tab, loaded: false });
+    // 清空 exams 并设置 loaded: false，触发骨架屏展示
+    this.setData({ currentTab: tab, loaded: false, exams: [] });
     // 'all' 表示加载全部，否则按分类ID过滤
     this.loadExams(tab === 'all' ? '' : tab).then(() => {
       this.setData({ loaded: true });

@@ -7,7 +7,8 @@ const db = cloud.database();
 
 // 导入选项布局标准化 & 增强题型判别模块（防御式加载：若模块不存在则回退到简单模式）
 let normalizeOptionLayouts, extractOptionsFromLine, extractBracketOptionsFromLine,
-    extractCircleOptionsFromLine, detectType, cleanStem,
+    extractCircleOptionsFromLine, detectType, cleanStem, normalizeMathSymbols,
+    countBlanks, splitFillBlankAnswer,
     OPT_CHINBRACKET_RE, OPT_ENBRACKET_RE,
     ANSWER_RE_SHARED, ANSWER_EXPL_SHARED, EXPLANATION_RE_SHARED,
     TF_TRUE, TF_FALSE;
@@ -20,6 +21,9 @@ try {
   extractCircleOptionsFromLine = optNorm.extractCircleOptionsFromLine;
   detectType = optNorm.detectType;
   cleanStem = optNorm.cleanStem;
+  normalizeMathSymbols = optNorm.normalizeMathSymbols;
+  countBlanks = optNorm.countBlanks;
+  splitFillBlankAnswer = optNorm.splitFillBlankAnswer;
   OPT_CHINBRACKET_RE = optNorm.OPT_CHINBRACKET_RE;
   OPT_ENBRACKET_RE = optNorm.OPT_ENBRACKET_RE;
   ANSWER_RE_SHARED = optNorm.ANSWER_RE;
@@ -199,8 +203,8 @@ const importBank = async (event) => {
     return { success: false, errMsg: '缺少题库名称或题目数据' };
   }
 
-  if (questions.length > 500) {
-    return { success: false, errMsg: '单次最多导入 500 题' };
+  if (questions.length > 1000) {
+    return { success: false, errMsg: '单次最多导入 1000 题' };
   }
 
   try {
@@ -244,6 +248,8 @@ const importBank = async (event) => {
           explanation: q.explanation || '',
           stemImages: q.stemImages || [],
           explanationImages: q.explanationImages || [],
+          fillBlankCount: q.fillBlankCount || 0,
+          fillBlankAnswers: q.fillBlankAnswers || [],
         },
         tags: ['自导入'],
         status: 'active',
@@ -441,8 +447,13 @@ const importBankByExcel = async (event) => {
 };
 
 /**
- * Word 文档解析（仅提取文本+结构化，不入库）
+ * Word 文档解析（提取文本+数学公式+结构化，不入库）
  * 用于预览页展示解析结果
+ *
+ * 解析策略：
+ *   1. 优先使用 docxMathExtractor（直接解析 XML，提取 OMML 数学公式）
+ *   2. 如果失败或无数学公式，回退到 mammoth.extractRawText
+ *   3. 合并两种方式的结果（取更长的）
  */
 const parseWordDocument = async (event) => {
   const { fileID } = event;
@@ -457,21 +468,40 @@ const parseWordDocument = async (event) => {
     const downloadRes = await cloud.downloadFile({ fileID });
     const fileBuffer = downloadRes.fileContent;
 
-    // 动态加载 mammoth
-    let mammoth;
+    // ── 策略1: docxMathExtractor（支持 OMML 数学公式）──
+    var rawText = '';
+    var mathFound = false;
+    var extractionMethod = 'mammoth';
+
     try {
-      mammoth = require('mammoth');
-    } catch (e) {
-      console.error('[parseWordDocument] mammoth require failed:', e.message);
-      return {
-        success: false,
-        errMsg: 'Word解析组件未就绪，请运行 npm install 安装 mammoth 依赖。错误: ' + e.message,
-      };
+      var mathExtractor = require('./lib/docxMathExtractor');
+      var extractResult = mathExtractor.extractFromDocx(fileBuffer);
+      rawText = extractResult.text;
+      mathFound = extractResult.mathFound;
+      extractionMethod = extractResult.method;
+      console.log('[parseWordDocument] docxMathExtractor: mathFound=' + mathFound + ', textLength=' + rawText.length);
+    } catch (mathErr) {
+      console.warn('[parseWordDocument] docxMathExtractor failed, falling back to mammoth:', mathErr.message);
     }
 
-    // 提取纯文本
-    const extractResult = await mammoth.extractRawText({ buffer: fileBuffer });
-    const rawText = extractResult.value;
+    // ── 策略2: mammoth 回退 ──
+    if (!rawText || !rawText.trim()) {
+      let mammoth;
+      try {
+        mammoth = require('mammoth');
+      } catch (e) {
+        console.error('[parseWordDocument] mammoth require failed:', e.message);
+        return {
+          success: false,
+          errMsg: 'Word解析组件未就绪，请运行 npm install 安装 mammoth 依赖。错误: ' + e.message,
+        };
+      }
+
+      const extractResult = await mammoth.extractRawText({ buffer: fileBuffer });
+      rawText = extractResult.value;
+      extractionMethod = 'mammoth';
+      console.log('[parseWordDocument] mammoth fallback: textLength=' + (rawText || '').length);
+    }
 
     if (!rawText || !rawText.trim()) {
       return {
@@ -558,6 +588,9 @@ const parseWordDocument = async (event) => {
     if (rawText.length > 50000) {
       warnings.push('文档内容较长，仅解析了前50000字符');
     }
+    if (mathFound) {
+      warnings.push('检测到数学公式，已自动提取');
+    }
 
     return {
       success: true,
@@ -567,6 +600,8 @@ const parseWordDocument = async (event) => {
       questionCount: questions.length,
       typeDistribution: typeCounts,
       warnings,
+      extractionMethod: extractionMethod,
+      mathFormulaDetected: mathFound,
     };
   } catch (err) {
     console.error('[parseWordDocument] Exception:', err.message);
@@ -897,12 +932,27 @@ function parseOcrText(rawText) {
       answer = answer.replace(/[^A-Ea-e]/g, '').toUpperCase();
     }
 
+    // 填空题：自动检测空格数量并拆分答案
+    var fillBlankCount = 0;
+    var fillBlankAnswers = null;
+    if (type === 'fill_blank') {
+      fillBlankCount = countBlanks ? countBlanks(q.stem || '') : 1;
+      fillBlankAnswers = splitFillBlankAnswer
+        ? splitFillBlankAnswer(answer, fillBlankCount)
+        : [answer];
+    }
+
     return {
       type: type,
-      stem: cleanStem(q.stem || ''),
-      options: q.options || [],
-      answer: answer,
-      explanation: (q.explanation || '').trim(),
+      stem: normalizeMathSymbols ? normalizeMathSymbols(cleanStem(q.stem || '')) : cleanStem(q.stem || ''),
+      options: (q.options || []).map(function (opt) {
+        var text = opt.text || '';
+        return normalizeMathSymbols ? { key: opt.key, text: normalizeMathSymbols(text) } : opt;
+      }),
+      answer: normalizeMathSymbols ? normalizeMathSymbols(answer) : answer,
+      explanation: normalizeMathSymbols ? normalizeMathSymbols((q.explanation || '').trim()) : (q.explanation || '').trim(),
+      fillBlankCount: fillBlankCount || 0,
+      fillBlankAnswers: fillBlankAnswers || [],
     };
   });
 }
@@ -1124,18 +1174,86 @@ const getWrongStats = async (event) => {
 
 // ─── 题库分享 ───
 
-/** 分享题库：存储题库数据并返回分享码 */
+/**
+ * 服务端分页拉取某题库的全部题目
+ * 微信云函数端单次 get 最多返回 100 条，必须分页累加才能取全。
+ * （小程序端 wx.cloud.database 单次仅返回 20 条，是旧版分享被截断为 20 题的根因）
+ */
+async function fetchAllQuestions(bankId) {
+  const PAGE_SIZE = 100;
+  var all = [];
+  var skip = 0;
+  while (true) {
+    var res = await db.collection('questions')
+      .where({ bankId: bankId })
+      .skip(skip)
+      .limit(PAGE_SIZE)
+      .get();
+    if (!res.data || res.data.length === 0) break;
+    all = all.concat(res.data);
+    if (res.data.length < PAGE_SIZE) break;
+    skip += PAGE_SIZE;
+  }
+  return all;
+}
+
+/**
+ * 分享题库：存储题库数据并返回分享码
+ * 支持两种入参方式：
+ *   1) { bank, questions } —— 客户端直接传入题目（本地 / mockData 题库）
+ *   2) { bank, bankId }    —— 传题库ID，由云函数在服务端分页拉取全部题目（云端自导入题库）
+ * 第 2 种方式可突破小程序端单次 20 条的限制，确保分享的是完整题库。
+ */
 const shareBank = async (event) => {
-  const { bank, questions } = event;
+  const { bank, questions, bankId } = event;
   const wxContext = cloud.getWXContext();
   const openid = wxContext.OPENID;
 
   if (!openid) {
     return { success: false, message: '无法获取用户身份' };
   }
-  if (!bank || !questions) {
-    return { success: false, message: '缺少题库数据' };
+  if (!bank) {
+    return { success: false, message: '缺少题库信息' };
   }
+
+  var allQuestions = questions;
+
+  // 云端自导入题库：服务端分页拉取全部题目
+  if ((!allQuestions || !Array.isArray(allQuestions)) && bankId) {
+    // 安全校验：只能分享属于自己的题库
+    try {
+      const bankDoc = await db.collection('banks').doc(bankId).get();
+      if (!bankDoc.data) {
+        return { success: false, message: '题库不存在' };
+      }
+      if (bankDoc.data.ownerId && bankDoc.data.ownerId !== openid) {
+        return { success: false, message: '无权分享此题库' };
+      }
+    } catch (e) {
+      return { success: false, message: '题库校验失败' };
+    }
+    allQuestions = await fetchAllQuestions(bankId);
+  }
+
+  if (!allQuestions || !Array.isArray(allQuestions) || allQuestions.length === 0) {
+    return { success: false, message: '缺少题目数据' };
+  }
+
+  // 统一规范化为 content.* 结构，剔除 _id 等无需分享的字段，减小存储体积
+  var normalizedQuestions = allQuestions.map(function (q) {
+    var c = q.content || {};
+    return {
+      type: q.type || 'single_choice',
+      content: {
+        stem: c.stem || q.stem || '',
+        options: c.options || q.options || [],
+        answer: c.answer || q.answer || '',
+        explanation: c.explanation || q.explanation || '',
+        stemImages: c.stemImages || q.stemImages || [],
+        explanationImages: c.explanationImages || q.explanationImages || [],
+      },
+    };
+  });
 
   const shareCode = 'S' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 6).toUpperCase();
 
@@ -1143,15 +1261,15 @@ const shareBank = async (event) => {
     await db.collection('sharedBanks').add({
       data: {
         shareCode,
-        bank,
-        questions,
+        bank: Object.assign({}, bank, { questionCount: normalizedQuestions.length }),
+        questions: normalizedQuestions,
         ownerId: openid,
         createdAt: new Date(),
         // 7天过期
         expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
     });
-    return { success: true, shareCode };
+    return { success: true, shareCode, questionCount: normalizedQuestions.length };
   } catch (e) {
     return { success: false, message: e.message };
   }
@@ -1239,10 +1357,21 @@ const getBankQuestions = async (event) => {
       if (condition.knowledgePointId) query.knowledgePointId = condition.knowledgePointId;
       if (condition.questionClassId) query.questionClassId = condition.questionClassId;
     }
-    const list = (await db.collection('questions')
-      .where(query)
-      .limit(500)
-      .get()).data;
+    // 云函数端单次 get 最多返回 100 条，分页拉取该题库全部题目
+    const PAGE_SIZE = 100;
+    var list = [];
+    var skip = 0;
+    while (true) {
+      var res = await db.collection('questions')
+        .where(query)
+        .skip(skip)
+        .limit(PAGE_SIZE)
+        .get();
+      if (!res.data || res.data.length === 0) break;
+      list = list.concat(res.data);
+      if (res.data.length < PAGE_SIZE) break;
+      skip += PAGE_SIZE;
+    }
     return { success: true, data: list };
   } catch (e) {
     return { success: false, errMsg: e.message };
